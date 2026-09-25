@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- Hanya untuk mengunduh pembaruan ketetapan kalender hijriah (tanpa
+         data pribadi) - lihat services/hijri_config.dart. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Notifikasi adzan: dijadwalkan tepat waktu (izin diminta ke pengguna
          di Android 14+), dijadwalkan ulang sesudah perangkat dinyalakan. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
