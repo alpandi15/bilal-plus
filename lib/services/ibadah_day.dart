@@ -112,7 +112,9 @@ const _excusableKeys = {
 
 /// Ibadah yang gugur saat berhalangan (haid/nifas): sholat & puasa.
 bool excusable(IbadahItem item) =>
-    item.groupKey == sholatWajibGroup || _excusableKeys.contains(item.key);
+    item.groupKey == sholatWajibGroup ||
+    item.groupKey == rawatibGroup ||
+    _excusableKeys.contains(item.key);
 
 /// Selesai: check tercentang / counter mencapai target. Tilawah selesai
 /// bila ada catatan bacaan Al-Qur'an hari itu.

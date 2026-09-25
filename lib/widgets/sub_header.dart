@@ -7,10 +7,14 @@ class SubHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.showBack = true,
   });
   final String title;
   final String? subtitle;
   final Widget? trailing;
+
+  /// false untuk halaman akar sebuah tab (tidak ada yang bisa di-pop).
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -38,30 +42,33 @@ class SubHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Material(
-                  color: const Color(0xCCFFFFFF),
-                  borderRadius: BorderRadius.circular(12),
-                  elevation: 2,
-                  shadowColor: const Color(0x1F785624),
-                  child: InkWell(
+                if (showBack) ...[
+                  Material(
+                    color: const Color(0xCCFFFFFF),
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xB3FDE68A)),
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left_rounded,
-                        size: 24,
-                        color: Color(0xFF92400E),
+                    elevation: 2,
+                    shadowColor: const Color(0x1F785624),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.of(context).maybePop(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xB3FDE68A)),
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          size: 24,
+                          color: Color(0xFF92400E),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                ] else
+                  const SizedBox(width: 4),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

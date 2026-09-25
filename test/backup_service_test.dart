@@ -37,7 +37,13 @@ Future<Map<String, Object?>> _snapshot(AppDatabase db) async {
 
 Future<void> _fill(AppDatabase db) async {
   final dao = db.ibadahDao;
-  await dao.setValue('2027-02-08', await _idOf(db, 'subuh'), 1);
+  await dao.setValue(
+    '2027-02-08',
+    await _idOf(db, 'subuh'),
+    1,
+    prayedAt: DateTime(2027, 2, 8, 5, 12),
+    place: 'masjid',
+  );
   await dao.setValue('2027-02-08', await _idOf(db, 'istighfar'), 70);
   final custom = await dao.addCustomItem(
     name: 'Sholawat',

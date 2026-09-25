@@ -76,6 +76,6 @@ void main() {
     expect(find.text('Rekap terkunci · hutang 3 hari'), findsOneWidget);
     expect(find.text('puasa ${r.days - 3}/${r.days} hari'), findsOneWidget);
     expect(find.textContaining('0 dari 3 sudah diganti'), findsOneWidget);
-    expect(find.text('LIMA WAKTU PER BULAN'), findsOneWidget);
+    expect(find.text('IBADAH HARIAN PER BULAN'), findsOneWidget);
   });
 }

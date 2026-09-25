@@ -6,6 +6,7 @@ import 'ibadah_day.dart';
 import 'prayer_calculator.dart' as calc;
 import 'quran_index.dart';
 import 'quran_target.dart';
+import 'sholat_time.dart';
 
 /// Data untuk widget layar utama Ibadah & Al-Qur'an (dibaca
 /// `IbadahWidgetProvider.kt` / `QuranWidgetProvider.kt`). Widget tidak
@@ -58,11 +59,15 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
   required String today,
   required double latitude,
   required double longitude,
+  bool sholatTime = false,
+  int onTimeMinutes = defaultOnTimeMinutes,
 }) async {
   final tz = calc.timezoneFromLongitude(longitude);
   return {
     'generatedAt': DateTime.now().millisecondsSinceEpoch,
     'tzId': tzIds[tz],
+    'sholatTime': sholatTime,
+    'onTimeMinutes': onTimeMinutes,
     'days': [
       for (final date in [today, _tomorrow(today)])
         await ibadahWidgetDay(
@@ -71,6 +76,8 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
           date: date,
           latitude: latitude,
           longitude: longitude,
+          sholatTime: sholatTime,
+          onTimeMinutes: onTimeMinutes,
         ),
     ],
   };
@@ -82,6 +89,8 @@ Future<Map<String, Object?>> ibadahWidgetDay(
   required String date,
   required double latitude,
   required double longitude,
+  bool sholatTime = false,
+  int onTimeMinutes = defaultOnTimeMinutes,
 }) async {
   final data = await db.ibadahDao.loadDay(
     date,
@@ -104,9 +113,19 @@ Future<Map<String, Object?>> ibadahWidgetDay(
   );
   final d = parseDateKey(date);
 
+  final tz = calc.timezoneFromLongitude(longitude);
   Map<String, Object?> entry(IbadahItem i) {
     final value = data.values[i.id] ?? 0;
     final prayer = _prayerOfItem[i.key];
+    final window = prayer == null
+        ? null
+        : sholatWindow(
+            i.key,
+            parseDateKey(date),
+            latitude: latitude,
+            longitude: longitude,
+          );
+    final prayedAt = data.logs[i.id]?.prayedAt;
     return {
       'id': i.id,
       'name': i.name,
@@ -117,7 +136,16 @@ Future<Map<String, Object?>> ibadahWidgetDay(
       'excused': data.excused && excusable(i),
       if (prayer != null) ...{
         'at': schedule.times[prayer]!.millisecondsSinceEpoch,
+        'end': window!.end.millisecondsSinceEpoch,
         'time': schedule.labels[prayer],
+      },
+      if (sholatTime && window != null && prayedAt != null && value > 0) ...{
+        'status': sholatStatus(
+          prayedAt,
+          window,
+          onTimeMinutes: onTimeMinutes,
+        ).name,
+        'prayed': calc.formatInZone(prayedAt.toUtc(), tz),
       },
     };
   }
@@ -144,9 +172,38 @@ Future<Map<String, Object?>> ibadahWidgetDay(
         if (i.groupKey == sholatWajibGroup) entry(i),
     ],
     'items': [
+      ?_rawatibEntry(items, data.values, data.excused),
       for (final i in items)
-        if (i.groupKey != sholatWajibGroup) entry(i),
+        if (i.groupKey != sholatWajibGroup && i.groupKey != rawatibGroup)
+          entry(i),
     ],
+  };
+}
+
+/// Id entri ringkasan rawatib di payload widget (bukan id item sungguhan).
+const rawatibSummaryId = -1;
+
+/// Rawatib diringkas jadi satu baris hitungan ("Sunnah rawatib 2/5") -
+/// ketuk membuka aplikasi. Null bila tidak ada rawatib yang aktif.
+Map<String, Object?>? _rawatibEntry(
+  List<IbadahItem> items,
+  Map<int, int> values,
+  bool excused,
+) {
+  final rawatib = [
+    for (final i in items)
+      if (i.groupKey == rawatibGroup) i,
+  ];
+  if (rawatib.isEmpty) return null;
+  final done = rawatib.where((i) => (values[i.id] ?? 0) > 0).length;
+  return {
+    'id': rawatibSummaryId,
+    'name': 'Sunnah rawatib',
+    'kind': 'counter',
+    'value': done,
+    'target': rawatib.length,
+    'done': done >= rawatib.length,
+    'excused': excused,
   };
 }
 
@@ -171,10 +228,26 @@ Future<Map<String, Object?>> patchIbadahPayload(
     summariesTo: date,
   );
   final byId = {for (final i in data.items) i.id: i};
+  final rawatib = [
+    for (final i in data.items)
+      if (i.groupKey == rawatibGroup) i,
+  ];
   var done = 0;
   var total = 0;
   for (final key in ['sholat', 'items']) {
     for (final e in (day[key] as List).cast<Map<String, Object?>>()) {
+      if (e['id'] == rawatibSummaryId) {
+        final n = rawatib.where((i) => (data.values[i.id] ?? 0) > 0).length;
+        e['value'] = n;
+        e['done'] = n >= rawatib.length;
+        e['excused'] = data.excused;
+        // tiap rawatib dihitung sendiri-sendiri di jumlah hari itu
+        if (!data.excused) {
+          total += rawatib.length;
+          done += n;
+        }
+        continue;
+      }
       final item = byId[e['id']];
       if (item == null) continue;
       final value = data.values[item.id] ?? 0;
@@ -182,6 +255,25 @@ Future<Map<String, Object?>> patchIbadahPayload(
       e['value'] = value;
       e['done'] = isDone;
       e['excused'] = data.excused && excusable(item);
+      final prayedAt = data.logs[item.id]?.prayedAt;
+      final at = e['at'], end = e['end'];
+      if (payload['sholatTime'] == true &&
+          prayedAt != null &&
+          value > 0 &&
+          at is int &&
+          end is int) {
+        e['status'] = sholatStatus(
+          prayedAt,
+          SholatWindow(
+            DateTime.fromMillisecondsSinceEpoch(at),
+            DateTime.fromMillisecondsSinceEpoch(end),
+          ),
+          onTimeMinutes:
+              payload['onTimeMinutes'] as int? ?? defaultOnTimeMinutes,
+        ).name;
+      } else {
+        e.remove('status');
+      }
       if (e['excused'] != true) {
         total++;
         if (isDone) done++;

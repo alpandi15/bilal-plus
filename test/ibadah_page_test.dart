@@ -66,11 +66,12 @@ void main() {
   ) async {
     await open(tester);
     expect(find.text('SHOLAT LIMA WAKTU'), findsOneWidget);
-    expect(find.text('0/5'), findsOneWidget);
+    // lima waktu 0/5 & sunnah rawatib 0/5
+    expect(find.text('0/5'), findsNWidgets(2));
 
     await tester.tap(find.text('Subuh'));
     await settle(tester);
-    expect(find.text('1/5'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget); // lima waktu
     expect(await tester.runAsync(() => valueOf('subuh')), 1);
 
     await tester.ensureVisible(find.text('Sedekah'));

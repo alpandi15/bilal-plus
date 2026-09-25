@@ -3,8 +3,11 @@
      targetCell* untuk Android 12+), bisa diregangkan sampai 2x4 atau lebih
      lebar - isinya bertambah mengikuti tinggi (lihat provider-nya).
 
-     previewLayout (Android 12+) memakai layout aslinya karena teks bawaannya
-     sudah berupa contoh isi; previewImage untuk launcher lama.
+     previewImage statis (render widget asli berisi data contoh), BUKAN
+     previewLayout - sebagian launcher menganggap previewLayout tidak sah
+     lalu menampilkan kosong atau menyembunyikan widgetnya (lihat catatan di
+     prayer_widget_info.xml). Buat ulang PNG-nya bila tampilan widget berubah
+     (WidgetPreviewActivity, build debug).
 
      updatePeriodMillis 30 menit: pergantian hari paling telat terlihat 30
      menit sesudah tengah malam - datanya sudah memuat hari esok. -->
@@ -18,8 +21,7 @@
     android:maxResizeHeight="420dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/ibadah_widget_layout"
-    android:previewLayout="@layout/ibadah_widget_layout"
-    android:previewImage="@drawable/ramadan_widget_bg"
+    android:previewImage="@drawable/widget_preview_ibadah"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/ibadah_widget_description">

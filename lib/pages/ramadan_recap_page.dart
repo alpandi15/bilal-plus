@@ -5,12 +5,14 @@ import '../db/app_database.dart';
 import '../db/app_database_scope.dart';
 import '../services/hijri_calendar.dart';
 import '../services/hijri_config_scope.dart';
+import '../services/ibadah_report.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/quran_target.dart';
 import '../services/ramadan_calendar.dart';
 import '../services/ramadan_recap.dart';
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
+import '../widgets/report/ibadah_heatmap.dart';
 import '../widgets/sub_header.dart';
 
 const _amber = Color(0xFFB45309);
@@ -51,8 +53,8 @@ class _RecapData {
   final QadhaStatus qadha;
   final List<RamadanRecap> recaps;
 
-  /// Ringkasan lima waktu untuk bulan heatmap.
-  final Map<String, IbadahDaySummary> month;
+  /// Skor semua ibadah aktif per tanggal untuk bulan heatmap.
+  final Map<String, DayScore> month;
 }
 
 /// Rekap Ramadan per tahun hijriah (grid hari puasa, tarawih, tilawah,
@@ -118,10 +120,17 @@ class _RamadanRecapPageState extends State<RamadanRecapPage> {
               recap: await db.ibadahDao.recapOf(year),
               qadha: await db.ibadahDao.qadhaStatus(),
               recaps: await db.ibadahDao.watchRecaps().first,
-              month: await db.ibadahDao.summaries(
-                dateKey(month),
-                dateKey(monthEnd),
-              ),
+              month: {
+                for (final d in buildIbadahReport(
+                  await db.ibadahDao.loadRange(
+                    dateKey(month),
+                    dateKey(monthEnd),
+                  ),
+                  anchors: anchors,
+                  today: today,
+                ).days)
+                  d.date: d,
+              },
             ),
           );
     }
@@ -160,7 +169,12 @@ class _RamadanRecapPageState extends State<RamadanRecapPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    32 + MediaQuery.paddingOf(context).bottom,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 520),
@@ -195,7 +209,7 @@ class _RamadanRecapPageState extends State<RamadanRecapPage> {
                           _MonthHeatmap(
                             month: month,
                             today: today,
-                            summaries: data.month,
+                            days: data.month,
                             onPrev: () => setState(
                               () => _month = DateTime.utc(
                                 month.year,
@@ -831,44 +845,34 @@ class _QadhaSection extends StatelessWidget {
   }
 }
 
-/// Kalender satu bulan: warna tiap tanggal menunjukkan berapa dari lima
-/// waktu yang tercentang.
+/// Kalender satu bulan untuk SEMUA ibadah harian yang aktif: warna tiap
+/// tanggal = persen ibadah yang tuntas (lihat `ibadah_heatmap.dart`).
 class _MonthHeatmap extends StatelessWidget {
   const _MonthHeatmap({
     required this.month,
     required this.today,
-    required this.summaries,
+    required this.days,
     required this.onPrev,
     required this.onNext,
   });
 
   final DateTime month;
   final String today;
-  final Map<String, IbadahDaySummary> summaries;
+  final Map<String, DayScore> days;
   final VoidCallback onPrev;
   final VoidCallback? onNext;
 
-  static const _shades = [
-    Color(0xFFFFFFFF),
-    Color(0xFFFEF3C7),
-    Color(0xFFFDE68A),
-    Color(0xFFFCD34D),
-    Color(0xFFF59E0B),
-    Color(0xFFD97706),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final days = DateTime.utc(month.year, month.month + 1, 0).day;
-    final leading = month.weekday - 1; // Senin di kolom pertama
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _SectionTitle('LIMA WAKTU PER BULAN'),
+        const _SectionTitle('IBADAH HARIAN PER BULAN'),
         Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
           decoration: _card(),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
@@ -898,94 +902,13 @@ class _MonthHeatmap extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  for (final h in const ['S', 'S', 'R', 'K', 'J', 'S', 'M'])
-                    Expanded(
-                      child: Text(
-                        h,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 10, color: _muted),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              GridView.count(
-                crossAxisCount: 7,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 5,
-                crossAxisSpacing: 5,
-                children: [
-                  for (var i = 0; i < leading; i++) const SizedBox(),
-                  for (var d = 1; d <= days; d++)
-                    _heatCell(
-                      dateKey(DateTime.utc(month.year, month.month, d)),
-                      d,
-                    ),
-                ],
-              ),
+              MonthHeatmap(month: month, today: today, days: days),
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Text(
-                    '0',
-                    style: TextStyle(fontSize: 10, color: _muted),
-                  ),
-                  for (final c in _shades)
-                    Container(
-                      width: 14,
-                      height: 14,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: c,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: _line),
-                      ),
-                    ),
-                  const Text(
-                    '5 waktu',
-                    style: TextStyle(fontSize: 10, color: _muted),
-                  ),
-                ],
-              ),
+              const HeatLegend(),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _heatCell(String key, int day) {
-    final s = summaries[key];
-    final future = key.compareTo(today) > 0;
-    final excused = s?.excused ?? false;
-    final color = future
-        ? const Color(0xFFFFFAF3)
-        : excused
-        ? const Color(0xFFE7E5E4)
-        : _shades[(s?.sholat ?? 0).clamp(0, 5)];
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: key == today ? _amber : _line),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '$day',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: future
-              ? const Color(0xFFD6D3D1)
-              : (s?.sholat ?? 0) >= 4 && !excused
-              ? Colors.white
-              : _stone,
-        ),
-      ),
     );
   }
 }

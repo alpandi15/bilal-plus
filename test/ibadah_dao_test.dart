@@ -22,7 +22,7 @@ void main() {
           .id;
 
   test('item bawaan terisi sekali, lima waktu sekelompok', () async {
-    final items = await dao.watchItems().first;
+    final items = await dao.watchItems(includeInactive: true).first;
     expect(items.length, defaultIbadahItems.length);
     expect(
       items.where((i) => i.groupKey == sholatWajibGroup).map((i) => i.key),
@@ -30,7 +30,10 @@ void main() {
     );
     // dibuka ulang: tidak dobel
     await db.customStatement('SELECT 1');
-    expect((await dao.watchItems().first).length, items.length);
+    expect(
+      (await dao.watchItems(includeInactive: true).first).length,
+      items.length,
+    );
   });
 
   test('centang, hitungan, dan hapus', () async {

@@ -43,6 +43,8 @@ dependencies:
   drift_flutter: ^0.2.8
   share_plus: ^12.0.2
   file_picker: ^11.0.3
+  flutter_local_notifications: ^20.1.0
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +78,13 @@ flutter:
   assets:
     - assets/kitab/yasin/
     - assets/hijri_config.json
+
+  # Teks Arab: LPMQ Isep Misbah (Lajnah Pentashihan Mushaf Al-Qur'an
+  # Kemenag RI) - sama dengan situs web Bilal Tarawih.
+  fonts:
+    - family: LPMQ
+      fonts:
+        - asset: assets/fonts/LPMQ.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -107,6 +107,9 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             val excused: Boolean,
             val at: Long,
             val time: String,
+            /** onTime / late / qadha - hanya bila pencatatan waktu sholat aktif. */
+            var status: String?,
+            val prayed: String,
         )
 
         private fun entries(arr: JSONArray?): MutableList<Entry> {
@@ -123,6 +126,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     excused = o.optBoolean("excused", false),
                     at = o.optLong("at", 0L),
                     time = o.optString("time", ""),
+                    status = o.optString("status", "").ifEmpty { null },
+                    prayed = o.optString("prayed", ""),
                 )
             }.toMutableList()
         }
@@ -232,6 +237,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 if (!e.excused && nowDone != e.done) done += if (nowDone) 1 else -1
                 e.value = v
                 e.done = nowDone
+                // status baru diketahui sesudah Dart mencatat jamnya
+                if (!nowDone) e.status = null
             }
             val total = day.optInt("total", 0)
             val excused = day.optBoolean("excused", false)
@@ -266,12 +273,25 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     dot,
                     when {
                         e.excused -> R.drawable.tracker_dot_off
+                        e.done && e.status == "qadha" -> R.drawable.tracker_dot_qadha
+                        e.done && e.status == "late" -> R.drawable.tracker_dot_late
                         e.done -> R.drawable.tracker_dot_done
                         e.id == currentId -> R.drawable.tracker_dot_now
                         else -> R.drawable.tracker_dot_todo
                     },
                 )
-                views.setContentDescription(dot, "${e.name} ${e.time}" + if (e.done) ", sudah" else "")
+                val statusLabel = when (e.status) {
+                    "onTime" -> ", awal waktu"
+                    "late" -> ", terlambat"
+                    "qadha" -> ", qadha"
+                    else -> ""
+                }
+                views.setContentDescription(
+                    dot,
+                    "${e.name} ${e.time}" + (if (e.done) ", sudah" else "") + statusLabel,
+                )
+                // jam sholat yang dicatat menggantikan nama saat sudah dikerjakan
+                views.setTextViewText(name, if (e.done && e.prayed.isNotEmpty()) e.prayed else e.name)
                 if (!e.excused) {
                     views.setOnClickPendingIntent(col, setIntent(context, today, e.id, if (e.done) 0 else 1))
                 }

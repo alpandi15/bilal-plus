@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/app_database.dart';
 import '../utils/date_key.dart';
+import 'app_settings.dart';
 import 'hijri_config.dart';
 import 'prayer_calculator.dart' as calc;
 import 'tracker_widget_payload.dart';
@@ -33,11 +35,13 @@ class TrackerWidgetSync {
     required this.db,
     required this.hijri,
     required this.location,
+    required this.settings,
   });
 
   final AppDatabase db;
   final HijriConfigController hijri;
   final UserLocationController location;
+  final AppSettingsController settings;
 
   StreamSubscription<void>? _sub;
   Timer? _debounce;
@@ -66,6 +70,7 @@ class TrackerWidgetSync {
         );
     hijri.addListener(schedule);
     location.addListener(schedule);
+    settings.addListener(schedule);
     _armMidnight();
   }
 
@@ -75,6 +80,7 @@ class TrackerWidgetSync {
     _midnight?.cancel();
     hijri.removeListener(schedule);
     location.removeListener(schedule);
+    settings.removeListener(schedule);
   }
 
   /// Sinkron sebentar lagi - beberapa perubahan beruntun cukup sekali.
@@ -103,6 +109,8 @@ class TrackerWidgetSync {
         today: today,
         latitude: loc.lat,
         longitude: loc.long,
+        sholatTime: settings.sholatTime,
+        onTimeMinutes: settings.onTimeMinutes,
       );
       final quran = await quranWidgetPayload(
         db,
@@ -134,7 +142,28 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
 
   final db = AppDatabase();
   try {
-    await db.ibadahDao.setValue(date, item, value);
+    // sholat wajib dicentang dari widget: jam = saat diketuk, tempat = yang
+    // terakhir dipilih (bila pencatatan waktu aktif)
+    DateTime? prayedAt;
+    String? place;
+    if (value > 0) {
+      final prefs = await SharedPreferences.getInstance();
+      final tracking = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
+      final row = await (db.select(
+        db.ibadahItems,
+      )..where((i) => i.id.equals(item))).getSingleOrNull();
+      if (tracking && row?.groupKey == sholatWajibGroup) {
+        prayedAt = DateTime.now();
+        place = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
+      }
+    }
+    await db.ibadahDao.setValue(
+      date,
+      item,
+      value,
+      prayedAt: prayedAt,
+      place: place,
+    );
     final raw = await HomeWidget.getWidgetData<String>(_ibadahKey);
     if (raw != null) {
       final payload = await patchIbadahPayload(

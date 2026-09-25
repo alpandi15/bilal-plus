@@ -8,12 +8,19 @@ import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
+import '../services/app_settings.dart';
 import '../services/ramadan_recap.dart';
+import '../services/sholat_time.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
 import '../widgets/ibadah/ramadan_notice_cards.dart';
+import '../widgets/ibadah/sholat_log_sheet.dart';
+import '../widgets/ibadah/sholat_nudge_card.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/sub_header.dart';
+import '../services/dzikir.dart';
+import 'dzikir_page.dart';
 import 'quran_tracker_page.dart';
+import 'tasbih_page.dart';
 import 'ramadan_recap_page.dart';
 
 const _amber = Color(0xFFB45309);
@@ -52,7 +59,10 @@ const _hariPendek = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 /// diturunkan dari kalender hijriah yang berlaku, jadi otomatis ikut bila
 /// awal Ramadan bergeser.
 class IbadahPage extends StatefulWidget {
-  const IbadahPage({super.key});
+  const IbadahPage({super.key, this.showBack = true});
+
+  /// false saat menjadi tab di navigasi bawah.
+  final bool showBack;
 
   @override
   State<IbadahPage> createState() => _IbadahPageState();
@@ -114,6 +124,7 @@ class _IbadahPageState extends State<IbadahPage> {
         children: [
           SubHeader(
             title: 'Ibadah Harian',
+            showBack: widget.showBack,
             subtitle: day.isRamadan
                 ? 'Ramadan hari ke-${day.ramadanDay} · ${day.hijri.format()}'
                 : day.hijri.format(),
@@ -156,6 +167,8 @@ class _IbadahPageState extends State<IbadahPage> {
                   day: day,
                   today: today,
                   schedule: schedule,
+                  latitude: location.lat,
+                  longitude: location.long,
                   onGo: _go,
                   dao: dao,
                 );
@@ -174,6 +187,8 @@ class _DayView extends StatelessWidget {
     required this.day,
     required this.today,
     required this.schedule,
+    required this.latitude,
+    required this.longitude,
     required this.onGo,
     required this.dao,
   });
@@ -182,8 +197,54 @@ class _DayView extends StatelessWidget {
   final IbadahDay day;
   final String today;
   final calc.DailyPrayerTimes schedule;
+  final double latitude, longitude;
   final ValueChanged<String> onGo;
   final IbadahDao dao;
+
+  /// Ketuk sholat wajib: bila pencatatan waktu aktif, tanya jam & tempat;
+  /// kalau tidak, centang/batalkan langsung.
+  Future<void> _tapSholat(BuildContext context, IbadahItem item) async {
+    final settings = AppSettingsScope.maybeOf(context);
+    final value = data.values[item.id] ?? 0;
+    final window = sholatWindow(
+      item.key,
+      parseDateKey(data.date),
+      latitude: latitude,
+      longitude: longitude,
+    );
+    if (settings == null || !settings.sholatTime || window == null) {
+      await dao.setValue(data.date, item.id, value > 0 ? 0 : 1);
+      return;
+    }
+    final log = data.logs[item.id];
+    final result = await showSholatLogSheet(
+      context,
+      name: item.name,
+      itemKey: item.key,
+      date: parseDateKey(data.date),
+      window: window,
+      tz: calc.timezoneFromLongitude(longitude),
+      onTimeMinutes: settings.onTimeMinutes,
+      place: log?.place ?? settings.lastPlace,
+      prayedAt: log?.prayedAt,
+      done: value > 0,
+    );
+    switch (result) {
+      case SholatLogSave(:final prayedAt, :final place):
+        await dao.setValue(
+          data.date,
+          item.id,
+          1,
+          prayedAt: prayedAt,
+          place: place,
+        );
+        await settings.setLastPlace(place);
+      case SholatLogRemove():
+        await dao.setValue(data.date, item.id, 0);
+      case null:
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,9 +258,13 @@ class _DayView extends StatelessWidget {
       for (final i in items)
         if (i.groupKey == sholatWajibGroup) i,
     ];
+    final rawatib = [
+      for (final i in items)
+        if (i.groupKey == rawatibGroup) i,
+    ];
     final others = [
       for (final i in items)
-        if (i.groupKey != sholatWajibGroup) i,
+        if (i.groupKey != sholatWajibGroup && i.groupKey != rawatibGroup) i,
     ];
 
     final (done, total) = ibadahProgress(
@@ -210,7 +275,12 @@ class _DayView extends StatelessWidget {
     );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        14,
+        16,
+        32 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -218,6 +288,8 @@ class _DayView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               RamadanNoticeCards(today: today),
+              if (data.date == today)
+                SholatNudgeCards(onLog: (item) => _tapSholat(context, item)),
               _WeekStrip(
                 date: data.date,
                 today: today,
@@ -240,10 +312,20 @@ class _DayView extends StatelessWidget {
                 _SholatCard(
                   items: sholat,
                   values: data.values,
+                  logs: data.logs,
                   excused: data.excused,
                   schedule: schedule,
+                  date: parseDateKey(data.date),
+                  latitude: latitude,
+                  longitude: longitude,
                   isToday: data.date == today,
-                  onToggle: (item, v) => dao.setValue(data.date, item.id, v),
+                  onTap: (item) => _tapSholat(context, item),
+                  rawatib: rawatib,
+                  onToggleRawatib: (item) => dao.setValue(
+                    data.date,
+                    item.id,
+                    (data.values[item.id] ?? 0) > 0 ? 0 : 1,
+                  ),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -280,6 +362,8 @@ class _DayView extends StatelessWidget {
       'tarawih' when day.ramadanNight != null => 'Malam ke-${day.ramadanNight}',
       'puasa_sunnah' => day.sunnahFastReasons.join(' · '),
       qadhaKey => 'Sisa hutang ${data.qadhaRemaining} hari',
+      'dzikir_pagi' || 'dzikir_petang' =>
+        'Ketuk ikon kitab untuk membaca - tercentang saat selesai',
       tilawahKey =>
         data.hasTilawah
             ? "Tercatat dari bacaan Al-Qur'an"
@@ -607,21 +691,52 @@ class _SholatCard extends StatelessWidget {
   const _SholatCard({
     required this.items,
     required this.values,
+    required this.logs,
     required this.excused,
     required this.schedule,
+    required this.date,
+    required this.latitude,
+    required this.longitude,
     required this.isToday,
-    required this.onToggle,
+    required this.onTap,
+    this.rawatib = const [],
+    this.onToggleRawatib,
   });
 
   final List<IbadahItem> items;
+
+  /// Sholat sunnah rawatib yang aktif - ditampilkan di bawah kolom sholat
+  /// wajibnya masing-masing.
+  final List<IbadahItem> rawatib;
+  final void Function(IbadahItem)? onToggleRawatib;
   final Map<int, int> values;
+  final Map<int, IbadahLog> logs;
   final bool excused;
   final calc.DailyPrayerTimes schedule;
+  final DateTime date;
+  final double latitude, longitude;
   final bool isToday;
-  final void Function(IbadahItem, int) onToggle;
+  final void Function(IbadahItem) onTap;
 
   @override
   Widget build(BuildContext context) {
+    final settings = AppSettingsScope.maybeOf(context);
+    final tracking = settings?.sholatTime ?? false;
+    final tz = calc.timezoneFromLongitude(longitude);
+    SholatStatus? statusOf(IbadahItem i) {
+      final at = logs[i.id]?.prayedAt;
+      if (!tracking || at == null || (values[i.id] ?? 0) == 0) return null;
+      final w = sholatWindow(
+        i.key,
+        date,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return w == null
+          ? null
+          : sholatStatus(at, w, onTimeMinutes: settings!.onTimeMinutes);
+    }
+
     // waktu sholat yang sedang berjalan: yang terakhir sudah masuk
     String? currentKey;
     if (isToday) {
@@ -668,13 +783,171 @@ class _SholatCard extends StatelessWidget {
                     done: (values[item.id] ?? 0) > 0,
                     current: item.key == currentKey,
                     disabled: excused,
-                    onTap: () =>
-                        onToggle(item, (values[item.id] ?? 0) > 0 ? 0 : 1),
+                    status: statusOf(item),
+                    prayedTime: tracking && logs[item.id]?.prayedAt != null
+                        ? calc.formatInZone(
+                            logs[item.id]!.prayedAt!.toUtc(),
+                            tz,
+                          )
+                        : null,
+                    place: tracking ? logs[item.id]?.place : null,
+                    onTap: () => onTap(item),
                   ),
                 ),
             ],
           ),
+          if (rawatib.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: _line),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Text(
+                  'SUNNAH RAWATIB',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    color: Color(0xCCB45309),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${rawatib.where((r) => (values[r.id] ?? 0) > 0).length}'
+                  '/${rawatib.length}',
+                  style: const TextStyle(fontSize: 11, color: _muted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final item in items)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // urutan item sudah qabliyah sebelum ba'diyah
+                        for (final r in rawatib.where(
+                          (r) => rawatibOf(r.key)?.$1 == item.key,
+                        ))
+                          _RawatibPill(
+                            qabliyah: rawatibOf(r.key)!.$2,
+                            done: (values[r.id] ?? 0) > 0,
+                            disabled: excused,
+                            tooltip: r.name,
+                            onTap: () => onToggleRawatib?.call(r),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (tracking) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                for (final st in SholatStatus.values)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: sholatStatusColor[st],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        sholatStatusLabel[st]!,
+                        style: const TextStyle(fontSize: 10, color: _muted),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Satu sholat rawatib di bawah kolom sholat wajibnya: pil kecil
+/// "Qabliyah"/"Ba'diyah" yang tercentang dengan sekali ketuk.
+class _RawatibPill extends StatelessWidget {
+  const _RawatibPill({
+    required this.qabliyah,
+    required this.done,
+    required this.disabled,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final bool qabliyah, done, disabled;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Semantics(
+        button: true,
+        checked: done,
+        label: tooltip,
+        child: GestureDetector(
+          onTap: disabled ? null : onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            constraints: const BoxConstraints(minWidth: 50, maxWidth: 60),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+            decoration: BoxDecoration(
+              color: disabled
+                  ? const Color(0xFFF5F5F4)
+                  : done
+                  ? const Color(0xFFFEF3C7)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(99),
+              border: Border.all(
+                color: done ? const Color(0xFFF59E0B) : _line,
+                width: done ? 1.5 : 1,
+              ),
+            ),
+            // menyusut (bukan terpotong) pada font besar
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (done)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 2),
+                      child: Icon(Icons.check_rounded, size: 11, color: _amber),
+                    ),
+                  Text(
+                    qabliyah ? 'Qabl' : "Ba'd",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: disabled
+                          ? _muted
+                          : done
+                          ? _amber
+                          : _stone,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -688,23 +961,36 @@ class _PrayerDot extends StatelessWidget {
     required this.current,
     required this.disabled,
     required this.onTap,
+    this.status,
+    this.prayedTime,
+    this.place,
   });
 
   final String name, time;
   final bool done, current, disabled;
   final VoidCallback onTap;
 
+  /// Ketepatan waktu (bila pencatatan waktu aktif & jamnya tercatat).
+  final SholatStatus? status;
+  final String? prayedTime;
+  final String? place;
+
   @override
   Widget build(BuildContext context) {
+    final doneColor = status == null ? _amber : sholatStatusColor[status]!;
     final fill = disabled
         ? const Color(0xFFF5F5F4)
         : done
-        ? _amber
+        ? doneColor
         : Colors.white;
     return Semantics(
       button: true,
       checked: done,
-      label: '$name $time',
+      label: [
+        '$name $time',
+        if (status != null) sholatStatusLabel[status]!,
+        if (sholatPlaceLabel[place] case final p?) p,
+      ].join(', '),
       child: GestureDetector(
         onTap: disabled ? null : onTap,
         child: Column(
@@ -721,16 +1007,16 @@ class _PrayerDot extends StatelessWidget {
                   color: current && !done
                       ? const Color(0xFFF59E0B)
                       : done
-                      ? _amber
+                      ? doneColor
                       : _line,
                   width: current && !done ? 2.5 : 1.5,
                 ),
                 boxShadow: done
-                    ? const [
+                    ? [
                         BoxShadow(
-                          color: Color(0x40B45309),
+                          color: doneColor.withValues(alpha: 0.25),
                           blurRadius: 12,
-                          offset: Offset(0, 5),
+                          offset: const Offset(0, 5),
                         ),
                       ]
                     : null,
@@ -750,7 +1036,27 @@ class _PrayerDot extends StatelessWidget {
                 color: disabled ? _muted : _stone,
               ),
             ),
-            Text(time, style: const TextStyle(fontSize: 10, color: _muted)),
+            if (done && prayedTime != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (sholatPlaceIcon[place] case final icon?)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: Icon(icon, size: 10, color: doneColor),
+                    ),
+                  Text(
+                    prayedTime!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: doneColor,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(time, style: const TextStyle(fontSize: 10, color: _muted)),
           ],
         ),
       ),
@@ -830,6 +1136,38 @@ class _ItemTile extends StatelessWidget {
                     icon: const Icon(
                       Icons.menu_book_rounded,
                       size: 20,
+                      color: _amber,
+                    ),
+                  ),
+                if (dzikirSession(item.key) case final session?)
+                  IconButton(
+                    tooltip: 'Buka bacaan ${session.title.toLowerCase()}',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DzikirPage(session: session),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.auto_stories_rounded,
+                      size: 20,
+                      color: _amber,
+                    ),
+                  ),
+                if (counter && !excused)
+                  IconButton(
+                    tooltip: 'Hitung layar penuh',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => openTasbih(
+                      context,
+                      title: item.name,
+                      target: item.target,
+                      initial: value,
+                      onChanged: onChanged,
+                    ),
+                    icon: const Icon(
+                      Icons.open_in_full_rounded,
+                      size: 18,
                       color: _amber,
                     ),
                   ),

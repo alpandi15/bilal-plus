@@ -46,7 +46,10 @@ class _PageData {
 /// progress khatam berbobot halaman, target harian, peta 30 juz, dan
 /// riwayat sesi baca. Semua dari basis data lokal ([AppDatabaseScope]).
 class QuranTrackerPage extends StatefulWidget {
-  const QuranTrackerPage({super.key});
+  const QuranTrackerPage({super.key, this.showBack = true});
+
+  /// false saat menjadi tab di navigasi bawah.
+  final bool showBack;
 
   @override
   State<QuranTrackerPage> createState() => _QuranTrackerPageState();
@@ -170,6 +173,7 @@ class _QuranTrackerPageState extends State<QuranTrackerPage> {
             children: [
               SubHeader(
                 title: "Tilawah Al-Qur'an",
+                showBack: widget.showBack,
                 subtitle: data == null
                     ? null
                     : 'Putaran khatam ke-${data.progress.round}',
@@ -240,7 +244,12 @@ class _Body extends StatelessWidget {
     final completed = data.justCompleted;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        32 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),

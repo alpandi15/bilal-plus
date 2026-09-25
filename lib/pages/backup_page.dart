@@ -9,6 +9,7 @@ import '../db/app_database_scope.dart';
 import '../services/backup_service.dart';
 import '../services/hijri_config_scope.dart';
 import '../utils/date_key.dart';
+import '../widgets/privacy_note.dart';
 import '../widgets/sub_header.dart';
 
 const _amber = Color(0xFFB45309);
@@ -167,13 +168,20 @@ class _BackupPageState extends State<BackupPage> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                32 + MediaQuery.paddingOf(context).bottom,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const PrivacyNote(compact: true),
+                      const SizedBox(height: 14),
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(

@@ -39,6 +39,24 @@ String formatInZone(
   return withSeconds ? '$hhmm:${_pad2(shifted.second)}' : hhmm;
 }
 
+/// Waktu absolut (UTC) untuk jam [hour]:[minute] pada tanggal kalender
+/// [date] (hanya Y/M/D dibaca) di zona waktu [tz] - kebalikan
+/// [formatInZone]. Dipakai saat pengguna memilih jam sholat.
+DateTime atTimeInZone(TimezoneCode tz, DateTime date, int hour, int minute) =>
+    DateTime.utc(
+      date.year,
+      date.month,
+      date.day,
+      hour,
+      minute,
+    ).subtract(Duration(hours: _tzOffset[tz]!));
+
+/// (jam, menit) waktu absolut [date] di zona waktu [tz].
+(int, int) hourMinuteInZone(DateTime date, TimezoneCode tz) {
+  final shifted = date.toUtc().add(Duration(hours: _tzOffset[tz]!));
+  return (shifted.hour, shifted.minute);
+}
+
 const _hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu', 'Minggu'];
 const _bulan = [
   'Januari',

@@ -79,6 +79,13 @@ class IbadahLogs extends Table {
   TextColumn get note => text().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
 
+  /// Sholat wajib (bila pencatatan waktu aktif): kapan dikerjakan - status
+  /// awal waktu/terlambat/qadha dihitung dari jadwal, tidak disimpan.
+  DateTimeColumn get prayedAt => dateTime().nullable()();
+
+  /// Sholat wajib: 'masjid' / 'rumah' / 'lainnya'.
+  TextColumn get place => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {date, itemId};
 }
@@ -171,10 +178,25 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // v2: waktu & tempat sholat wajib
+        await m.addColumn(ibadahLogs, ibadahLogs.prayedAt);
+        await m.addColumn(ibadahLogs, ibadahLogs.place);
+      }
+      if (from < 3) {
+        // v3: "Sholat rawatib" dipecah per waktu (qabliyah/ba'diyah); item
+        // lama disembunyikan, catatannya tetap tersimpan
+        await customStatement(
+          "UPDATE ibadah_items SET active = 0 WHERE key = 'rawatib'",
+        );
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       // item bawaan yang belum ada ditambahkan setiap kali dibuka, jadi item
@@ -194,6 +216,16 @@ class AppDatabase extends _$AppDatabase {
 /// Kunci kelompok sholat lima waktu.
 const sholatWajibGroup = 'sholat_wajib';
 
+/// Kunci kelompok sholat sunnah rawatib; kuncinya `qabliyah_<sholat>` /
+/// `badiyah_<sholat>` (lihat [rawatibOf]).
+const rawatibGroup = 'rawatib';
+
+/// (sholat wajib, qabliyah?) untuk kunci item rawatib, null bila bukan.
+(String, bool)? rawatibOf(String key) {
+  final m = RegExp(r'^(qabliyah|badiyah)_(\w+)$').firstMatch(key);
+  return m == null ? null : (m.group(2)!, m.group(1) == 'qabliyah');
+}
+
 /// Kunci item puasa qadha - tiap catatannya melunasi satu hari hutang.
 const qadhaKey = 'puasa_qadha';
 
@@ -209,6 +241,7 @@ IbadahItemsCompanion _item(
   IbadahKind kind = IbadahKind.check,
   int target = 1,
   String? group,
+  bool active = true,
 }) => IbadahItemsCompanion.insert(
   key: key,
   name: name,
@@ -217,6 +250,7 @@ IbadahItemsCompanion _item(
   target: Value(target),
   groupKey: Value(group),
   sort: Value(sort),
+  active: Value(active),
   builtIn: const Value(true),
 );
 
@@ -233,7 +267,33 @@ final defaultIbadahItems = [
   _item(qadhaKey, 'Puasa qadha', 21, scope: IbadahScope.qadha),
   _item(tilawahKey, "Tilawah Al-Qur'an", 30),
   _item('dhuha', 'Sholat Dhuha', 31),
-  _item('rawatib', 'Sholat rawatib', 32),
+  // rawatib: muakkadah aktif, ghairu muakkadah tersedia tapi disembunyikan
+  _item('qabliyah_subuh', 'Qabliyah Subuh', 5, group: rawatibGroup),
+  _item('qabliyah_dzuhur', 'Qabliyah Dzuhur', 6, group: rawatibGroup),
+  _item('badiyah_dzuhur', "Ba'diyah Dzuhur", 7, group: rawatibGroup),
+  _item(
+    'qabliyah_ashar',
+    'Qabliyah Ashar',
+    8,
+    group: rawatibGroup,
+    active: false,
+  ),
+  _item(
+    'qabliyah_maghrib',
+    'Qabliyah Maghrib',
+    9,
+    group: rawatibGroup,
+    active: false,
+  ),
+  _item('badiyah_maghrib', "Ba'diyah Maghrib", 10, group: rawatibGroup),
+  _item(
+    'qabliyah_isya',
+    'Qabliyah Isya',
+    11,
+    group: rawatibGroup,
+    active: false,
+  ),
+  _item('badiyah_isya', "Ba'diyah Isya", 12, group: rawatibGroup),
   _item('tahajud', 'Tahajud', 33),
   _item('witir', 'Witir', 34),
   _item('dzikir_pagi', 'Dzikir pagi', 35),
@@ -252,9 +312,13 @@ class IbadahDayData {
     required this.hasTilawah,
     required this.summaries,
     this.qadhaRemaining = 0,
+    this.logs = const {},
   });
 
   final String date;
+
+  /// Catatan lengkap per item (untuk waktu & tempat sholat).
+  final Map<int, IbadahLog> logs;
 
   /// Sisa hutang puasa (rekap terkunci - puasa qadha yang tercatat).
   final int qadhaRemaining;
@@ -271,6 +335,33 @@ class IbadahDayData {
 
   /// Ringkasan per tanggal (hanya tanggal yang punya catatan).
   final Map<String, IbadahDaySummary> summaries;
+}
+
+/// Data mentah satu rentang tanggal untuk laporan - lihat
+/// `ibadah_report.dart`.
+class IbadahRangeData {
+  const IbadahRangeData({
+    required this.from,
+    required this.to,
+    required this.items,
+    required this.logs,
+    required this.excused,
+    required this.tilawah,
+    required this.firstDate,
+  });
+
+  final String from, to;
+
+  /// Item aktif, terurut.
+  final List<IbadahItem> items;
+
+  /// tanggal -> itemId -> catatan.
+  final Map<String, Map<int, IbadahLog>> logs;
+  final Set<String> excused;
+  final Set<String> tilawah;
+
+  /// Tanggal catatan pertama yang pernah ada (semua tabel), null bila kosong.
+  final String? firstDate;
 }
 
 /// Hutang puasa Ramadan.
@@ -365,6 +456,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       date: date,
       items: items,
       values: {for (final l in logs) l.itemId: l.value},
+      logs: {for (final l in logs) l.itemId: l},
       excused: status?.excused ?? false,
       hasTilawah: tilawah.isNotEmpty,
       summaries: await summaries(summariesFrom, summariesTo),
@@ -422,6 +514,46 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     return {for (final r in rows) r.read<String>('date')};
   }
 
+  /// Semua catatan di [from]..[to] untuk laporan: item aktif, catatan per
+  /// tanggal, tanggal berhalangan, dan tanggal yang ada bacaan Al-Qur'an.
+  Future<IbadahRangeData> loadRange(String from, String to) async {
+    final items =
+        await (select(ibadahItems)
+              ..where((i) => i.active.equals(true))
+              ..orderBy([
+                (i) => OrderingTerm.asc(i.sort),
+                (i) => OrderingTerm.asc(i.id),
+              ]))
+            .get();
+    final logs = await (select(
+      ibadahLogs,
+    )..where((l) => l.date.isBetweenValues(from, to))).get();
+    final byDate = <String, Map<int, IbadahLog>>{};
+    for (final l in logs) {
+      (byDate[l.date] ??= {})[l.itemId] = l;
+    }
+    final tilawah =
+        await (selectOnly(quranLogs, distinct: true)
+              ..addColumns([quranLogs.date])
+              ..where(quranLogs.date.isBetweenValues(from, to)))
+            .map((r) => r.read(quranLogs.date)!)
+            .get();
+    final first = await customSelect(
+      'SELECT MIN(d) AS d FROM (SELECT MIN(date) AS d FROM ibadah_logs '
+      'UNION ALL SELECT MIN(date) FROM day_statuses '
+      'UNION ALL SELECT MIN(date) FROM quran_logs)',
+    ).getSingle();
+    return IbadahRangeData(
+      from: from,
+      to: to,
+      items: items,
+      logs: byDate,
+      excused: await excusedDates(from, to),
+      tilawah: tilawah.toSet(),
+      firstDate: first.read<String?>('d'),
+    );
+  }
+
   /// Tanggal berhalangan di [from]..[to].
   Future<Set<String>> excusedDates(String from, String to) async {
     final rows =
@@ -437,7 +569,15 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       (select(quranLogs)..where((l) => l.date.isBetweenValues(from, to))).get();
 
   /// Setel nilai item; 0 = hapus catatannya.
-  Future<void> setValue(String date, int itemId, int value) async {
+  /// [prayedAt]/[place] (sholat wajib) hanya ditulis bila diberikan - tanpa
+  /// keduanya, waktu & tempat yang sudah tercatat dipertahankan.
+  Future<void> setValue(
+    String date,
+    int itemId,
+    int value, {
+    DateTime? prayedAt,
+    String? place,
+  }) async {
     if (value <= 0) {
       await (delete(
         ibadahLogs,
@@ -450,6 +590,8 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
         itemId: itemId,
         value: value,
         updatedAt: DateTime.now(),
+        prayedAt: prayedAt == null ? const Value.absent() : Value(prayedAt),
+        place: place == null ? const Value.absent() : Value(place),
       ),
     );
   }

@@ -9,13 +9,13 @@ import '../services/ramadan_calendar.dart';
 import '../services/user_location_scope.dart';
 import 'hijri_settings_sheet.dart';
 
-const _cardRadius = BorderRadius.all(Radius.circular(32));
+const _cardRadius = BorderRadius.all(Radius.circular(26));
 
 // bayangan dilukis di luar ClipRRect supaya tidak ikut terpotong
 const _cardShadow = BoxDecoration(
   borderRadius: _cardRadius,
   boxShadow: [
-    BoxShadow(color: Color(0x33291E0F), blurRadius: 40, offset: Offset(0, 18)),
+    BoxShadow(color: Color(0x26291E0F), blurRadius: 28, offset: Offset(0, 12)),
   ],
 );
 
@@ -52,10 +52,7 @@ class _Card extends StatelessWidget {
             children: [
               const Positioned.fill(child: _Ornament()),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
                 child: child,
               ),
             ],
@@ -67,7 +64,7 @@ class _Card extends StatelessWidget {
 }
 
 const _bigDigitStyle = TextStyle(
-  fontSize: 56,
+  fontSize: 40,
   fontWeight: FontWeight.w800,
   height: 1.05,
   color: Color(0xFF44403C),
@@ -75,8 +72,8 @@ const _bigDigitStyle = TextStyle(
 );
 
 const _smallDigitStyle = TextStyle(
-  fontSize: 30,
-  fontWeight: FontWeight.bold,
+  fontSize: 15,
+  fontWeight: FontWeight.w800,
   height: 1.1,
   color: Color(0xFF1C1917),
   fontFeatures: [FontFeature.tabularFigures()],
@@ -348,39 +345,25 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
         1,
         ramadan.days,
       );
-
       return _Card(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Ramadan ${ramadan.start.year} 🌙',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFFB45309),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Alhamdulillah, saat ini sudah memasuki',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF44403C)),
-            ),
-            const SizedBox(height: 24),
-            _RollingNumber(value: dayNumber, style: _bigDigitStyle),
-            const SizedBox(height: 8),
-            const Text(
-              'HARI RAMADAN',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
-                color: Color(0xCCB45309),
-              ),
-            ),
+        child: _Compact(
+          kicker: 'RAMADAN ${ramadan.hijriYear} H 🌙',
+          title: 'Alhamdulillah, hari ke-$dayNumber',
+          lines: [
+            'Idulfitri insyaa Allah ${_formatTanggal(ramadan.end)}'
+                '${ramadan.statusLabel.isNotEmpty ? ' (${ramadan.statusLabel})' : ''}',
           ],
+          number: dayNumber,
+          unit: 'HARI',
+          footer: ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: dayNumber / ramadan.days,
+              minHeight: 6,
+              backgroundColor: const Color(0x33B45309),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFFF59E0B)),
+            ),
+          ),
         ),
       );
     }
@@ -393,83 +376,139 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
     final seconds = totalSeconds % 60;
 
     return _Card(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Ramadan ${ramadan.start.year} 🌙',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFFB45309),
-            ),
-          ),
-          const SizedBox(height: 8),
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: const TextStyle(color: Color(0xFF44403C), fontSize: 14),
-              children: [
-                const TextSpan(text: 'Insyaa Allah dimulai pada '),
-                TextSpan(
-                  text: _formatTanggal(ramadan.start),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFB45309),
-                  ),
-                ),
-                // belum ada ketetapan resmi untuk tahun ini (perkiraan /
-                // menunggu isbat) atau hasil penyesuaian pengguna
-                if (ramadan.statusLabel.isNotEmpty)
-                  TextSpan(
-                    text: ' (${ramadan.statusLabel})',
+      child: _Compact(
+        kicker: 'MENUJU RAMADAN ${ramadan.hijriYear} H 🌙',
+        title: _formatTanggal(ramadan.start),
+        titleSuffix: ramadan.statusLabel.isNotEmpty
+            ? ' (${ramadan.statusLabel})'
+            : null,
+        lines: [
+          'Mulai Maghrib ${_formatTanggalSingkat(eve)} · '
+              '${calc.formatInZone(startsAt.toUtc(), tz)} ${calc.tzLabel[tz]}',
+        ],
+        showMethod: true,
+        number: days,
+        digits: days > 99 ? 3 : 2,
+        unit: 'HARI LAGI',
+        footer: Row(
+          children: [
+            _ClockPill(label: 'jam', value: hours),
+            const SizedBox(width: 8),
+            _ClockPill(label: 'menit', value: minutes),
+            const SizedBox(width: 8),
+            _ClockPill(label: 'detik', value: seconds),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tata letak ringkas kartu: keterangan di kiri, angka bergulir di kanan,
+/// [footer] opsional selebar kartu di bawahnya.
+class _Compact extends StatelessWidget {
+  const _Compact({
+    required this.kicker,
+    required this.title,
+    required this.lines,
+    required this.number,
+    required this.unit,
+    this.titleSuffix,
+    this.digits = 2,
+    this.showMethod = false,
+    this.footer,
+  });
+
+  final String kicker, title, unit;
+  final String? titleSuffix;
+  final List<String> lines;
+  final int number, digits;
+  final bool showMethod;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    kicker,
                     style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF78716C),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.6,
+                      color: Color(0xFFB45309),
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: title),
+                        if (titleSuffix != null)
+                          TextSpan(
+                            text: titleSuffix,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF78716C),
+                            ),
+                          ),
+                      ],
+                    ),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF292524),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  for (final l in lines)
+                    Text(
+                      l,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF78716C),
+                        height: 1.35,
+                      ),
+                    ),
+                  if (showMethod) const _MethodLink(),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              children: [
+                _RollingNumber(
+                  value: number,
+                  digits: digits,
+                  style: _bigDigitStyle,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  unit,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.8,
+                    color: Color(0xCCB45309),
+                  ),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Terhitung sejak Maghrib ${_formatTanggalSingkat(eve)} · '
-            '${calc.formatInZone(startsAt.toUtc(), tz)} ${calc.tzLabel[tz]} di ${location.name}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
-          ),
-          const SizedBox(height: 2),
-          const _MethodLink(),
-          const SizedBox(height: 22),
-          _RollingNumber(
-            value: days,
-            digits: days > 99 ? 3 : 2,
-            style: _bigDigitStyle,
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'HARI',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 3,
-              color: Color(0xCCB45309),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _SmallUnit(label: 'Jam', value: hours),
-              const SizedBox(width: 10),
-              _SmallUnit(label: 'Menit', value: minutes),
-              const SizedBox(width: 10),
-              _SmallUnit(label: 'Detik', value: seconds),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
+        if (footer != null) ...[const SizedBox(height: 12), footer!],
+      ],
     );
   }
 }
@@ -490,46 +529,19 @@ class _EidCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Card(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Idulfitri ${status.ramadan.hijriYear} H 🌙',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFFB45309),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            takbiran
-                ? 'Malam takbiran. Allahu akbar, Allahu akbar, walillahilhamd.'
-                : 'Taqabbalallahu minna wa minkum. Mohon maaf lahir dan batin.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF44403C)),
-          ),
-          const SizedBox(height: 24),
-          _RollingNumber(value: status.day, digits: 1, style: _bigDigitStyle),
-          const SizedBox(height: 8),
-          const Text(
-            'SYAWAL',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 3,
-              color: Color(0xCCB45309),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Ramadan berikutnya insyaa Allah ${_formatTanggal(next.start)}'
-            '${next.statusLabel.isNotEmpty ? ' (${next.statusLabel})' : ''}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
-          ),
+      child: _Compact(
+        kicker: 'IDULFITRI ${status.ramadan.hijriYear} H 🌙',
+        title: takbiran ? 'Malam takbiran' : 'Selamat Hari Raya Idulfitri',
+        lines: [
+          takbiran
+              ? 'Allahu akbar, Allahu akbar, walillahilhamd.'
+              : 'Taqabbalallahu minna wa minkum.',
+          'Ramadan berikutnya insyaa Allah ${_formatTanggal(next.start)}'
+              '${next.statusLabel.isNotEmpty ? ' (${next.statusLabel})' : ''}',
         ],
+        number: status.day,
+        digits: 1,
+        unit: 'SYAWAL',
       ),
     );
   }
@@ -547,7 +559,7 @@ class _MethodLink extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => showHijriSettingsSheet(context),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.only(top: 4, bottom: 2),
         child: Text.rich(
           TextSpan(
             style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
@@ -573,8 +585,9 @@ class _MethodLink extends StatelessWidget {
   }
 }
 
-class _SmallUnit extends StatelessWidget {
-  const _SmallUnit({required this.label, required this.value});
+/// Satu bagian jam:menit:detik hitung mundur - pil tipis.
+class _ClockPill extends StatelessWidget {
+  const _ClockPill({required this.label, required this.value});
   final String label;
   final int value;
 
@@ -582,24 +595,21 @@ class _SmallUnit extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withOpacity(0.65),
-          border: Border.all(color: Colors.white.withOpacity(0.8)),
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withValues(alpha: 0.7),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _RollingNumber(value: value, style: _smallDigitStyle),
-            const SizedBox(height: 6),
+            const SizedBox(width: 4),
             Text(
-              label.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-                color: Color(0xFF78716C),
-              ),
+              label,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF78716C)),
             ),
           ],
         ),

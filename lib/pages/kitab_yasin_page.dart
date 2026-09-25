@@ -56,7 +56,12 @@ class _KitabYasinPageState extends State<KitabYasinPage> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                40 + MediaQuery.paddingOf(context).bottom,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 960),

@@ -111,6 +111,8 @@ class BackupService {
             'value': l.value,
             'note': l.note,
             'updatedAt': _iso(l.updatedAt),
+            if (l.prayedAt != null) 'prayedAt': _iso(l.prayedAt!),
+            if (l.place != null) 'place': l.place,
           },
       ],
       'dayStatuses': [
@@ -280,6 +282,11 @@ class BackupService {
                 value: l['value'] as int,
                 note: Value(l['note'] as String?),
                 updatedAt: updatedAt,
+                // opsional: berkas dari versi sebelum pencatatan jam sholat
+                prayedAt: Value(
+                  l['prayedAt'] == null ? null : _date(l['prayedAt']),
+                ),
+                place: Value(l['place'] as String?),
               ),
             );
         ibadahCount++;
