@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/menu_card.dart';
 import '../widgets/sub_header.dart';
 import 'backup_page.dart';
+import 'bilal_tarawih_page.dart';
 import 'dzikir_page.dart';
 import 'hijri_calendar_page.dart';
 import 'kitab_yasin_page.dart';
@@ -21,6 +22,15 @@ class MorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = [
+      (
+        'Bilal Tarawih 11 Rakaat',
+        'Bacaan bilal per bagian, sampai witir',
+        Icons.record_voice_over_rounded,
+        const [Color(0xFF818CF8), Color(0xFF4F46E5)],
+        const [Color(0xFFEEF2FF), Colors.white, Color(0xFFF5F3FF)],
+        const Color(0x73A5B4FC),
+        const BilalTarawihPage(),
+      ),
       (
         'Dzikir Pagi & Petang',
         'Bacaan Hisnul Muslim + penghitung',

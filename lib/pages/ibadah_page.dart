@@ -18,6 +18,7 @@ import '../widgets/ibadah/sholat_nudge_card.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/sub_header.dart';
 import '../services/dzikir.dart';
+import 'bilal_tarawih_page.dart';
 import 'dzikir_page.dart';
 import 'quran_tracker_page.dart';
 import 'tasbih_page.dart';
@@ -1135,6 +1136,21 @@ class _ItemTile extends StatelessWidget {
                     ),
                     icon: const Icon(
                       Icons.menu_book_rounded,
+                      size: 20,
+                      color: _amber,
+                    ),
+                  ),
+                if (item.key == 'tarawih')
+                  IconButton(
+                    tooltip: 'Buka bacaan bilal tarawih',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const BilalTarawihPage(),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.record_voice_over_rounded,
                       size: 20,
                       color: _amber,
                     ),

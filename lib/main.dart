@@ -160,7 +160,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
             controller: _settings,
             child: MaterialApp(
               navigatorKey: _navigator,
-              title: 'Rindu Ramadan',
+              title: 'Bilal+',
               debugShowCheckedModeBanner: false,
               theme: ThemeData(
                 useMaterial3: true,

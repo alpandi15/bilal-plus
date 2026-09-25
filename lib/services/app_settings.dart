@@ -19,7 +19,11 @@ class AppSettings {
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
   static const madzhabKey = 'sholat_madzhab';
+  static const readerSizeKey = 'reader_arabic_size';
 }
+
+/// Batas ukuran teks Arab di pembaca bilal.
+const readerSizeMin = 22.0, readerSizeMax = 40.0, readerSizeDefault = 28.0;
 
 /// Jenis kelamin pengguna - menentukan narasi ajakan (laki-laki: sholat
 /// berjamaah di masjid, termasuk Sholat Jumat).
@@ -43,6 +47,11 @@ class AppSettingsController extends ChangeNotifier {
 
   /// Madzhab untuk versi bacaan sholat bawaan.
   Madzhab get madzhab => _madzhab;
+
+  double _readerSize = readerSizeDefault;
+
+  /// Ukuran teks Arab di pembaca bilal tarawih.
+  double get readerSize => _readerSize;
 
   /// Getar setiap ketukan di penghitung dzikir/tasbih.
   bool get haptic => _haptic;
@@ -95,6 +104,8 @@ class AppSettingsController extends ChangeNotifier {
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
       _madzhab = Madzhab.parse(prefs.getString(AppSettings.madzhabKey));
+      _readerSize =
+          prefs.getDouble(AppSettings.readerSizeKey) ?? readerSizeDefault;
       _loaded = true;
       notifyListeners();
     } catch (e) {
@@ -159,6 +170,12 @@ class AppSettingsController extends ChangeNotifier {
     _madzhab = v;
     notifyListeners();
     await _save((p) => p.setString(AppSettings.madzhabKey, v.name));
+  }
+
+  Future<void> setReaderSize(double v) async {
+    _readerSize = v.clamp(readerSizeMin, readerSizeMax);
+    notifyListeners();
+    await _save((p) => p.setDouble(AppSettings.readerSizeKey, _readerSize));
   }
 
   Future<void> setSholatTime(bool v) async {

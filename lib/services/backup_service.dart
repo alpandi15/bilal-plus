@@ -8,6 +8,8 @@ import '../db/app_database.dart';
 /// tambahkan pembacaan versi lama di [BackupService.import] - berkas lama
 /// harus tetap bisa dipulihkan.
 const backupFormatVersion = 1;
+// Nama lama aplikasi (Rindu Ramadan) - tetap, supaya cadangan lama bisa
+// dipulihkan.
 const _appId = 'rindu_ramadan';
 
 class BackupException implements Exception {
@@ -171,7 +173,7 @@ class BackupService {
       throw const BackupException('Berkas bukan cadangan yang valid (JSON).');
     }
     if (raw is! Map<String, dynamic> || raw['app'] != _appId) {
-      throw const BackupException('Berkas ini bukan cadangan Rindu Ramadan.');
+      throw const BackupException('Berkas ini bukan cadangan Bilal+.');
     }
     final version = raw['version'];
     if (version is! int || version < 1) {

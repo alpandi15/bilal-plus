@@ -34,6 +34,7 @@ void main() {
     await tester.tap(find.text('Lainnya'));
     await _settle(tester);
     await tester.ensureVisible(find.text('Kalender Hijriah'));
+    await _settle(tester);
     await tester.tap(find.text('Kalender Hijriah'));
     await _settle(tester);
 

@@ -73,12 +73,12 @@ class _BackupPageState extends State<BackupPage> {
       final service = BackupService(db);
       final data = await service.export(settings: hijri.exportSettings());
       final bytes = utf8.encode(service.exportText(data));
-      final name = 'rindu-ramadan-${dateKey(DateTime.now())}.json';
+      final name = 'bilal-plus-${dateKey(DateTime.now())}.json';
       final result = await SharePlus.instance.share(
         ShareParams(
           files: [XFile.fromData(bytes, mimeType: 'application/json')],
           fileNameOverrides: [name],
-          subject: 'Cadangan Rindu Ramadan',
+          subject: 'Cadangan Bilal+',
           sharePositionOrigin: box == null
               ? null
               : box.localToGlobal(Offset.zero) & box.size,
