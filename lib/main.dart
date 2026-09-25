@@ -6,6 +6,7 @@ import 'services/hijri_config.dart';
 import 'services/hijri_config_scope.dart';
 import 'services/user_location_controller.dart';
 import 'services/user_location_scope.dart';
+import 'pages/backup_page.dart';
 import 'pages/hijri_calendar_page.dart';
 import 'pages/ibadah_page.dart';
 import 'pages/kitab_yasin_page.dart';
@@ -77,6 +78,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
               'calendar' => const HijriCalendarPage(),
               'quran' => const QuranTrackerPage(),
               'ibadah' => const IbadahPage(),
+              'backup' => const BackupPage(),
               _ => const _DemoPage(),
             },
           ),
@@ -176,6 +178,24 @@ class _DemoPage extends StatelessWidget {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const KitabYasinPage(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  MenuCard(
+                    title: 'Cadangan Data',
+                    description: 'Backup & pulihkan catatan',
+                    icon: Icons.backup_rounded,
+                    badge: const [Color(0xFF94A3B8), Color(0xFF475569)],
+                    wash: const [
+                      Color(0xFFF8FAFC),
+                      Colors.white,
+                      Color(0xFFF1F5F9),
+                    ],
+                    glow: const Color(0x73CBD5E1),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const BackupPage(),
                       ),
                     ),
                   ),

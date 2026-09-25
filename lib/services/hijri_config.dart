@@ -393,14 +393,7 @@ class HijriConfigController extends ChangeNotifier {
       _method = prefs.getString(_methodKey) ?? defaultHijriMethod;
       final saved = prefs.getString(_overridesKey);
       if (saved != null) {
-        final raw = (jsonDecode(saved) as Map).cast<String, dynamic>();
-        for (final e in raw.entries) {
-          final m = RegExp(r'^(\d{3,4})-(\d{1,2})$').firstMatch(e.key);
-          final date = DateTime.tryParse(e.value.toString());
-          if (m == null || date == null) continue;
-          _overrides[(int.parse(m.group(1)!), int.parse(m.group(2)!))] =
-              gregorianToJdn(date.year, date.month, date.day);
-        }
+        _overrides.addAll(_parseOverrides(jsonDecode(saved) as Map));
       }
     } catch (e) {
       debugPrint('hijri: pilihan pengguna gagal dibaca: $e');
@@ -521,21 +514,65 @@ class HijriConfigController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Pilihan pengguna (metode & penyesuaian) untuk berkas cadangan.
+  Map<String, Object?> exportSettings() => {
+    'method': _method,
+    'overrides': _overridesJson(),
+  };
+
+  /// Pulihkan pilihan dari berkas cadangan. [replace]: timpa semuanya;
+  /// kalau tidak, pilihan di perangkat ini yang dipertahankan dan hanya
+  /// penyesuaian bulan yang belum ada yang ditambahkan.
+  Future<void> importSettings(
+    Map<String, dynamic>? settings, {
+    required bool replace,
+  }) async {
+    if (settings == null) return;
+    final overrides = settings['overrides'];
+    final parsed = overrides is Map
+        ? _parseOverrides(overrides)
+        : <(int, int), int>{};
+    final method = settings['method'];
+    if (replace) {
+      if (method is String) _method = method;
+      _overrides
+        ..clear()
+        ..addAll(parsed);
+    } else {
+      for (final e in parsed.entries) {
+        _overrides.putIfAbsent(e.key, () => e.value);
+      }
+    }
+    _recompute();
+    await _save();
+  }
+
+  static Map<(int, int), int> _parseOverrides(Map raw) => {
+    for (final e in raw.entries)
+      if (RegExp(r'^(\d{3,4})-(\d{1,2})$').firstMatch(e.key.toString())
+          case final m?)
+        if (DateTime.tryParse(e.value.toString()) case final date?)
+          (int.parse(m.group(1)!), int.parse(m.group(2)!)): gregorianToJdn(
+            date.year,
+            date.month,
+            date.day,
+          ),
+  };
+
+  Map<String, String> _overridesJson() => {
+    for (final e in _overrides.entries)
+      _monthKey(e.key): () {
+        final (y, m, d) = jdnToGregorian(e.value);
+        return '$y-${m.toString().padLeft(2, '0')}-'
+            '${d.toString().padLeft(2, '0')}';
+      }(),
+  };
+
   Future<void> _save() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_methodKey, _method);
-      await prefs.setString(
-        _overridesKey,
-        jsonEncode({
-          for (final e in _overrides.entries)
-            _monthKey(e.key): () {
-              final (y, m, d) = jdnToGregorian(e.value);
-              return '$y-${m.toString().padLeft(2, '0')}-'
-                  '${d.toString().padLeft(2, '0')}';
-            }(),
-        }),
-      );
+      await prefs.setString(_overridesKey, jsonEncode(_overridesJson()));
     } catch (e) {
       debugPrint('hijri: pilihan pengguna gagal disimpan: $e');
     }
