@@ -1681,15 +1681,15 @@ class $QuranCyclesTable extends QuranCycles
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _targetDaysMeta = const VerificationMeta(
-    'targetDays',
+  static const VerificationMeta _targetDateMeta = const VerificationMeta(
+    'targetDate',
   );
   @override
-  late final GeneratedColumn<int> targetDays = GeneratedColumn<int>(
-    'target_days',
+  late final GeneratedColumn<String> targetDate = GeneratedColumn<String>(
+    'target_date',
     aliasedName,
     true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
   @override
@@ -1698,7 +1698,7 @@ class $QuranCyclesTable extends QuranCycles
     startedAt,
     finishedAt,
     completed,
-    targetDays,
+    targetDate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1735,10 +1735,10 @@ class $QuranCyclesTable extends QuranCycles
         completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
       );
     }
-    if (data.containsKey('target_days')) {
+    if (data.containsKey('target_date')) {
       context.handle(
-        _targetDaysMeta,
-        targetDays.isAcceptableOrUnknown(data['target_days']!, _targetDaysMeta),
+        _targetDateMeta,
+        targetDate.isAcceptableOrUnknown(data['target_date']!, _targetDateMeta),
       );
     }
     return context;
@@ -1766,9 +1766,9 @@ class $QuranCyclesTable extends QuranCycles
         DriftSqlType.bool,
         data['${effectivePrefix}completed'],
       )!,
-      targetDays: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}target_days'],
+      targetDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_date'],
       ),
     );
   }
@@ -1789,14 +1789,15 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
   /// true = ditutup karena khatam (sampai An-Nas).
   final bool completed;
 
-  /// Target khatam dalam sekian hari (mis. 30), null = tanpa target.
-  final int? targetDays;
+  /// Batas khatam (kunci tanggal, hari terakhir yang masih termasuk),
+  /// null = tanpa target.
+  final String? targetDate;
   const QuranCycle({
     required this.id,
     required this.startedAt,
     this.finishedAt,
     required this.completed,
-    this.targetDays,
+    this.targetDate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1807,8 +1808,8 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
       map['finished_at'] = Variable<DateTime>(finishedAt);
     }
     map['completed'] = Variable<bool>(completed);
-    if (!nullToAbsent || targetDays != null) {
-      map['target_days'] = Variable<int>(targetDays);
+    if (!nullToAbsent || targetDate != null) {
+      map['target_date'] = Variable<String>(targetDate);
     }
     return map;
   }
@@ -1821,9 +1822,9 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
           ? const Value.absent()
           : Value(finishedAt),
       completed: Value(completed),
-      targetDays: targetDays == null && nullToAbsent
+      targetDate: targetDate == null && nullToAbsent
           ? const Value.absent()
-          : Value(targetDays),
+          : Value(targetDate),
     );
   }
 
@@ -1837,7 +1838,7 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       finishedAt: serializer.fromJson<DateTime?>(json['finishedAt']),
       completed: serializer.fromJson<bool>(json['completed']),
-      targetDays: serializer.fromJson<int?>(json['targetDays']),
+      targetDate: serializer.fromJson<String?>(json['targetDate']),
     );
   }
   @override
@@ -1848,7 +1849,7 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'finishedAt': serializer.toJson<DateTime?>(finishedAt),
       'completed': serializer.toJson<bool>(completed),
-      'targetDays': serializer.toJson<int?>(targetDays),
+      'targetDate': serializer.toJson<String?>(targetDate),
     };
   }
 
@@ -1857,13 +1858,13 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
     DateTime? startedAt,
     Value<DateTime?> finishedAt = const Value.absent(),
     bool? completed,
-    Value<int?> targetDays = const Value.absent(),
+    Value<String?> targetDate = const Value.absent(),
   }) => QuranCycle(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
     finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
     completed: completed ?? this.completed,
-    targetDays: targetDays.present ? targetDays.value : this.targetDays,
+    targetDate: targetDate.present ? targetDate.value : this.targetDate,
   );
   QuranCycle copyWithCompanion(QuranCyclesCompanion data) {
     return QuranCycle(
@@ -1873,9 +1874,9 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
           ? data.finishedAt.value
           : this.finishedAt,
       completed: data.completed.present ? data.completed.value : this.completed,
-      targetDays: data.targetDays.present
-          ? data.targetDays.value
-          : this.targetDays,
+      targetDate: data.targetDate.present
+          ? data.targetDate.value
+          : this.targetDate,
     );
   }
 
@@ -1886,14 +1887,14 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
           ..write('startedAt: $startedAt, ')
           ..write('finishedAt: $finishedAt, ')
           ..write('completed: $completed, ')
-          ..write('targetDays: $targetDays')
+          ..write('targetDate: $targetDate')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, startedAt, finishedAt, completed, targetDays);
+      Object.hash(id, startedAt, finishedAt, completed, targetDate);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1902,7 +1903,7 @@ class QuranCycle extends DataClass implements Insertable<QuranCycle> {
           other.startedAt == this.startedAt &&
           other.finishedAt == this.finishedAt &&
           other.completed == this.completed &&
-          other.targetDays == this.targetDays);
+          other.targetDate == this.targetDate);
 }
 
 class QuranCyclesCompanion extends UpdateCompanion<QuranCycle> {
@@ -1910,34 +1911,34 @@ class QuranCyclesCompanion extends UpdateCompanion<QuranCycle> {
   final Value<DateTime> startedAt;
   final Value<DateTime?> finishedAt;
   final Value<bool> completed;
-  final Value<int?> targetDays;
+  final Value<String?> targetDate;
   const QuranCyclesCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
     this.finishedAt = const Value.absent(),
     this.completed = const Value.absent(),
-    this.targetDays = const Value.absent(),
+    this.targetDate = const Value.absent(),
   });
   QuranCyclesCompanion.insert({
     this.id = const Value.absent(),
     required DateTime startedAt,
     this.finishedAt = const Value.absent(),
     this.completed = const Value.absent(),
-    this.targetDays = const Value.absent(),
+    this.targetDate = const Value.absent(),
   }) : startedAt = Value(startedAt);
   static Insertable<QuranCycle> custom({
     Expression<int>? id,
     Expression<DateTime>? startedAt,
     Expression<DateTime>? finishedAt,
     Expression<bool>? completed,
-    Expression<int>? targetDays,
+    Expression<String>? targetDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (startedAt != null) 'started_at': startedAt,
       if (finishedAt != null) 'finished_at': finishedAt,
       if (completed != null) 'completed': completed,
-      if (targetDays != null) 'target_days': targetDays,
+      if (targetDate != null) 'target_date': targetDate,
     });
   }
 
@@ -1946,14 +1947,14 @@ class QuranCyclesCompanion extends UpdateCompanion<QuranCycle> {
     Value<DateTime>? startedAt,
     Value<DateTime?>? finishedAt,
     Value<bool>? completed,
-    Value<int?>? targetDays,
+    Value<String?>? targetDate,
   }) {
     return QuranCyclesCompanion(
       id: id ?? this.id,
       startedAt: startedAt ?? this.startedAt,
       finishedAt: finishedAt ?? this.finishedAt,
       completed: completed ?? this.completed,
-      targetDays: targetDays ?? this.targetDays,
+      targetDate: targetDate ?? this.targetDate,
     );
   }
 
@@ -1972,8 +1973,8 @@ class QuranCyclesCompanion extends UpdateCompanion<QuranCycle> {
     if (completed.present) {
       map['completed'] = Variable<bool>(completed.value);
     }
-    if (targetDays.present) {
-      map['target_days'] = Variable<int>(targetDays.value);
+    if (targetDate.present) {
+      map['target_date'] = Variable<String>(targetDate.value);
     }
     return map;
   }
@@ -1985,7 +1986,7 @@ class QuranCyclesCompanion extends UpdateCompanion<QuranCycle> {
           ..write('startedAt: $startedAt, ')
           ..write('finishedAt: $finishedAt, ')
           ..write('completed: $completed, ')
-          ..write('targetDays: $targetDays')
+          ..write('targetDate: $targetDate')
           ..write(')'))
         .toString();
   }
@@ -3520,7 +3521,7 @@ typedef $$QuranCyclesTableCreateCompanionBuilder =
       required DateTime startedAt,
       Value<DateTime?> finishedAt,
       Value<bool> completed,
-      Value<int?> targetDays,
+      Value<String?> targetDate,
     });
 typedef $$QuranCyclesTableUpdateCompanionBuilder =
     QuranCyclesCompanion Function({
@@ -3528,7 +3529,7 @@ typedef $$QuranCyclesTableUpdateCompanionBuilder =
       Value<DateTime> startedAt,
       Value<DateTime?> finishedAt,
       Value<bool> completed,
-      Value<int?> targetDays,
+      Value<String?> targetDate,
     });
 
 final class $$QuranCyclesTableReferences
@@ -3583,8 +3584,8 @@ class $$QuranCyclesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get targetDays => $composableBuilder(
-    column: $table.targetDays,
+  ColumnFilters<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3643,8 +3644,8 @@ class $$QuranCyclesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get targetDays => $composableBuilder(
-    column: $table.targetDays,
+  ColumnOrderings<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -3672,8 +3673,8 @@ class $$QuranCyclesTableAnnotationComposer
   GeneratedColumn<bool> get completed =>
       $composableBuilder(column: $table.completed, builder: (column) => column);
 
-  GeneratedColumn<int> get targetDays => $composableBuilder(
-    column: $table.targetDays,
+  GeneratedColumn<String> get targetDate => $composableBuilder(
+    column: $table.targetDate,
     builder: (column) => column,
   );
 
@@ -3735,13 +3736,13 @@ class $$QuranCyclesTableTableManager
                 Value<DateTime> startedAt = const Value.absent(),
                 Value<DateTime?> finishedAt = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<int?> targetDays = const Value.absent(),
+                Value<String?> targetDate = const Value.absent(),
               }) => QuranCyclesCompanion(
                 id: id,
                 startedAt: startedAt,
                 finishedAt: finishedAt,
                 completed: completed,
-                targetDays: targetDays,
+                targetDate: targetDate,
               ),
           createCompanionCallback:
               ({
@@ -3749,13 +3750,13 @@ class $$QuranCyclesTableTableManager
                 required DateTime startedAt,
                 Value<DateTime?> finishedAt = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<int?> targetDays = const Value.absent(),
+                Value<String?> targetDate = const Value.absent(),
               }) => QuranCyclesCompanion.insert(
                 id: id,
                 startedAt: startedAt,
                 finishedAt: finishedAt,
                 completed: completed,
-                targetDays: targetDays,
+                targetDate: targetDate,
               ),
           withReferenceMapper: (p0) => p0
               .map(

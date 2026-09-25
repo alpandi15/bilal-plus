@@ -70,11 +70,11 @@ void main() {
 
   test('ulangi dari awal: riwayat lama tetap ada, bukan khatam', () async {
     await dao.logReading(date: '2027-02-08', toAyah: 1000);
-    final fresh = await dao.startNewCycle(targetDays: 30);
+    final fresh = await dao.startNewCycle(targetDate: '2027-03-09');
 
     final p = await dao.progress();
     expect(p.cycle.id, fresh.id);
-    expect(p.cycle.targetDays, 30);
+    expect(p.cycle.targetDate, '2027-03-09');
     expect(p.lastAyah, 0);
     expect(p.completedCycles, 0);
 
@@ -87,10 +87,10 @@ void main() {
 
   test('ulangi pada putaran kosong tidak menumpuk putaran', () async {
     await dao.startNewCycle();
-    await dao.startNewCycle(targetDays: 15);
+    await dao.startNewCycle(targetDate: '2027-02-22');
     final all = await dao.cycles();
     expect(all, hasLength(1));
-    expect(all.single.targetDays, 15);
+    expect(all.single.targetDate, '2027-02-22');
   });
 
   test('watchProgress memancarkan perubahan', () async {

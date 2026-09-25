@@ -116,8 +116,9 @@ class QuranCycles extends Table {
   /// true = ditutup karena khatam (sampai An-Nas).
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
 
-  /// Target khatam dalam sekian hari (mis. 30), null = tanpa target.
-  IntColumn get targetDays => integer().nullable()();
+  /// Batas khatam (kunci tanggal, hari terakhir yang masih termasuk),
+  /// null = tanpa target.
+  TextColumn get targetDate => text().nullable()();
 }
 
 /// Satu sesi baca: ayat global [fromAyah]..[toAyah] (lihat
@@ -298,33 +299,34 @@ class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
 
   /// Ulangi dari awal: tutup putaran aktif (bukan khatam) dan buka yang
   /// baru. Riwayat sesi putaran lama tetap tersimpan.
-  Future<QuranCycle> startNewCycle({int? targetDays}) => transaction(() async {
-    final open = await _openCycle();
-    if (open != null) {
-      if (await _isEmpty(open.id)) {
-        // putaran kosong cukup diganti targetnya
-        await (update(quranCycles)..where((c) => c.id.equals(open.id))).write(
-          QuranCyclesCompanion(targetDays: Value(targetDays)),
+  Future<QuranCycle> startNewCycle({String? targetDate}) =>
+      transaction(() async {
+        final open = await _openCycle();
+        if (open != null) {
+          if (await _isEmpty(open.id)) {
+            // putaran kosong cukup diganti targetnya
+            await (update(quranCycles)..where((c) => c.id.equals(open.id)))
+                .write(QuranCyclesCompanion(targetDate: Value(targetDate)));
+            return (select(
+              quranCycles,
+            )..where((c) => c.id.equals(open.id))).getSingle();
+          }
+          await _closeCycle(open.id, completed: false, at: DateTime.now());
+        }
+        final id = await into(quranCycles).insert(
+          QuranCyclesCompanion.insert(
+            startedAt: DateTime.now(),
+            targetDate: Value(targetDate),
+          ),
         );
-        return (select(
-          quranCycles,
-        )..where((c) => c.id.equals(open.id))).getSingle();
-      }
-      await _closeCycle(open.id, completed: false, at: DateTime.now());
-    }
-    final id = await into(quranCycles).insert(
-      QuranCyclesCompanion.insert(
-        startedAt: DateTime.now(),
-        targetDays: Value(targetDays),
-      ),
-    );
-    return (select(quranCycles)..where((c) => c.id.equals(id))).getSingle();
-  });
+        return (select(quranCycles)..where((c) => c.id.equals(id))).getSingle();
+      });
 
-  Future<void> setTargetDays(int? days) async {
+  /// Atur batas khatam putaran aktif (kunci tanggal), null = tanpa target.
+  Future<void> setTargetDate(String? date) async {
     final cycle = await activeCycle();
     await (update(quranCycles)..where((c) => c.id.equals(cycle.id))).write(
-      QuranCyclesCompanion(targetDays: Value(days)),
+      QuranCyclesCompanion(targetDate: Value(date)),
     );
   }
 
