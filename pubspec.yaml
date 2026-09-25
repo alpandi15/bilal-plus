@@ -39,6 +39,8 @@ dependencies:
   shared_preferences: ^2.5.5
   home_widget: ^0.9.2+1
   http: ^1.6.0
+  drift: ^2.31.0
+  drift_flutter: ^0.2.8
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +55,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  drift_dev: ^2.31.0
+  build_runner: ^2.15.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
