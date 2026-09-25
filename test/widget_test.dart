@@ -28,8 +28,8 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    // lebar ponsel umum: pilihan tanggal tiga kolom tidak boleh overflow
-    tester.view.physicalSize = const Size(411, 860);
+    // lebar ponsel kecil: kartu jadwal & pilihan tanggal tidak boleh overflow
+    tester.view.physicalSize = const Size(360, 860);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 

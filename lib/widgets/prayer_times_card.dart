@@ -257,46 +257,53 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: [
-                                    Text(
-                                      clockHHMM,
-                                      style: TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.bold,
-                                        height: 1,
-                                        color: night
-                                            ? Colors.white
-                                            : const Color(0xFF1C1917),
+                                // mengecil (bukan terpotong) bila hitung
+                                // mundur di kanannya sedang panjang atau
+                                // layarnya sempit
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        clockHHMM,
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.bold,
+                                          height: 1,
+                                          color: night
+                                              ? Colors.white
+                                              : const Color(0xFF1C1917),
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      ':$clockSS',
-                                      style: TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1,
-                                        color: style.accent,
+                                      Text(
+                                        ':$clockSS',
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1,
+                                          color: style.accent,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      calc.tzLabel[schedule.timezone]!,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.6,
-                                        color: night
-                                            ? const Color(0xCCC7D2FE)
-                                            : const Color(0xFF78716C),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        calc.tzLabel[schedule.timezone]!,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.6,
+                                          color: night
+                                              ? const Color(0xCCC7D2FE)
+                                              : const Color(0xFF78716C),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
@@ -408,15 +415,20 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Metode Kemenag RI',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: night
-                                  ? const Color(0x99C7D2FE)
-                                  : const Color(0xFF78716C),
+                          Flexible(
+                            child: Text(
+                              'Metode Kemenag RI',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: night
+                                    ? const Color(0x99C7D2FE)
+                                    : const Color(0xFF78716C),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,

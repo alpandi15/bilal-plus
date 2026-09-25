@@ -2401,6 +2401,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuranCyclesTable quranCycles = $QuranCyclesTable(this);
   late final $QuranLogsTable quranLogs = $QuranLogsTable(this);
   late final QuranDao quranDao = QuranDao(this as AppDatabase);
+  late final IbadahDao ibadahDao = IbadahDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4173,6 +4174,30 @@ mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
 class QuranDaoManager {
   final _$QuranDaoMixin _db;
   QuranDaoManager(this._db);
+  $$QuranCyclesTableTableManager get quranCycles =>
+      $$QuranCyclesTableTableManager(_db.attachedDatabase, _db.quranCycles);
+  $$QuranLogsTableTableManager get quranLogs =>
+      $$QuranLogsTableTableManager(_db.attachedDatabase, _db.quranLogs);
+}
+
+mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {
+  $IbadahItemsTable get ibadahItems => attachedDatabase.ibadahItems;
+  $IbadahLogsTable get ibadahLogs => attachedDatabase.ibadahLogs;
+  $DayStatusesTable get dayStatuses => attachedDatabase.dayStatuses;
+  $QuranCyclesTable get quranCycles => attachedDatabase.quranCycles;
+  $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
+  IbadahDaoManager get managers => IbadahDaoManager(this);
+}
+
+class IbadahDaoManager {
+  final _$IbadahDaoMixin _db;
+  IbadahDaoManager(this._db);
+  $$IbadahItemsTableTableManager get ibadahItems =>
+      $$IbadahItemsTableTableManager(_db.attachedDatabase, _db.ibadahItems);
+  $$IbadahLogsTableTableManager get ibadahLogs =>
+      $$IbadahLogsTableTableManager(_db.attachedDatabase, _db.ibadahLogs);
+  $$DayStatusesTableTableManager get dayStatuses =>
+      $$DayStatusesTableTableManager(_db.attachedDatabase, _db.dayStatuses);
   $$QuranCyclesTableTableManager get quranCycles =>
       $$QuranCyclesTableTableManager(_db.attachedDatabase, _db.quranCycles);
   $$QuranLogsTableTableManager get quranLogs =>

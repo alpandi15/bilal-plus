@@ -7,6 +7,7 @@ import 'services/hijri_config_scope.dart';
 import 'services/user_location_controller.dart';
 import 'services/user_location_scope.dart';
 import 'pages/hijri_calendar_page.dart';
+import 'pages/ibadah_page.dart';
 import 'pages/kitab_yasin_page.dart';
 import 'pages/quran_tracker_page.dart';
 import 'widgets/menu_card.dart';
@@ -75,6 +76,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
             home: switch (const String.fromEnvironment('INITIAL_PAGE')) {
               'calendar' => const HijriCalendarPage(),
               'quran' => const QuranTrackerPage(),
+              'ibadah' => const IbadahPage(),
               _ => const _DemoPage(),
             },
           ),
@@ -120,6 +122,24 @@ class _DemoPage extends StatelessWidget {
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const HijriCalendarPage(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  MenuCard(
+                    title: 'Ibadah Harian',
+                    description: 'Checklist sholat, puasa & sunnah',
+                    icon: Icons.check_circle_rounded,
+                    badge: const [Color(0xFF34D399), Color(0xFF059669)],
+                    wash: const [
+                      Color(0xFFECFDF5),
+                      Colors.white,
+                      Color(0xFFF0FDF4),
+                    ],
+                    glow: const Color(0x736EE7B7),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const IbadahPage(),
                       ),
                     ),
                   ),

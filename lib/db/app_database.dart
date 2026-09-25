@@ -31,8 +31,12 @@ enum IbadahScope {
   /// setiap hari
   daily,
 
-  /// hanya selama Ramadan (tarawih, sahur, ...)
+  /// siang hari Ramadan (puasa, sahur, ...)
   ramadan,
+
+  /// malam Ramadan - malam sebelum puasa hari pertama sampai malam
+  /// sebelum puasa terakhir (tarawih)
+  ramadanNight,
 
   /// disarankan pada hari tertentu (puasa Senin-Kamis, Ayyamul Bidh, ...)
   sunnah,
@@ -143,7 +147,7 @@ class QuranLogs extends Table {
     QuranCycles,
     QuranLogs,
   ],
-  daos: [QuranDao],
+  daos: [QuranDao, IbadahDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
@@ -156,8 +160,278 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      // item bawaan yang belum ada ditambahkan setiap kali dibuka, jadi item
+      // bawaan baru di versi berikutnya ikut muncul; yang sudah ada (mungkin
+      // sudah disembunyikan/diurutkan pengguna) tidak disentuh
+      await batch(
+        (b) => b.insertAll(
+          ibadahItems,
+          defaultIbadahItems,
+          mode: InsertMode.insertOrIgnore,
+        ),
+      );
     },
   );
+}
+
+/// Kunci kelompok sholat lima waktu.
+const sholatWajibGroup = 'sholat_wajib';
+
+/// Kunci item tilawah - tercentang otomatis bila ada catatan bacaan
+/// Al-Qur'an pada hari itu.
+const tilawahKey = 'tilawah';
+
+IbadahItemsCompanion _item(
+  String key,
+  String name,
+  int sort, {
+  IbadahScope scope = IbadahScope.daily,
+  IbadahKind kind = IbadahKind.check,
+  int target = 1,
+  String? group,
+}) => IbadahItemsCompanion.insert(
+  key: key,
+  name: name,
+  kind: kind,
+  scope: scope,
+  target: Value(target),
+  groupKey: Value(group),
+  sort: Value(sort),
+  builtIn: const Value(true),
+);
+
+final defaultIbadahItems = [
+  _item('subuh', 'Subuh', 0, group: sholatWajibGroup),
+  _item('dzuhur', 'Dzuhur', 1, group: sholatWajibGroup),
+  _item('ashar', 'Ashar', 2, group: sholatWajibGroup),
+  _item('maghrib', 'Maghrib', 3, group: sholatWajibGroup),
+  _item('isya', 'Isya', 4, group: sholatWajibGroup),
+  _item('puasa', 'Puasa Ramadan', 10, scope: IbadahScope.ramadan),
+  _item('sahur', 'Sahur', 11, scope: IbadahScope.ramadan),
+  _item('tarawih', 'Tarawih', 12, scope: IbadahScope.ramadanNight),
+  _item('puasa_sunnah', 'Puasa sunnah', 20, scope: IbadahScope.sunnah),
+  _item(tilawahKey, "Tilawah Al-Qur'an", 30),
+  _item('dhuha', 'Sholat Dhuha', 31),
+  _item('rawatib', 'Sholat rawatib', 32),
+  _item('tahajud', 'Tahajud', 33),
+  _item('witir', 'Witir', 34),
+  _item('dzikir_pagi', 'Dzikir pagi', 35),
+  _item('dzikir_petang', 'Dzikir petang', 36),
+  _item('istighfar', 'Istighfar', 37, kind: IbadahKind.counter, target: 100),
+  _item('sedekah', 'Sedekah', 38),
+];
+
+/// Data layar satu hari - lihat [IbadahDao.watchDay].
+class IbadahDayData {
+  const IbadahDayData({
+    required this.date,
+    required this.items,
+    required this.values,
+    required this.excused,
+    required this.hasTilawah,
+    required this.summaries,
+  });
+
+  final String date;
+
+  /// Item aktif, terurut.
+  final List<IbadahItem> items;
+
+  /// itemId -> nilai pada [date].
+  final Map<int, int> values;
+  final bool excused;
+
+  /// Ada catatan bacaan Al-Qur'an pada [date].
+  final bool hasTilawah;
+
+  /// Ringkasan per tanggal (hanya tanggal yang punya catatan).
+  final Map<String, IbadahDaySummary> summaries;
+}
+
+/// Ringkasan satu hari untuk strip tanggal & streak.
+class IbadahDaySummary {
+  const IbadahDaySummary({this.sholat = 0, this.excused = false});
+
+  /// Jumlah sholat wajib yang tercentang (0..5).
+  final int sholat;
+  final bool excused;
+
+  /// Hari "terjaga": lima waktu lengkap, atau sedang berhalangan.
+  bool get complete => excused || sholat >= 5;
+}
+
+@DriftAccessor(tables: [IbadahItems, IbadahLogs, DayStatuses, QuranLogs])
+class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
+  IbadahDao(super.db);
+
+  /// Item terurut; [includeInactive] untuk layar pengaturan.
+  Stream<List<IbadahItem>> watchItems({bool includeInactive = false}) {
+    final q = select(ibadahItems)
+      ..orderBy([
+        (i) => OrderingTerm.asc(i.sort),
+        (i) => OrderingTerm.asc(i.id),
+      ]);
+    if (!includeInactive) q.where((i) => i.active.equals(true));
+    return q.watch();
+  }
+
+  /// Semua yang dibutuhkan layar satu hari, diperbarui setiap kali item,
+  /// catatan, status hari, atau bacaan Al-Qur'an berubah. Ringkasan per
+  /// tanggal (strip tanggal & streak) diambil untuk
+  /// [summariesFrom]..[summariesTo], biasanya ~setahun terakhir s/d hari ini.
+  Stream<IbadahDayData> watchDay(
+    String date, {
+    required String summariesFrom,
+    required String summariesTo,
+  }) =>
+      customSelect(
+        'SELECT 1',
+        readsFrom: {ibadahItems, ibadahLogs, dayStatuses, quranLogs},
+      ).watch().asyncMap(
+        (_) => loadDay(
+          date,
+          summariesFrom: summariesFrom,
+          summariesTo: summariesTo,
+        ),
+      );
+
+  Future<IbadahDayData> loadDay(
+    String date, {
+    required String summariesFrom,
+    required String summariesTo,
+  }) async {
+    final items =
+        await (select(ibadahItems)
+              ..where((i) => i.active.equals(true))
+              ..orderBy([
+                (i) => OrderingTerm.asc(i.sort),
+                (i) => OrderingTerm.asc(i.id),
+              ]))
+            .get();
+    final logs = await (select(
+      ibadahLogs,
+    )..where((l) => l.date.equals(date))).get();
+    final status = await (select(
+      dayStatuses,
+    )..where((d) => d.date.equals(date))).getSingleOrNull();
+    final tilawah =
+        await (selectOnly(quranLogs)
+              ..addColumns([quranLogs.id])
+              ..where(quranLogs.date.equals(date))
+              ..limit(1))
+            .get();
+    return IbadahDayData(
+      date: date,
+      items: items,
+      values: {for (final l in logs) l.itemId: l.value},
+      excused: status?.excused ?? false,
+      hasTilawah: tilawah.isNotEmpty,
+      summaries: await summaries(summariesFrom, summariesTo),
+    );
+  }
+
+  /// Setel nilai item; 0 = hapus catatannya.
+  Future<void> setValue(String date, int itemId, int value) async {
+    if (value <= 0) {
+      await (delete(
+        ibadahLogs,
+      )..where((l) => l.date.equals(date) & l.itemId.equals(itemId))).go();
+      return;
+    }
+    await into(ibadahLogs).insertOnConflictUpdate(
+      IbadahLogsCompanion.insert(
+        date: date,
+        itemId: itemId,
+        value: value,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<void> setExcused(String date, bool excused) =>
+      into(dayStatuses).insertOnConflictUpdate(
+        DayStatusesCompanion.insert(
+          date: date,
+          excused: Value(excused),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+  /// Ringkasan per tanggal di rentang [from]..[to] (kunci tanggal,
+  /// inklusif); tanggal tanpa catatan tidak ada di peta.
+  Future<Map<String, IbadahDaySummary>> summaries(String from, String to) =>
+      customSelect(
+        'SELECT d.date AS date, '
+        '  COALESCE(s.sholat, 0) AS sholat, '
+        '  COALESCE(st.excused, 0) AS excused '
+        'FROM ('
+        '  SELECT date FROM ibadah_logs WHERE date BETWEEN ?1 AND ?2 '
+        '  UNION SELECT date FROM day_statuses WHERE date BETWEEN ?1 AND ?2'
+        ') d '
+        'LEFT JOIN ('
+        '  SELECT l.date, COUNT(*) AS sholat FROM ibadah_logs l '
+        '  JOIN ibadah_items i ON i.id = l.item_id '
+        '  WHERE i.group_key = ?3 AND l.value > 0 GROUP BY l.date'
+        ') s ON s.date = d.date '
+        'LEFT JOIN day_statuses st ON st.date = d.date',
+        variables: [
+          Variable.withString(from),
+          Variable.withString(to),
+          Variable.withString(sholatWajibGroup),
+        ],
+      ).get().then(
+        (rows) => {
+          for (final r in rows)
+            r.read<String>('date'): IbadahDaySummary(
+              sholat: r.read<int>('sholat'),
+              excused: r.read<int>('excused') != 0,
+            ),
+        },
+      );
+
+  /// Tambah item buatan pengguna di urutan terakhir.
+  Future<int> addCustomItem({
+    required String name,
+    IbadahKind kind = IbadahKind.check,
+    int target = 1,
+  }) async {
+    final maxSort = ibadahItems.sort.max();
+    final last = await (selectOnly(
+      ibadahItems,
+    )..addColumns([maxSort])).map((r) => r.read(maxSort)).getSingle();
+    return into(ibadahItems).insert(
+      IbadahItemsCompanion.insert(
+        key: 'custom_${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        kind: kind,
+        scope: IbadahScope.daily,
+        target: Value(target),
+        sort: Value((last ?? 0) + 1),
+      ),
+    );
+  }
+
+  Future<void> setActive(int id, bool active) =>
+      (update(ibadahItems)..where((i) => i.id.equals(id))).write(
+        IbadahItemsCompanion(active: Value(active)),
+      );
+
+  /// Simpan urutan baru: [ids] dari atas ke bawah.
+  Future<void> reorder(List<int> ids) => batch((b) {
+    for (var i = 0; i < ids.length; i++) {
+      b.update(
+        ibadahItems,
+        IbadahItemsCompanion(sort: Value(i)),
+        where: (t) => t.id.equals(ids[i]),
+      );
+    }
+  });
+
+  /// Hapus item buatan pengguna beserta catatannya. Item bawaan hanya bisa
+  /// disembunyikan ([setActive]).
+  Future<void> deleteCustomItem(int id) => (delete(
+    ibadahItems,
+  )..where((i) => i.id.equals(id) & i.builtIn.equals(false))).go();
 }
 
 /// Ringkasan putaran bacaan yang sedang berjalan.
