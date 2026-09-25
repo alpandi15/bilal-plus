@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget hitung mundur Ramadan (2x2, bisa 2x3/3x2): hanya jumlah hari -
+     tanpa jam berjalan - dengan narasi pendek. Semua teksnya diisi
+     RamadanWidgetProvider.kt; latarnya drawable statis (ringan, tanpa
+     bitmap). -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ramadan_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/ramadan_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
+
+        <!-- kepala -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/widget_ic_crescent"
+                android:tint="#E3BE6A"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/ramadan_kicker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="@string/ramadan_kicker_default"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.22"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A" />
+        </LinearLayout>
+
+        <!-- pengisi ruang (FrameLayout kosong; <Space> bukan @RemoteView) -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- angka besar -->
+        <!-- rata bawah + margin, bukan baselineAligned: penggeseran baseline
+             label ke baseline angka 42sp membuat kotak label keluar dari
+             batas baris dan bagian bawahnya terpotong -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="bottom">
+
+            <TextView
+                android:id="@+id/ramadan_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="—"
+                android:textSize="42sp"
+                android:textStyle="bold"
+                android:letterSpacing="-0.03"
+                android:includeFontPadding="false"
+                android:fontFeatureSettings="tnum"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ramadan_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="5dp"
+                android:text="@string/ramadan_unit_default"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.2"
+                android:textColor="#E3BE6A" />
+        </LinearLayout>
+
+        <!-- judul & tanggal -->
+        <TextView
+            android:id="@+id/ramadan_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="#F7F1E1" />
+
+        <TextView
+            android:id="@+id/ramadan_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="#B9D3CB" />
+
+        <!-- narasi -->
+        <TextView
+            android:id="@+id/ramadan_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="9.5sp"
+            android:textStyle="italic"
+            android:lineSpacingExtra="1.5dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="#D9E3BE6A" />
+    </LinearLayout>
+</FrameLayout>

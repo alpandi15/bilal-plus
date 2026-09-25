@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ukuran: 4x2 sel pada Android 12+ (targetCellWidth/Height, API 31+).
+     Android 11 ke bawah memakai minWidth/minHeight, yang sengaja dipatok
+     3x2 (180dp = 3 kolom) supaya widget tetap muat - dan tetap muncul di
+     daftar - pada launcher bergrid kecil; pengguna bisa melebarkannya.
+
+     previewImage, BUKAN previewLayout: layout aslinya baru terisi setelah
+     provider mengirim data (langit, jam, jadwal), jadi bila dipakai sebagai
+     pratinjau ia tampil kosong melompong - dan sebagian launcher
+     menganggapnya tidak sah lalu menyembunyikan widgetnya. Gambar statis
+     ini tampil sama di semua versi Android.
+
+     updatePeriodMillis dipatok minimum praktis Android (~30 menit) sebagai
+     jaring pengaman. Refresh yang sesungguhnya dijadwalkan sendiri oleh
+     PrayerWidgetProvider lewat AlarmManager: tepat di tiap waktu sholat
+     (ganti fase langit & sorotan sel) dan tiap ~10 menit di siang hari
+     (menggeser matahari di busur). Jam & hitung mundurnya berdetik sendiri
+     lewat TextClock/Chronometer tanpa perlu refresh sama sekali. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/prayer_widget_layout"
+    android:previewImage="@drawable/widget_preview_prayer"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_description">
+</appwidget-provider>

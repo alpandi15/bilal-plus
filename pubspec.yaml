@@ -1,5 +1,5 @@
-name: bilal_tarawih
-description: "A new Flutter project."
+name: rindu_ramadan
+description: "Rindu Ramadan - jadwal sholat, hitung mundur Ramadan, kalender hijriah, dan bacaan."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -35,11 +35,17 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   adhan_dart: ^2.0.1
-  intl: ^0.20.3
+  geolocator: ^14.0.2
+  shared_preferences: ^2.5.5
+  home_widget: ^0.9.2+1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # untuk memalsukan platform geolocator di test/location_gps_test.dart
+  geolocator_platform_interface: ^4.3.0
+  plugin_platform_interface: ^2.1.8
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -59,10 +65,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # Halaman kitab "Surat Yasin, Tahtim & Tahlil" (WebP dari PDF pindaian),
+  # dibaca seperti buku lewat widgets/flip_book.dart.
+  assets:
+    - assets/kitab/yasin/
+    - assets/hijri_config.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Dipakai untuk menghitung jadwal sholat sesuai lokasi Anda.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dipakai untuk menghitung jadwal sholat sesuai lokasi Anda.</string>
 </dict>
 </plist>

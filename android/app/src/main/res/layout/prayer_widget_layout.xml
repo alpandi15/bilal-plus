@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget layar utama 3x2: susunan ulang kartu jadwal sholat
+     (PrayerTimesCard) memakai View yang boleh dipakai RemoteViews.
+
+     Lapisan (bawah ke atas):
+     * sky_base + sky_flipper : latar (gradasi fase + langit + scrim) - frame
+                                PNG hasil render Flutter, disilangkan pelan.
+     * arc_layer              : busur & matahari (Canvas native di Kotlin),
+                                diletakkan absolut di belakang teks supaya
+                                tidak memakan tinggi kartu.
+     * widget_content         : header, jam (TextClock), tanggal Masehi &
+                                Hijriah, hitung mundur (Chronometer), sel.
+     Semua warna/latar per fase (siang vs malam) diatur dari Kotlin. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/sky_base"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:importantForAccessibility="no" />
+
+    <ViewFlipper
+        android:id="@+id/sky_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:autoStart="true"
+        android:flipInterval="2600"
+        android:inAnimation="@anim/widget_fade_in"
+        android:outAnimation="@anim/widget_fade_out" />
+
+    <!-- busur matahari: absolut, di belakang teks. Margin-nya harus sama
+         dengan ARC_* di PrayerWidgetProvider.kt -->
+    <FrameLayout
+        android:id="@+id/arc_layer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="30dp"
+        android:layout_marginBottom="46dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp">
+
+        <ImageView
+            android:id="@+id/arc_base"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
+
+        <ViewFlipper
+            android:id="@+id/arc_flipper"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:autoStart="true"
+            android:flipInterval="2600"
+            android:inAnimation="@anim/widget_fade_in"
+            android:outAnimation="@anim/widget_fade_out" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
+
+        <!-- header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_title"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.18"
+                android:includeFontPadding="false"
+                android:textColor="#B45309" />
+
+            <LinearLayout
+                android:id="@+id/widget_location_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="9dp"
+                android:paddingEnd="9dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/widget_pill_day">
+
+                <ImageView
+                    android:id="@+id/widget_location_icon"
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:src="@drawable/widget_ic_location"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/widget_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:maxWidth="120dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="@string/widget_default_location"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false"
+                    android:textColor="#44403C" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- jam, tanggal & hitung mundur -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="true">
+
+                    <TextClock
+                        android:id="@+id/widget_clock"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:format24Hour="HH:mm"
+                        android:format12Hour="HH:mm"
+                        android:fontFamily="monospace"
+                        android:includeFontPadding="false"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="#1C1917" />
+
+                    <TextClock
+                        android:id="@+id/widget_clock_seconds"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:format24Hour=":ss"
+                        android:format12Hour=":ss"
+                        android:fontFamily="monospace"
+                        android:includeFontPadding="false"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#B45309" />
+
+                    <TextView
+                        android:id="@+id/widget_tz"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.06"
+                        android:includeFontPadding="false"
+                        android:textColor="#78716C" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/widget_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textSize="10sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/widget_hijri"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B45309" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <TextView
+                    android:id="@+id/widget_next_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_default_label"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.12"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <Chronometer
+                    android:id="@+id/widget_countdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="monospace"
+                    android:includeFontPadding="false"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#292524" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- sisa ruang: busur matahari tampak di sini (lapisan di belakang).
+             FrameLayout kosong, bukan <Space>: Space bukan @RemoteView -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="6dp" />
+
+        <!-- enam waktu sholat -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:id="@+id/cell_fajr"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_fajr_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_fajr_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_sunrise"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_sunrise_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_sunrise_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_dhuhr"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_dhuhr_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_dhuhr_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_asr"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_asr_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_asr_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_maghrib"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_maghrib_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_maghrib_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cell_isha"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:background="@drawable/widget_cell_day">
+
+                <TextView
+                    android:id="@+id/cell_isha_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="7sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#78716C" />
+
+                <TextView
+                    android:id="@+id/cell_isha_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="#292524" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

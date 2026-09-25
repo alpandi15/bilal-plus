@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x2 sel (110dp -> 2 sel pada Android 11 ke bawah; targetCell* untuk
+     Android 12+), boleh diregangkan ke 2x3 / 3x2.
+
+     previewImage statis - lihat catatan di prayer_widget_info.xml.
+
+     Hitungannya per hari, jadi refresh 30 menit bawaan sudah cukup -
+     pergantian hari (tengah malam / Maghrib) paling telat terlihat 30 menit. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/ramadan_widget_layout"
+    android:previewImage="@drawable/widget_preview_ramadan"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/ramadan_widget_description">
+</appwidget-provider>

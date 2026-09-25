@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Frame baru muncul perlahan DI ATAS frame lama yang tetap pekat (lihat
+     widget_fade_out.xml) - tidak ada saat keduanya sama-sama setengah
+     transparan, jadi latar tidak pernah "berdenyut" tembus. -->
+<alpha xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fromAlpha="0.0"
+    android:toAlpha="1.0"
+    android:duration="1200"
+    android:interpolator="@android:anim/decelerate_interpolator" />

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">JADWAL SHOLAT</string>
+    <string name="widget_default_location">Atur lokasi…</string>
+    <string name="widget_default_label">MENUNGGU JADWAL</string>
+    <string name="widget_description">Kartu jadwal sholat lengkap: langit hidup, jam berjalan, dan hitung mundur menuju sholat berikutnya.</string>
+    <string name="ramadan_kicker_default">MENUJU RAMADAN</string>
+    <string name="ramadan_unit_default">HARI LAGI</string>
+    <string name="ramadan_widget_description">Hitung mundur hari menuju Ramadan, dengan tanggal Hijriah dan Masehi.</string>
+</resources>

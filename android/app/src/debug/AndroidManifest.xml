@@ -4,4 +4,15 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application>
+        <!-- Pratinjau widget layar utama tanpa harus memasangnya di launcher
+             (hanya build debug):
+             adb shell am start -n com.rinduramadan.app/.WidgetPreviewActivity
+             Ekstra opsional (int) w, h = ukuran dp; (long) now = epoch ms. -->
+        <activity
+            android:name=".WidgetPreviewActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
 </manifest>

@@ -1,30 +1,24 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Uji asap sederhana: pastikan kartu jadwal sholat & hitung mundur Ramadan
+// tampil tanpa error, begitu resolusi lokasi (yang async) selesai.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bilal_tarawih/main.dart';
+import 'package:rindu_ramadan/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Kartu jadwal sholat & hitung mundur Ramadan tampil', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const RinduRamadanApp());
+    // resolusi lokasi (shared_preferences + percobaan GPS yang gagal di
+    // lingkungan uji) berjalan async - beri waktu sampai semuanya selesai.
+    // Bukan `pumpAndSettle`: kartu ini punya timer berjalan terus tiap detik
+    // (jam & hitung mundur), jadi tidak akan pernah "diam" sepenuhnya.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('JADWAL SHOLAT'), findsOneWidget);
+    expect(find.textContaining('🌙'), findsOneWidget);
   });
 }
