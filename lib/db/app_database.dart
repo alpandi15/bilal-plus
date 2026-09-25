@@ -159,7 +159,16 @@ class QuranLogs extends Table {
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
-    : super(executor ?? driftDatabase(name: 'rindu_ramadan'));
+    : super(
+        executor ??
+            driftDatabase(
+              name: 'rindu_ramadan',
+              // widget layar utama menulis catatan dari isolate latar
+              // (callback home_widget) - satu koneksi bersama supaya tidak
+              // saling mengunci & perubahan langsung terlihat di aplikasi
+              native: const DriftNativeOptions(shareAcrossIsolates: true),
+            ),
+      );
 
   @override
   int get schemaVersion => 1;

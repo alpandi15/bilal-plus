@@ -17,7 +17,7 @@ Future<void> _settle(WidgetTester tester, {int ticks = 6}) async {
 void main() {
   testWidgets('Kalender hijriah tampil & bisa berpindah bulan', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(const RinduRamadanApp());
+    await tester.pumpWidget(const RinduRamadanApp(homeWidgets: false));
     await _settle(tester);
 
     // baris tanggal di kartu jadwal sudah memuat nama bulan hijriah

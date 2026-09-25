@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget Al-Qur'an (2x3, diregangkan sampai 2x4): cincin progress khatam,
+     posisi terakhir, target hari ini, grafik 7 hari (bila cukup tinggi), dan
+     tombol "Lanjut baca". Diisi QuranWidgetProvider.kt; teks bawaan di sini
+     sekaligus menjadi pratinjau (previewLayout) di pemilih widget. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/qw_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/ramadan_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp">
+
+        <!-- kepala -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/tracker_ic_book"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/qw_kicker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:text="KHATAM KE-1"
+                android:textSize="8.5sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A" />
+        </LinearLayout>
+
+        <!-- cincin + persen -->
+        <FrameLayout
+            android:id="@+id/qw_ring_box"
+            android:layout_width="78dp"
+            android:layout_height="78dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp">
+
+            <ProgressBar
+                android:id="@+id/qw_ring"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:max="1000"
+                android:progress="380"
+                android:progressDrawable="@drawable/tracker_ring" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <TextView
+                    android:id="@+id/qw_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="38%"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:fontFeatureSettings="tnum"
+                    android:includeFontPadding="false"
+                    android:textColor="#F7F1E1" />
+
+                <TextView
+                    android:id="@+id/qw_percent_sub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="khatam"
+                    android:textSize="7.5sp"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- posisi terakhir -->
+        <TextView
+            android:id="@+id/qw_juz"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_horizontal"
+            android:text="Juz 12"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:includeFontPadding="false"
+            android:textColor="#F7F1E1" />
+
+        <TextView
+            android:id="@+id/qw_position"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:gravity="center_horizontal"
+            android:text="Hud 45 · hlm 230"
+            android:textSize="9.5sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="#B9D3CB" />
+
+        <!-- target hari ini -->
+        <LinearLayout
+            android:id="@+id/qw_target_box"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/qw_target"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Target: s/d Yusuf 52"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:includeFontPadding="false"
+                    android:textColor="#E3BE6A" />
+
+                <TextView
+                    android:id="@+id/qw_pages"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="12/20 hlm"
+                    android:textSize="8.5sp"
+                    android:textStyle="bold"
+                    android:fontFeatureSettings="tnum"
+                    android:includeFontPadding="false"
+                    android:textColor="#F7F1E1" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/qw_target_bar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="5dp"
+                android:max="1000"
+                android:progress="600"
+                android:progressDrawable="@drawable/tracker_bar" />
+        </LinearLayout>
+
+        <!-- grafik halaman 7 hari (bitmap dari QuranWidgetProvider) -->
+        <ImageView
+            android:id="@+id/qw_chart"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            android:contentDescription="Halaman dibaca 7 hari terakhir" />
+
+        <FrameLayout
+            android:id="@+id/qw_spacer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/qw_continue"
+            android:layout_width="match_parent"
+            android:layout_height="28dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:background="@drawable/tracker_pill"
+            android:text="Lanjut baca ›"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#0C3A33" />
+    </LinearLayout>
+</FrameLayout>

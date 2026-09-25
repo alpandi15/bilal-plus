@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget Ibadah Harian (2x3, diregangkan sampai 2x4): kemajuan hari ini,
+     lima waktu yang bisa dicentang langsung, lalu ibadah lainnya. Baris
+     ib_row_0..6 diisi/disembunyikan IbadahWidgetProvider.kt sesuai tinggi
+     widget. Teks bawaan di sini sekaligus menjadi pratinjau (previewLayout)
+     di pemilih widget Android 12+. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ib_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/ramadan_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp">
+
+        <!-- kepala: tanggal/Ramadan + x/y -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/widget_ic_crescent"
+                android:tint="#E3BE6A"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/ib_kicker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:text="IBADAH HARIAN"
+                android:textSize="8.5sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A" />
+
+            <TextView
+                android:id="@+id/ib_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3/12"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/ib_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:layout_marginTop="7dp"
+            android:max="1000"
+            android:progress="250"
+            android:progressDrawable="@drawable/tracker_bar" />
+
+        <TextView
+            android:id="@+id/ib_streak"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Lengkapi lima waktu hari ini"
+            android:textSize="9sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="#B9D3CB" />
+
+        <!-- lima waktu -->
+        <LinearLayout
+            android:id="@+id/ib_sholat_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/ib_sholat_0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/ib_sholat_dot_0"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:contentDescription="Subuh" />
+
+                <TextView
+                    android:id="@+id/ib_sholat_name_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Subuh"
+                    android:textSize="7sp"
+                    android:letterSpacing="-0.02"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ib_sholat_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/ib_sholat_dot_1"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:contentDescription="Dzuhur" />
+
+                <TextView
+                    android:id="@+id/ib_sholat_name_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Dzuhur"
+                    android:textSize="7sp"
+                    android:letterSpacing="-0.02"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ib_sholat_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/ib_sholat_dot_2"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:contentDescription="Ashar" />
+
+                <TextView
+                    android:id="@+id/ib_sholat_name_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Ashar"
+                    android:textSize="7sp"
+                    android:letterSpacing="-0.02"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ib_sholat_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/ib_sholat_dot_3"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:contentDescription="Maghrib" />
+
+                <TextView
+                    android:id="@+id/ib_sholat_name_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Maghrib"
+                    android:textSize="7sp"
+                    android:letterSpacing="-0.02"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ib_sholat_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/ib_sholat_dot_4"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:contentDescription="Isya" />
+
+                <TextView
+                    android:id="@+id/ib_sholat_name_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Isya"
+                    android:textSize="7sp"
+                    android:letterSpacing="-0.02"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_0"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/ib_row_name_0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Tilawah Al-Qur'an"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_0"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_1"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/ib_row_name_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Sholat Dhuha"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_1"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_2"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/ib_row_name_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Sedekah"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_2"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_3"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/ib_row_name_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_3"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_4"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/ib_row_name_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_4"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_5"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/ib_row_name_5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_5"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ib_row_6"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="9dp"
+            android:paddingEnd="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/tracker_row_bg"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/ib_row_name_6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F7F1E1" />
+
+            <TextView
+                android:id="@+id/ib_row_meta_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#E3BE6A"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/ib_row_check_6"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/tracker_dot_todo"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+
+        <!-- pengisi ruang (FrameLayout kosong; <Space> bukan @RemoteView) -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/ib_more"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:text="Buka checklist ›"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:includeFontPadding="false"
+            android:textColor="#E3BE6A" />
+    </LinearLayout>
+</FrameLayout>

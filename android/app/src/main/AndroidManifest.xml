@@ -52,6 +52,39 @@
                 android:resource="@xml/ramadan_widget_info"/>
         </receiver>
 
+        <!-- Widget Ibadah Harian (checklist, bisa dicentang). IbadahWidgetProvider.kt. -->
+        <receiver android:name=".IbadahWidgetProvider"
+            android:exported="true"
+            android:label="Ibadah Harian">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ibadah_widget_info"/>
+        </receiver>
+
+        <!-- Widget bacaan Al-Qur'an. QuranWidgetProvider.kt. -->
+        <receiver android:name=".QuranWidgetProvider"
+            android:exported="true"
+            android:label="Tilawah Al-Qur'an">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quran_widget_info"/>
+        </receiver>
+
+        <!-- home_widget: menjalankan callback Dart (trackerWidgetCallback) di
+             latar saat item dicentang dari widget, untuk menulis ke basis data. -->
+        <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

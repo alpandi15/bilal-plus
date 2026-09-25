@@ -1,9 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'db/app_database.dart';
 import 'db/app_database_scope.dart';
 import 'services/hijri_config.dart';
 import 'services/hijri_config_scope.dart';
+import 'services/tracker_widget_sync.dart';
 import 'services/user_location_controller.dart';
 import 'services/user_location_scope.dart';
 import 'pages/backup_page.dart';
@@ -20,11 +25,15 @@ void main() {
 }
 
 class RinduRamadanApp extends StatefulWidget {
-  const RinduRamadanApp({super.key, this.database});
+  const RinduRamadanApp({super.key, this.database, this.homeWidgets = true});
 
   /// Basis data pengganti (mis. in-memory untuk uji); null = berkas SQLite
   /// aplikasi.
   final AppDatabase? database;
+
+  /// Sinkron & tangani ketukan widget layar utama Ibadah/Al-Qur'an. Uji
+  /// mematikannya karena plugin `home_widget` tidak tersedia di sana.
+  final bool homeWidgets;
 
   @override
   State<RinduRamadanApp> createState() => _RinduRamadanAppState();
@@ -45,15 +54,60 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
         : const String.fromEnvironment('HIJRI_URL'),
   );
 
+  final _navigator = GlobalKey<NavigatorState>();
+  late final _widgetSync = TrackerWidgetSync(
+    db: _db,
+    hijri: _hijri,
+    location: _location,
+  );
+  StreamSubscription<Uri?>? _widgetClicks;
+
   @override
   void initState() {
     super.initState();
     _location.init();
     _hijri.init();
+    if (widget.homeWidgets) {
+      _widgetSync
+        ..start()
+        ..schedule();
+      registerTrackerWidgetCallback();
+      _listenWidgetLaunch();
+    }
+  }
+
+  /// Ketuk widget Ibadah/Al-Qur'an membuka halamannya
+  /// (`rinduramadan://ibadah`, `rinduramadan://quran`).
+  void _listenWidgetLaunch() {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    HomeWidget.initiallyLaunchedFromHomeWidget()
+        .then(_openFromWidget)
+        .catchError((Object _) {});
+    _widgetClicks = HomeWidget.widgetClicked.listen(
+      _openFromWidget,
+      onError: (Object _) {},
+    );
+  }
+
+  void _openFromWidget(Uri? uri) {
+    final page = switch (uri?.host) {
+      'ibadah' => const IbadahPage(),
+      'quran' => const QuranTrackerPage(),
+      _ => null,
+    };
+    if (page == null) return;
+    // navigator belum siap saat aplikasi baru dibuka dari widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navigator.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => page),
+      );
+    });
   }
 
   @override
   void dispose() {
+    _widgetClicks?.cancel();
+    _widgetSync.dispose();
     _location.dispose();
     _hijri.dispose();
     if (widget.database == null) _db.close();
@@ -69,6 +123,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
         child: HijriConfigScope(
           controller: _hijri,
           child: MaterialApp(
+            navigatorKey: _navigator,
             title: 'Rindu Ramadan',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.amber),

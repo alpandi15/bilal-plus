@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- progressDrawable ProgressBar melingkar: jalur emas samar + busur emas
+     yang panjangnya mengikuti level (0..10000) dari ProgressBar. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape
+            android:shape="ring"
+            android:innerRadiusRatio="2.7"
+            android:thicknessRatio="11"
+            android:useLevel="false">
+            <solid android:color="#2EE3BE6A" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <rotate
+            android:fromDegrees="270"
+            android:toDegrees="270"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape
+                android:shape="ring"
+                android:innerRadiusRatio="2.7"
+                android:thicknessRatio="11"
+                android:useLevel="true">
+                <gradient
+                    android:type="sweep"
+                    android:startColor="#F2D38A"
+                    android:endColor="#D9A441" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>

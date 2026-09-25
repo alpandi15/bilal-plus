@@ -202,17 +202,12 @@ class _DayView extends StatelessWidget {
         if (i.groupKey != sholatWajibGroup) i,
     ];
 
-    // yang gugur saat berhalangan tidak dihitung
-    final counted = [
-      for (final i in items)
-        if (!(data.excused && excusable(i))) i,
-    ];
-    final done = counted
-        .where(
-          (i) =>
-              itemDone(i, data.values[i.id] ?? 0, hasTilawah: data.hasTilawah),
-        )
-        .length;
+    final (done, total) = ibadahProgress(
+      items,
+      data.values,
+      excused: data.excused,
+      hasTilawah: data.hasTilawah,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
@@ -235,7 +230,7 @@ class _DayView extends StatelessWidget {
                 today: today,
                 day: day,
                 done: done,
-                total: counted.length,
+                total: total,
                 streak: ibadahStreak(data.summaries, today),
                 excused: data.excused,
                 onExcused: (v) => dao.setExcused(data.date, v),

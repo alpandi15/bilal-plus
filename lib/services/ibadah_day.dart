@@ -136,3 +136,21 @@ int ibadahStreak(Map<String, IbadahDaySummary> days, String today) {
   }
   return streak;
 }
+
+/// (selesai, jumlah) dari [items] yang tampil - ibadah yang gugur karena
+/// berhalangan tidak dihitung.
+(int, int) ibadahProgress(
+  List<IbadahItem> items,
+  Map<int, int> values, {
+  required bool excused,
+  required bool hasTilawah,
+}) {
+  final counted = [
+    for (final i in items)
+      if (!(excused && excusable(i))) i,
+  ];
+  final done = counted
+      .where((i) => itemDone(i, values[i.id] ?? 0, hasTilawah: hasTilawah))
+      .length;
+  return (done, counted.length);
+}

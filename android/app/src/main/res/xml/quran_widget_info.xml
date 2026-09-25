@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x3 sel (2 kolom x 3 baris; 110x180dp untuk Android 11 ke bawah,
+     targetCell* untuk Android 12+), bisa diregangkan sampai 2x4 atau lebih
+     lebar - isinya bertambah mengikuti tinggi (lihat provider-nya).
+
+     previewLayout (Android 12+) memakai layout aslinya karena teks bawaannya
+     sudah berupa contoh isi; previewImage untuk launcher lama.
+
+     updatePeriodMillis 30 menit: pergantian hari paling telat terlihat 30
+     menit sesudah tengah malam - datanya sudah memuat hari esok. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="180dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="180dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="3"
+    android:maxResizeHeight="420dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/quran_widget_layout"
+    android:previewLayout="@layout/quran_widget_layout"
+    android:previewImage="@drawable/ramadan_widget_bg"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/quran_widget_description">
+</appwidget-provider>
