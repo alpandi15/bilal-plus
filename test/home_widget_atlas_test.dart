@@ -56,6 +56,14 @@ void main() {
     expect((json['days'] as List).first['hijriAfterMaghrib'], contains(' H'));
     expect(store['sky_atlas_version'], isNotNull);
 
+    // Ramadan untuk widget hitung mundur: 3 berurutan (termasuk yang baru
+    // selesai bila masih suasana Idulfitri) lengkap dengan status tanggal
+    final ramadan = jsonDecode(store['ramadan_json'] as String) as Map;
+    final items = (ramadan['items'] as List).cast<Map>();
+    expect(items, hasLength(3));
+    expect(items[1]['hijriYear'], items[0]['hijriYear'] + 1);
+    expect(items.first.keys, containsAll(['tentative', 'overridden']));
+
     for (final v in [
       'dawn',
       'morning',

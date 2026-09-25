@@ -123,31 +123,73 @@ int hijriToJdnTabular(int y, int m, int d) =>
 /*  Jangkar                                                                    */
 /* -------------------------------------------------------------------------- */
 
+(int, int) nextHijriMonth(int y, int m) => m == 12 ? (y + 1, 1) : (y, m + 1);
+(int, int) prevHijriMonth(int y, int m) => m == 1 ? (y - 1, 12) : (y, m - 1);
+
 /// Kumpulan tanggal 1 bulan hijriah yang sudah ditetapkan, dipetakan sebagai
 /// `(tahun, bulan) -> JDN`. Dibangun dari berkas konfigurasi
 /// (lihat `hijri_config.dart`); kelas ini sendiri tidak peduli asalnya.
 class HijriAnchors {
-  HijriAnchors(Map<(int, int), int> anchorsByMonth)
-    : _byMonth = Map.unmodifiable(anchorsByMonth);
+  /// [tentative]: jangkar yang belum ditetapkan resmi (mis. menunggu sidang
+  /// isbat). [overridden]: jangkar hasil penyesuaian pengguna sendiri.
+  /// [adjusted]: bulan yang ikut digeser supaya panjang bulan di sekitar
+  /// penyesuaian pengguna tetap 29/30 hari - bukan ketetapan, jadi tetap
+  /// dianggap perkiraan oleh [has].
+  HijriAnchors(
+    Map<(int, int), int> anchorsByMonth, {
+    Set<(int, int)> tentative = const {},
+    Set<(int, int)> overridden = const {},
+    Set<(int, int)> adjusted = const {},
+  }) : _byMonth = Map.unmodifiable(anchorsByMonth),
+       _tentative = Set.unmodifiable(tentative),
+       _overridden = Set.unmodifiable(overridden),
+       _adjusted = Set.unmodifiable(adjusted);
 
   static final HijriAnchors none = HijriAnchors(const {});
 
   final Map<(int, int), int> _byMonth;
+  final Set<(int, int)> _tentative;
+  final Set<(int, int)> _overridden;
+  final Set<(int, int)> _adjusted;
 
   bool get isEmpty => _byMonth.isEmpty;
-  int get length => _byMonth.length;
+  int get length => _byMonth.length - _adjusted.length;
 
-  bool has(int year, int month) => _byMonth.containsKey((year, month));
+  /// Semua jangkar mentah `(tahun, bulan) -> JDN`, termasuk bulan yang
+  /// hanya [adjusted].
+  Map<(int, int), int> get byMonth => _byMonth;
+  Set<(int, int)> get tentativeMonths => _tentative;
+
+  /// true bila bulan ini punya ketetapan (resmi, menunggu isbat, atau
+  /// pilihan pengguna) - bukan sekadar hasil perhitungan.
+  bool has(int year, int month) =>
+      _byMonth.containsKey((year, month)) && !_adjusted.contains((year, month));
+
+  bool isTentative(int year, int month) => _tentative.contains((year, month));
+
+  bool isOverridden(int year, int month) => _overridden.contains((year, month));
+
+  /// Sidik jari isi jangkar: berubah bila ada tanggal/status yang berubah.
+  /// Dipakai untuk memutuskan kapan widget layar utama perlu disinkronkan.
+  late final String fingerprint = () {
+    final keys = _byMonth.keys.toList()
+      ..sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
+    return [
+      for (final k in keys)
+        '${k.$1}-${k.$2}:${_byMonth[k]}'
+            '${_tentative.contains(k) ? 't' : ''}'
+            '${_overridden.contains(k) ? 'o' : ''}'
+            '${_adjusted.contains(k) ? 'a' : ''}',
+    ].join(',');
+  }();
 
   /// JDN tanggal 1 untuk bulan hijriah [year]-[month]: jangkar bila ada,
   /// kalau tidak hasil algoritma tabular.
   int firstDayJdn(int year, int month) =>
       _byMonth[(year, month)] ?? hijriToJdnTabular(year, month, 1);
 
-  static (int, int) _nextMonth(int y, int m) =>
-      m == 12 ? (y + 1, 1) : (y, m + 1);
-  static (int, int) _prevMonth(int y, int m) =>
-      m == 1 ? (y - 1, 12) : (y, m - 1);
+  static (int, int) _nextMonth(int y, int m) => nextHijriMonth(y, m);
+  static (int, int) _prevMonth(int y, int m) => prevHijriMonth(y, m);
 
   /// Jumlah hari bulan [year]-[month] = tanggal 1 bulan berikutnya dikurangi
   /// tanggal 1 bulan ini (masing-masing jangkar bila ada).

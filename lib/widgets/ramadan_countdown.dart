@@ -7,6 +7,7 @@ import '../services/hijri_config_scope.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/ramadan_calendar.dart';
 import '../services/user_location_scope.dart';
+import 'hijri_settings_sheet.dart';
 
 const _cardRadius = BorderRadius.all(Radius.circular(32));
 
@@ -296,7 +297,31 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
     // perangkat - lewat tengah malam WIT tanggalnya sudah berganti walau
     // ponsel yang di WIB belum.
     final anchors = HijriConfigScope.of(context).config.anchors;
-    final ramadan = relevantRamadan(calc.todayInZone(tz, _now), anchors);
+    final today = calc.todayInZone(tz, _now);
+    final afterMaghrib = !_now.isBefore(
+      calc
+          .calculatePrayerTimes(
+            latitude: location.lat,
+            longitude: location.long,
+            date: today,
+          )
+          .times[PrayerKey.maghrib]!,
+    );
+    final status = ramadanStatus(
+      today: today,
+      afterMaghrib: afterMaghrib,
+      anchors: anchors,
+    );
+    if (status.phase == RamadanPhase.eid) {
+      return _EidCard(
+        status: status,
+        // tanggal Masehi-nya masih hari terakhir Ramadan = sudah lewat
+        // Maghrib, malam takbiran
+        takbiran: today.isBefore(status.ramadan.end),
+        next: relevantRamadan(status.ramadan.end, anchors),
+      );
+    }
+    final ramadan = status.ramadan;
 
     // Malam sebelum 1 Ramadan (hari hijriah berganti saat maghrib). Dibuat
     // via DateTime.utc, sama seperti `todayInZone`, supaya selisih hari di
@@ -318,17 +343,7 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
     final started = !_now.isBefore(startsAt);
 
     if (started) {
-      final today = calc.todayInZone(tz, _now);
       final elapsed = today.difference(eve).inDays;
-      final afterMaghrib = !_now.isBefore(
-        calc
-            .calculatePrayerTimes(
-              latitude: location.lat,
-              longitude: location.long,
-              date: today,
-            )
-            .times[PrayerKey.maghrib]!,
-      );
       final dayNumber = (elapsed + (afterMaghrib ? 1 : 0)).clamp(
         1,
         ramadan.days,
@@ -404,12 +419,15 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
                     color: Color(0xFFB45309),
                   ),
                 ),
-                // belum ada ketetapan resmi untuk tahun ini - tanggalnya
-                // masih hasil perhitungan, bisa bergeser sehari
-                if (ramadan.estimated)
-                  const TextSpan(
-                    text: ' (perkiraan)',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF78716C)),
+                // belum ada ketetapan resmi untuk tahun ini (perkiraan /
+                // menunggu isbat) atau hasil penyesuaian pengguna
+                if (ramadan.statusLabel.isNotEmpty)
+                  TextSpan(
+                    text: ' (${ramadan.statusLabel})',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF78716C),
+                    ),
                   ),
               ],
             ),
@@ -421,7 +439,9 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 2),
+          const _MethodLink(),
+          const SizedBox(height: 22),
           _RollingNumber(
             value: days,
             digits: days > 99 ? 3 : 2,
@@ -449,6 +469,105 @@ class _RamadanCountdownState extends State<RamadanCountdown> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Suasana Idulfitri: sejak Maghrib hari terakhir Ramadan (malam takbiran)
+/// sampai Maghrib [eidDays] Syawal, sebelum hitung mundur beralih ke
+/// Ramadan berikutnya ([next]).
+class _EidCard extends StatelessWidget {
+  const _EidCard({
+    required this.status,
+    required this.takbiran,
+    required this.next,
+  });
+  final RamadanStatus status;
+  final bool takbiran;
+  final RamadanDate next;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Idulfitri ${status.ramadan.hijriYear} H 🌙',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFFB45309),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            takbiran
+                ? 'Malam takbiran. Allahu akbar, Allahu akbar, walillahilhamd.'
+                : 'Taqabbalallahu minna wa minkum. Mohon maaf lahir dan batin.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF44403C)),
+          ),
+          const SizedBox(height: 24),
+          _RollingNumber(value: status.day, digits: 1, style: _bigDigitStyle),
+          const SizedBox(height: 8),
+          const Text(
+            'SYAWAL',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 3,
+              color: Color(0xCCB45309),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Ramadan berikutnya insyaa Allah ${_formatTanggal(next.start)}'
+            '${next.statusLabel.isNotEmpty ? ' (${next.statusLabel})' : ''}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Ikuti: Pemerintah · ubah" - membuka pengaturan metode & penyesuaian
+/// tanggal.
+class _MethodLink extends StatelessWidget {
+  const _MethodLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final config = HijriConfigScope.of(context).config;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => showHijriSettingsSheet(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text.rich(
+          TextSpan(
+            style: const TextStyle(fontSize: 11, color: Color(0xFF78716C)),
+            children: [
+              TextSpan(
+                text:
+                    'Ikuti: ${config.currentMethod?.label ?? 'Pemerintah'} · ',
+              ),
+              const TextSpan(
+                text: 'ubah',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFB45309),
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFFB45309),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

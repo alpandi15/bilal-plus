@@ -6,6 +6,7 @@ import '../services/hijri_config.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
+import '../widgets/hijri_settings_sheet.dart';
 import '../widgets/sub_header.dart';
 
 const _bulanMasehi = [
@@ -145,16 +146,32 @@ class _HijriCalendarPageState extends State<HijriCalendarPage> {
           SubHeader(
             title: 'Kalender Hijriah',
             subtitle: hijriNow.format(),
-            trailing: IconButton(
-              tooltip: 'Perbarui dari server',
-              onPressed: _refreshing ? null : () => _refresh(controller),
-              icon: _refreshing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync_rounded, color: Color(0xFF92400E)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Metode & penyesuaian tanggal',
+                  onPressed: () => showHijriSettingsSheet(context),
+                  icon: const Icon(
+                    Icons.tune_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Perbarui dari server',
+                  onPressed: _refreshing ? null : () => _refresh(controller),
+                  icon: _refreshing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(
+                          Icons.sync_rounded,
+                          color: Color(0xFF92400E),
+                        ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -1230,6 +1247,15 @@ class _ConfigInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Mengikuti ${config.currentMethod?.label ?? 'Pemerintah'}',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _stone,
+              height: 1.4,
+            ),
+          ),
           Text(
             'Ketetapan tanggal: ${config.anchors.length} bulan · sumber $asal'
             '${config.updatedAt.isNotEmpty ? ' · diperbarui ${config.updatedAt}' : ''}',

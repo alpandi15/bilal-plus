@@ -104,7 +104,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     // (jadi jadwalnya), atau jangkar hijriah berubah, dijadwalkan sesudah
     // frame ini supaya tidak memicu efek samping langsung di tengah build().
     final syncKey =
-        '${userLocation.id}-${userLocation.lat}-${userLocation.long}-${schedule.date}-${anchors.length}';
+        '${userLocation.id}-${userLocation.lat}-${userLocation.long}-${schedule.date}-${anchors.fingerprint}';
     if (syncKey != _lastSyncedKey) {
       _lastSyncedKey = syncKey;
       WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -15,11 +15,14 @@ import java.util.TimeZone
 
 /**
  * Widget hitung mundur Ramadan: hanya jumlah hari (tanpa jam berjalan) plus
- * narasi pendek - padanan ringkas `RamadanCountdown` di aplikasi.
+ * narasi pendek - padanan ringkas `RamadanCountdown` di aplikasi. Tiga
+ * fase: menuju Ramadan, selama Ramadan, dan suasana Idulfitri (Maghrib hari
+ * terakhir Ramadan sampai Maghrib 3 Syawal).
  *
  * Datanya (`ramadan_json`) ditulis Flutter lewat `home_widget_service_io.dart`
- * dari jangkar kalender hijriah yang sama dengan aplikasi: Ramadan yang
- * relevan sekarang + berikutnya, masing-masing dengan `startsAt` = Maghrib
+ * dari jangkar kalender hijriah yang sama dengan aplikasi: Ramadan yang baru
+ * selesai (untuk fase Idulfitri), yang relevan sekarang, dan berikutnya,
+ * masing-masing dengan `startsAt` = Maghrib
  * malam sebelum tanggal 1 (saat hari hijriah berganti). Hari Ramadan ke-n
  * juga berganti saat Maghrib - Maghrib hari ini dibaca dari `schedule_json`
  * milik widget jadwal sholat bila tersedia.
@@ -30,6 +33,8 @@ private class RamadanItem(
     val endJdn: Int,
     val days: Int,
     val estimated: Boolean,
+    val tentative: Boolean,
+    val overridden: Boolean,
     val startsAt: Long,
     val startLabel: String,
     val endLabel: String,
@@ -60,6 +65,9 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
 
     companion object {
         private const val DAY_MS = 24L * 60 * 60 * 1000
+
+        /** Lama suasana Idulfitri (1-3 Syawal) - sama dengan `eidDays` di Flutter. */
+        private const val EID_DAYS = 3
         private val BULAN = arrayOf(
             "Januari", "Februari", "Maret", "April", "Mei", "Juni",
             "Juli", "Agustus", "September", "Oktober", "November", "Desember",
@@ -97,6 +105,8 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                         endJdn = jdn(ey, em, ed),
                         days = o.getInt("days"),
                         estimated = o.optBoolean("estimated", false),
+                        tentative = o.optBoolean("tentative", false),
+                        overridden = o.optBoolean("overridden", false),
                         startsAt = o.getLong("startsAt"),
                         startLabel = labelOf(o.getString("start")),
                         endLabel = labelOf(o.getString("end")),
@@ -116,6 +126,14 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
             days > 1 -> "Tinggal hitungan hari. Marhaban ya Ramadan."
             days == 1 -> "Ramadan dimulai nanti Maghrib. Marhaban ya Ramadan."
             else -> "Malam pertama Ramadan. Selamat menunaikan tarawih."
+        }
+
+        /** Keterangan status tanggal, sama dengan `RamadanDate.statusLabel` di Flutter. */
+        private fun statusSuffix(r: RamadanItem): String = when {
+            r.overridden -> " · pilihanmu"
+            r.estimated -> " · perkiraan"
+            r.tentative -> " · menunggu isbat"
+            else -> ""
         }
 
         /** Narasi selama Ramadan: tiga fase sepuluh hari. */
@@ -157,9 +175,32 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                 ?.takeIf { !it.stale }
                 ?.let { now >= it.today.times["maghrib"]!! } ?: false
 
+            // Suasana Idulfitri: sejak Maghrib hari terakhir Ramadan (malam
+            // takbiran = 1 Syawal) sampai Maghrib 3 Syawal
+            val shift = if (afterMaghrib) 1 else 0
+            val eid = items.firstOrNull { (todayJdn - it.endJdn + 1 + shift) in 1..EID_DAYS }
+            if (eid != null) {
+                val syawal = todayJdn - eid.endJdn + 1 + shift
+                val next = items.firstOrNull { it.endJdn > eid.endJdn }
+                views.setTextViewText(R.id.ramadan_kicker, "IDULFITRI ${eid.hijriYear} H")
+                views.setTextViewText(R.id.ramadan_number, "$syawal")
+                views.setTextViewText(R.id.ramadan_unit, "SYAWAL")
+                views.setTextViewText(
+                    R.id.ramadan_title,
+                    if (todayJdn < eid.endJdn) "Malam takbiran" else "Selamat Idulfitri",
+                )
+                views.setTextViewText(R.id.ramadan_date, "Taqabbalallahu minna wa minkum")
+                views.setTextViewText(
+                    R.id.ramadan_note,
+                    if (next != null) "Mohon maaf lahir dan batin. Ramadan berikutnya insyaa Allah ${next.startLabel}."
+                    else "Mohon maaf lahir dan batin.",
+                )
+                return views
+            }
+
             // Ramadan pertama yang Idulfitrinya masih di depan
             val r = items.firstOrNull { it.endJdn > todayJdn } ?: items.last()
-            val perkiraan = if (r.estimated) " · perkiraan" else ""
+            val status = statusSuffix(r)
             val started = now >= r.startsAt
 
             if (!started) {
@@ -171,7 +212,7 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                 views.setTextViewText(R.id.ramadan_number, "$days")
                 views.setTextViewText(R.id.ramadan_unit, "HARI LAGI")
                 views.setTextViewText(R.id.ramadan_title, "Ramadan ${r.hijriYear} H")
-                views.setTextViewText(R.id.ramadan_date, "Insyaa Allah ${r.startLabel}$perkiraan")
+                views.setTextViewText(R.id.ramadan_date, "Insyaa Allah ${r.startLabel}$status")
                 views.setTextViewText(R.id.ramadan_note, noteBefore(days))
             } else {
                 val day = (todayJdn - r.startJdn + 1 + (if (afterMaghrib) 1 else 0)).coerceIn(1, r.days)
@@ -179,7 +220,7 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                 views.setTextViewText(R.id.ramadan_number, "$day")
                 views.setTextViewText(R.id.ramadan_unit, "HARI RAMADAN")
                 views.setTextViewText(R.id.ramadan_title, "Alhamdulillah, hari ke-$day")
-                views.setTextViewText(R.id.ramadan_date, "Idulfitri insyaa Allah ${r.endLabel}$perkiraan")
+                views.setTextViewText(R.id.ramadan_date, "Idulfitri insyaa Allah ${r.endLabel}$status")
                 views.setTextViewText(R.id.ramadan_note, noteDuring(day))
             }
             return views

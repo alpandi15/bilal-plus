@@ -105,13 +105,17 @@ Future<void> syncPrayerHomeWidget({
     });
     await HomeWidget.saveWidgetData<String>('schedule_json', payload);
 
-    // Widget hitung mundur Ramadan: Ramadan yang relevan sekarang + yang
-    // berikutnya (supaya sesudah Idulfitri widget langsung menghitung tahun
-    // depan walau aplikasi belum dibuka lagi). `startsAt` = Maghrib malam
+    // Widget hitung mundur Ramadan: Ramadan yang baru selesai (bila masih
+    // dalam suasana Idulfitri 1-3 Syawal), yang relevan sekarang, dan yang
+    // berikutnya - supaya sesudah Idulfitri widget langsung menghitung tahun
+    // depan walau aplikasi belum dibuka lagi. `startsAt` = Maghrib malam
     // sebelum tanggal 1 di lokasi ini - saat hari hijriah berganti.
     final ramadans = <Map<String, Object>>[];
-    var r = relevantRamadan(today, anchors);
-    for (var i = 0; i < 2; i++) {
+    var r = relevantRamadan(
+      today.subtract(const Duration(days: eidDays)),
+      anchors,
+    );
+    for (var i = 0; i < 3; i++) {
       final eve = r.start.subtract(const Duration(days: 1));
       final startsAt = calculatePrayerTimes(
         latitude: latitude,
@@ -124,6 +128,8 @@ Future<void> syncPrayerHomeWidget({
         'end': _ymd(r.end),
         'days': r.days,
         'estimated': r.estimated,
+        'tentative': r.tentative,
+        'overridden': r.overridden,
         'startsAt': startsAt.millisecondsSinceEpoch,
       });
       r = relevantRamadan(r.end, anchors);
