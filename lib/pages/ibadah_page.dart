@@ -8,10 +8,13 @@ import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
+import '../services/ramadan_recap.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
+import '../widgets/ibadah/ramadan_notice_cards.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/sub_header.dart';
 import 'quran_tracker_page.dart';
+import 'ramadan_recap_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -59,6 +62,7 @@ class _IbadahPageState extends State<IbadahPage> {
   String? _date; // tanggal yang dibuka; null = hari ini
   Stream<IbadahDayData>? _stream;
   String? _streamKey;
+  bool _lockChecked = false;
 
   String _today() {
     final location = UserLocationScope.of(context).location;
@@ -91,6 +95,13 @@ class _IbadahPageState extends State<IbadahPage> {
     final date = _date ?? today;
     final day = ibadahDay(date, anchors);
 
+    // Ramadan yang suasana Idulfitrinya sudah lewat dikunci rekapnya, supaya
+    // hutang qadha (dan item "Puasa qadha") langsung tersedia
+    if (!_lockChecked) {
+      _lockChecked = true;
+      lockFinishedRamadans(AppDatabaseScope.of(context), anchors, today);
+    }
+
     final schedule = calc.calculatePrayerTimes(
       latitude: location.lat,
       longitude: location.long,
@@ -106,10 +117,30 @@ class _IbadahPageState extends State<IbadahPage> {
             subtitle: day.isRamadan
                 ? 'Ramadan hari ke-${day.ramadanDay} · ${day.hijri.format()}'
                 : day.hijri.format(),
-            trailing: IconButton(
-              tooltip: 'Atur daftar ibadah',
-              onPressed: () => showIbadahManageSheet(context),
-              icon: const Icon(Icons.tune_rounded, color: Color(0xFF92400E)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Rekap Ramadan',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const RamadanRecapPage(),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.insights_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Atur daftar ibadah',
+                  onPressed: () => showIbadahManageSheet(context),
+                  icon: const Icon(
+                    Icons.tune_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -156,7 +187,12 @@ class _DayView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = visibleItems(data.items, day, data.values);
+    final items = visibleItems(
+      data.items,
+      day,
+      data.values,
+      qadhaRemaining: data.qadhaRemaining,
+    );
     final sholat = [
       for (final i in items)
         if (i.groupKey == sholatWajibGroup) i,
@@ -186,6 +222,7 @@ class _DayView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              RamadanNoticeCards(today: today),
               _WeekStrip(
                 date: data.date,
                 today: today,
@@ -247,6 +284,7 @@ class _DayView extends StatelessWidget {
       'puasa' when day.ramadanDay != null => 'Hari ke-${day.ramadanDay}',
       'tarawih' when day.ramadanNight != null => 'Malam ke-${day.ramadanNight}',
       'puasa_sunnah' => day.sunnahFastReasons.join(' · '),
+      qadhaKey => 'Sisa hutang ${data.qadhaRemaining} hari',
       tilawahKey =>
         data.hasTilawah
             ? "Tercatat dari bacaan Al-Qur'an"

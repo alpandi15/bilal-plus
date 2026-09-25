@@ -40,6 +40,10 @@ enum IbadahScope {
 
   /// disarankan pada hari tertentu (puasa Senin-Kamis, Ayyamul Bidh, ...)
   sunnah,
+
+  /// selama masih ada hutang puasa Ramadan (di luar Ramadan & hari yang
+  /// diharamkan berpuasa)
+  qadha,
 }
 
 @DataClassName('IbadahItem')
@@ -94,13 +98,17 @@ class DayStatuses extends Table {
 
 /// Rekap Ramadan yang sudah "dikunci" sesudah Idulfitri - dibekukan supaya
 /// perubahan jangkar kalender di kemudian hari tidak mengubah hutang qadha
-/// yang sudah dicicil.
+/// yang sudah dicicil. Hutang tahun itu = [days] - [fasted].
+///
+/// Hutang dari tahun-tahun sebelum memakai aplikasi dicatat sebagai rekap
+/// manual: [days] = jumlah hutangnya, [fasted] = 0.
 @DataClassName('RamadanRecap')
 class RamadanRecaps extends Table {
   IntColumn get hijriYear => integer()();
   IntColumn get days => integer()();
   IntColumn get fasted => integer()();
   IntColumn get excused => integer()();
+  BoolColumn get manual => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lockedAt => dateTime()();
 
   @override
@@ -177,6 +185,9 @@ class AppDatabase extends _$AppDatabase {
 /// Kunci kelompok sholat lima waktu.
 const sholatWajibGroup = 'sholat_wajib';
 
+/// Kunci item puasa qadha - tiap catatannya melunasi satu hari hutang.
+const qadhaKey = 'puasa_qadha';
+
 /// Kunci item tilawah - tercentang otomatis bila ada catatan bacaan
 /// Al-Qur'an pada hari itu.
 const tilawahKey = 'tilawah';
@@ -210,6 +221,7 @@ final defaultIbadahItems = [
   _item('sahur', 'Sahur', 11, scope: IbadahScope.ramadan),
   _item('tarawih', 'Tarawih', 12, scope: IbadahScope.ramadanNight),
   _item('puasa_sunnah', 'Puasa sunnah', 20, scope: IbadahScope.sunnah),
+  _item(qadhaKey, 'Puasa qadha', 21, scope: IbadahScope.qadha),
   _item(tilawahKey, "Tilawah Al-Qur'an", 30),
   _item('dhuha', 'Sholat Dhuha', 31),
   _item('rawatib', 'Sholat rawatib', 32),
@@ -230,9 +242,13 @@ class IbadahDayData {
     required this.excused,
     required this.hasTilawah,
     required this.summaries,
+    this.qadhaRemaining = 0,
   });
 
   final String date;
+
+  /// Sisa hutang puasa (rekap terkunci - puasa qadha yang tercatat).
+  final int qadhaRemaining;
 
   /// Item aktif, terurut.
   final List<IbadahItem> items;
@@ -248,6 +264,14 @@ class IbadahDayData {
   final Map<String, IbadahDaySummary> summaries;
 }
 
+/// Hutang puasa Ramadan.
+class QadhaStatus {
+  const QadhaStatus({required this.owed, required this.paid});
+  final int owed;
+  final int paid;
+  int get remaining => (owed - paid).clamp(0, owed);
+}
+
 /// Ringkasan satu hari untuk strip tanggal & streak.
 class IbadahDaySummary {
   const IbadahDaySummary({this.sholat = 0, this.excused = false});
@@ -260,7 +284,9 @@ class IbadahDaySummary {
   bool get complete => excused || sholat >= 5;
 }
 
-@DriftAccessor(tables: [IbadahItems, IbadahLogs, DayStatuses, QuranLogs])
+@DriftAccessor(
+  tables: [IbadahItems, IbadahLogs, DayStatuses, QuranLogs, RamadanRecaps],
+)
 class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
   IbadahDao(super.db);
 
@@ -286,7 +312,13 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
   }) =>
       customSelect(
         'SELECT 1',
-        readsFrom: {ibadahItems, ibadahLogs, dayStatuses, quranLogs},
+        readsFrom: {
+          ibadahItems,
+          ibadahLogs,
+          dayStatuses,
+          quranLogs,
+          ramadanRecaps,
+        },
       ).watch().asyncMap(
         (_) => loadDay(
           date,
@@ -327,8 +359,73 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       excused: status?.excused ?? false,
       hasTilawah: tilawah.isNotEmpty,
       summaries: await summaries(summariesFrom, summariesTo),
+      qadhaRemaining: (await qadhaStatus()).remaining,
     );
   }
+
+  /// Hutang puasa: total dari rekap terkunci dan yang sudah dibayar.
+  Future<QadhaStatus> qadhaStatus() async {
+    final recaps = await select(ramadanRecaps).get();
+    final owed = recaps.fold<int>(
+      0,
+      (a, r) => a + (r.days - r.fasted).clamp(0, r.days),
+    );
+    final paid = customSelect(
+      'SELECT COUNT(*) AS n FROM ibadah_logs l '
+      'JOIN ibadah_items i ON i.id = l.item_id '
+      'WHERE i.key = ?1 AND l.value > 0',
+      variables: [Variable.withString(qadhaKey)],
+    );
+    return QadhaStatus(owed: owed, paid: (await paid.getSingle()).read('n'));
+  }
+
+  Stream<List<RamadanRecap>> watchRecaps() => (select(
+    ramadanRecaps,
+  )..orderBy([(r) => OrderingTerm.desc(r.hijriYear)])).watch();
+
+  Stream<QadhaStatus> watchQadha() => customSelect(
+    'SELECT 1',
+    readsFrom: {ramadanRecaps, ibadahLogs, ibadahItems},
+  ).watch().asyncMap((_) => qadhaStatus());
+
+  Future<RamadanRecap?> recapOf(int hijriYear) => (select(
+    ramadanRecaps,
+  )..where((r) => r.hijriYear.equals(hijriYear))).getSingleOrNull();
+
+  Future<void> saveRecap(RamadanRecapsCompanion recap) =>
+      into(ramadanRecaps).insertOnConflictUpdate(recap);
+
+  Future<void> deleteRecap(int hijriYear) =>
+      (delete(ramadanRecaps)..where((r) => r.hijriYear.equals(hijriYear))).go();
+
+  /// Tanggal-tanggal di [from]..[to] yang item [key]-nya tercatat.
+  Future<Set<String>> datesOf(String key, String from, String to) async {
+    final rows = await customSelect(
+      'SELECT l.date AS date FROM ibadah_logs l '
+      'JOIN ibadah_items i ON i.id = l.item_id '
+      'WHERE i.key = ?1 AND l.value > 0 AND l.date BETWEEN ?2 AND ?3',
+      variables: [
+        Variable.withString(key),
+        Variable.withString(from),
+        Variable.withString(to),
+      ],
+    ).get();
+    return {for (final r in rows) r.read<String>('date')};
+  }
+
+  /// Tanggal berhalangan di [from]..[to].
+  Future<Set<String>> excusedDates(String from, String to) async {
+    final rows =
+        await (select(dayStatuses)..where(
+              (d) => d.excused.equals(true) & d.date.isBetweenValues(from, to),
+            ))
+            .get();
+    return {for (final r in rows) r.date};
+  }
+
+  /// Sesi baca Al-Qur'an di [from]..[to] (semua putaran).
+  Future<List<QuranLog>> quranLogsBetween(String from, String to) =>
+      (select(quranLogs)..where((l) => l.date.isBetweenValues(from, to))).get();
 
   /// Setel nilai item; 0 = hapus catatannya.
   Future<void> setValue(String date, int itemId, int value) async {

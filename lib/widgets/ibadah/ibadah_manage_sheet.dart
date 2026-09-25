@@ -13,6 +13,7 @@ const _scopeLabel = {
   IbadahScope.ramadan: 'Siang Ramadan',
   IbadahScope.ramadanNight: 'Malam Ramadan',
   IbadahScope.sunnah: 'Hari yang disunnahkan',
+  IbadahScope.qadha: 'Selama ada hutang puasa',
 };
 
 /// Atur daftar ibadah: urutkan (seret), sembunyikan item bawaan, tambah &

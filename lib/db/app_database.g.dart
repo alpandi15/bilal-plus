@@ -1322,6 +1322,19 @@ class $RamadanRecapsTable extends RamadanRecaps
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _manualMeta = const VerificationMeta('manual');
+  @override
+  late final GeneratedColumn<bool> manual = GeneratedColumn<bool>(
+    'manual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("manual" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _lockedAtMeta = const VerificationMeta(
     'lockedAt',
   );
@@ -1339,6 +1352,7 @@ class $RamadanRecapsTable extends RamadanRecaps
     days,
     fasted,
     excused,
+    manual,
     lockedAt,
   ];
   @override
@@ -1383,6 +1397,12 @@ class $RamadanRecapsTable extends RamadanRecaps
     } else if (isInserting) {
       context.missing(_excusedMeta);
     }
+    if (data.containsKey('manual')) {
+      context.handle(
+        _manualMeta,
+        manual.isAcceptableOrUnknown(data['manual']!, _manualMeta),
+      );
+    }
     if (data.containsKey('locked_at')) {
       context.handle(
         _lockedAtMeta,
@@ -1416,6 +1436,10 @@ class $RamadanRecapsTable extends RamadanRecaps
         DriftSqlType.int,
         data['${effectivePrefix}excused'],
       )!,
+      manual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}manual'],
+      )!,
       lockedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}locked_at'],
@@ -1434,12 +1458,14 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
   final int days;
   final int fasted;
   final int excused;
+  final bool manual;
   final DateTime lockedAt;
   const RamadanRecap({
     required this.hijriYear,
     required this.days,
     required this.fasted,
     required this.excused,
+    required this.manual,
     required this.lockedAt,
   });
   @override
@@ -1449,6 +1475,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
     map['days'] = Variable<int>(days);
     map['fasted'] = Variable<int>(fasted);
     map['excused'] = Variable<int>(excused);
+    map['manual'] = Variable<bool>(manual);
     map['locked_at'] = Variable<DateTime>(lockedAt);
     return map;
   }
@@ -1459,6 +1486,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
       days: Value(days),
       fasted: Value(fasted),
       excused: Value(excused),
+      manual: Value(manual),
       lockedAt: Value(lockedAt),
     );
   }
@@ -1473,6 +1501,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
       days: serializer.fromJson<int>(json['days']),
       fasted: serializer.fromJson<int>(json['fasted']),
       excused: serializer.fromJson<int>(json['excused']),
+      manual: serializer.fromJson<bool>(json['manual']),
       lockedAt: serializer.fromJson<DateTime>(json['lockedAt']),
     );
   }
@@ -1484,6 +1513,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
       'days': serializer.toJson<int>(days),
       'fasted': serializer.toJson<int>(fasted),
       'excused': serializer.toJson<int>(excused),
+      'manual': serializer.toJson<bool>(manual),
       'lockedAt': serializer.toJson<DateTime>(lockedAt),
     };
   }
@@ -1493,12 +1523,14 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
     int? days,
     int? fasted,
     int? excused,
+    bool? manual,
     DateTime? lockedAt,
   }) => RamadanRecap(
     hijriYear: hijriYear ?? this.hijriYear,
     days: days ?? this.days,
     fasted: fasted ?? this.fasted,
     excused: excused ?? this.excused,
+    manual: manual ?? this.manual,
     lockedAt: lockedAt ?? this.lockedAt,
   );
   RamadanRecap copyWithCompanion(RamadanRecapsCompanion data) {
@@ -1507,6 +1539,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
       days: data.days.present ? data.days.value : this.days,
       fasted: data.fasted.present ? data.fasted.value : this.fasted,
       excused: data.excused.present ? data.excused.value : this.excused,
+      manual: data.manual.present ? data.manual.value : this.manual,
       lockedAt: data.lockedAt.present ? data.lockedAt.value : this.lockedAt,
     );
   }
@@ -1518,13 +1551,15 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
           ..write('days: $days, ')
           ..write('fasted: $fasted, ')
           ..write('excused: $excused, ')
+          ..write('manual: $manual, ')
           ..write('lockedAt: $lockedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(hijriYear, days, fasted, excused, lockedAt);
+  int get hashCode =>
+      Object.hash(hijriYear, days, fasted, excused, manual, lockedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1533,6 +1568,7 @@ class RamadanRecap extends DataClass implements Insertable<RamadanRecap> {
           other.days == this.days &&
           other.fasted == this.fasted &&
           other.excused == this.excused &&
+          other.manual == this.manual &&
           other.lockedAt == this.lockedAt);
 }
 
@@ -1541,12 +1577,14 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
   final Value<int> days;
   final Value<int> fasted;
   final Value<int> excused;
+  final Value<bool> manual;
   final Value<DateTime> lockedAt;
   const RamadanRecapsCompanion({
     this.hijriYear = const Value.absent(),
     this.days = const Value.absent(),
     this.fasted = const Value.absent(),
     this.excused = const Value.absent(),
+    this.manual = const Value.absent(),
     this.lockedAt = const Value.absent(),
   });
   RamadanRecapsCompanion.insert({
@@ -1554,6 +1592,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
     required int days,
     required int fasted,
     required int excused,
+    this.manual = const Value.absent(),
     required DateTime lockedAt,
   }) : days = Value(days),
        fasted = Value(fasted),
@@ -1564,6 +1603,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
     Expression<int>? days,
     Expression<int>? fasted,
     Expression<int>? excused,
+    Expression<bool>? manual,
     Expression<DateTime>? lockedAt,
   }) {
     return RawValuesInsertable({
@@ -1571,6 +1611,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
       if (days != null) 'days': days,
       if (fasted != null) 'fasted': fasted,
       if (excused != null) 'excused': excused,
+      if (manual != null) 'manual': manual,
       if (lockedAt != null) 'locked_at': lockedAt,
     });
   }
@@ -1580,6 +1621,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
     Value<int>? days,
     Value<int>? fasted,
     Value<int>? excused,
+    Value<bool>? manual,
     Value<DateTime>? lockedAt,
   }) {
     return RamadanRecapsCompanion(
@@ -1587,6 +1629,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
       days: days ?? this.days,
       fasted: fasted ?? this.fasted,
       excused: excused ?? this.excused,
+      manual: manual ?? this.manual,
       lockedAt: lockedAt ?? this.lockedAt,
     );
   }
@@ -1606,6 +1649,9 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
     if (excused.present) {
       map['excused'] = Variable<int>(excused.value);
     }
+    if (manual.present) {
+      map['manual'] = Variable<bool>(manual.value);
+    }
     if (lockedAt.present) {
       map['locked_at'] = Variable<DateTime>(lockedAt.value);
     }
@@ -1619,6 +1665,7 @@ class RamadanRecapsCompanion extends UpdateCompanion<RamadanRecap> {
           ..write('days: $days, ')
           ..write('fasted: $fasted, ')
           ..write('excused: $excused, ')
+          ..write('manual: $manual, ')
           ..write('lockedAt: $lockedAt')
           ..write(')'))
         .toString();
@@ -3328,6 +3375,7 @@ typedef $$RamadanRecapsTableCreateCompanionBuilder =
       required int days,
       required int fasted,
       required int excused,
+      Value<bool> manual,
       required DateTime lockedAt,
     });
 typedef $$RamadanRecapsTableUpdateCompanionBuilder =
@@ -3336,6 +3384,7 @@ typedef $$RamadanRecapsTableUpdateCompanionBuilder =
       Value<int> days,
       Value<int> fasted,
       Value<int> excused,
+      Value<bool> manual,
       Value<DateTime> lockedAt,
     });
 
@@ -3365,6 +3414,11 @@ class $$RamadanRecapsTableFilterComposer
 
   ColumnFilters<int> get excused => $composableBuilder(
     column: $table.excused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get manual => $composableBuilder(
+    column: $table.manual,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3403,6 +3457,11 @@ class $$RamadanRecapsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get manual => $composableBuilder(
+    column: $table.manual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lockedAt => $composableBuilder(
     column: $table.lockedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3429,6 +3488,9 @@ class $$RamadanRecapsTableAnnotationComposer
 
   GeneratedColumn<int> get excused =>
       $composableBuilder(column: $table.excused, builder: (column) => column);
+
+  GeneratedColumn<bool> get manual =>
+      $composableBuilder(column: $table.manual, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lockedAt =>
       $composableBuilder(column: $table.lockedAt, builder: (column) => column);
@@ -3469,12 +3531,14 @@ class $$RamadanRecapsTableTableManager
                 Value<int> days = const Value.absent(),
                 Value<int> fasted = const Value.absent(),
                 Value<int> excused = const Value.absent(),
+                Value<bool> manual = const Value.absent(),
                 Value<DateTime> lockedAt = const Value.absent(),
               }) => RamadanRecapsCompanion(
                 hijriYear: hijriYear,
                 days: days,
                 fasted: fasted,
                 excused: excused,
+                manual: manual,
                 lockedAt: lockedAt,
               ),
           createCompanionCallback:
@@ -3483,12 +3547,14 @@ class $$RamadanRecapsTableTableManager
                 required int days,
                 required int fasted,
                 required int excused,
+                Value<bool> manual = const Value.absent(),
                 required DateTime lockedAt,
               }) => RamadanRecapsCompanion.insert(
                 hijriYear: hijriYear,
                 days: days,
                 fasted: fasted,
                 excused: excused,
+                manual: manual,
                 lockedAt: lockedAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -4186,6 +4252,7 @@ mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {
   $DayStatusesTable get dayStatuses => attachedDatabase.dayStatuses;
   $QuranCyclesTable get quranCycles => attachedDatabase.quranCycles;
   $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
+  $RamadanRecapsTable get ramadanRecaps => attachedDatabase.ramadanRecaps;
   IbadahDaoManager get managers => IbadahDaoManager(this);
 }
 
@@ -4202,4 +4269,6 @@ class IbadahDaoManager {
       $$QuranCyclesTableTableManager(_db.attachedDatabase, _db.quranCycles);
   $$QuranLogsTableTableManager get quranLogs =>
       $$QuranLogsTableTableManager(_db.attachedDatabase, _db.quranLogs);
+  $$RamadanRecapsTableTableManager get ramadanRecaps =>
+      $$RamadanRecapsTableTableManager(_db.attachedDatabase, _db.ramadanRecaps);
 }

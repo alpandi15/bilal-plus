@@ -72,13 +72,17 @@ IbadahDay ibadahDay(String date, HijriAnchors anchors) {
   );
 }
 
-/// Item [item] berlaku pada hari [day] menurut cakupannya.
-bool itemApplies(IbadahItem item, IbadahDay day) => switch (item.scope) {
-  IbadahScope.daily => true,
-  IbadahScope.ramadan => day.isRamadan,
-  IbadahScope.ramadanNight => day.ramadanNight != null,
-  IbadahScope.sunnah => day.sunnahFastSuggested,
-};
+/// Item [item] berlaku pada hari [day] menurut cakupannya. Puasa qadha
+/// hanya bila masih ada hutang ([qadhaRemaining]).
+bool itemApplies(IbadahItem item, IbadahDay day, {int qadhaRemaining = 0}) =>
+    switch (item.scope) {
+      IbadahScope.daily => true,
+      IbadahScope.ramadan => day.isRamadan,
+      IbadahScope.ramadanNight => day.ramadanNight != null,
+      IbadahScope.sunnah => day.sunnahFastSuggested,
+      IbadahScope.qadha =>
+        qadhaRemaining > 0 && !day.isRamadan && !day.fastForbidden,
+    };
 
 /// Item yang ditampilkan pada [day]: yang berlaku, DAN yang sudah punya
 /// catatan walau kini tidak berlaku (mis. awal Ramadan bergeser sesudah
@@ -86,15 +90,19 @@ bool itemApplies(IbadahItem item, IbadahDay day) => switch (item.scope) {
 List<IbadahItem> visibleItems(
   List<IbadahItem> items,
   IbadahDay day,
-  Map<int, int> values,
-) => [
+  Map<int, int> values, {
+  int qadhaRemaining = 0,
+}) => [
   for (final i in items)
-    if (itemApplies(i, day) || (values[i.id] ?? 0) > 0) i,
+    if (itemApplies(i, day, qadhaRemaining: qadhaRemaining) ||
+        (values[i.id] ?? 0) > 0)
+      i,
 ];
 
 const _excusableKeys = {
   'puasa',
   'puasa_sunnah',
+  qadhaKey,
   'tarawih',
   'dhuha',
   'rawatib',
