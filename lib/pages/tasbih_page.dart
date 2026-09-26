@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../services/app_settings.dart';
+import '../services/haptics.dart';
 import '../widgets/arabic_font.dart';
 
 const _gold = Color(0xFFE3BE6A);
@@ -158,17 +158,7 @@ class _TasbihPageState extends State<TasbihPage>
     final reached =
         (_target != null && next == _target) ||
         (_target == null && next % _cycle == 0);
-    if (_haptic) {
-      if (reached) {
-        HapticFeedback.heavyImpact();
-        Future.delayed(
-          const Duration(milliseconds: 140),
-          HapticFeedback.heavyImpact,
-        );
-      } else {
-        HapticFeedback.lightImpact();
-      }
-    }
+    if (_haptic) Haptics.play(reached ? HapticKind.target : HapticKind.tap);
     _pulse.forward(from: 0);
     _set(next);
   }
@@ -192,7 +182,7 @@ class _TasbihPageState extends State<TasbihPage>
       ),
     );
     if (ok == true) {
-      if (_haptic) HapticFeedback.mediumImpact();
+      if (_haptic) Haptics.play(HapticKind.toggle);
       _set(0);
     }
   }
@@ -274,7 +264,9 @@ class _TasbihPageState extends State<TasbihPage>
                                 ? null
                                 : () {
                                     settings.setHaptic(!haptic);
-                                    if (!haptic) HapticFeedback.mediumImpact();
+                                    if (!haptic) {
+                                      Haptics.play(HapticKind.toggle);
+                                    }
                                   },
                             icon: Icon(
                               haptic

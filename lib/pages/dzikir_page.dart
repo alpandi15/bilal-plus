@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../db/app_database_scope.dart';
 import '../services/app_settings.dart';
 import '../services/dzikir.dart';
+import '../services/haptics.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
@@ -83,10 +83,13 @@ class _DzikirPageState extends State<DzikirPage> {
   void _tap(Dzikir d) {
     final c = _counts[d.id] ?? 0;
     if (c >= d.repeat) return;
-    if (_haptic) {
-      c + 1 >= d.repeat
-          ? HapticFeedback.heavyImpact()
-          : HapticFeedback.lightImpact();
+    final reached = c + 1 >= d.repeat;
+    // dzikir terakhir yang tuntas: pola "selesai semua" (di _markChecklist)
+    final last =
+        reached &&
+        _list.every((x) => x.id == d.id || (_counts[x.id] ?? 0) >= x.repeat);
+    if (_haptic && !last) {
+      Haptics.play(reached ? HapticKind.target : HapticKind.tap);
     }
     _setCount(d, c + 1);
   }
@@ -116,7 +119,7 @@ class _DzikirPageState extends State<DzikirPage> {
     if (item == null) return;
     await db.ibadahDao.setValue(_today!, item.id, 1);
     if (!mounted) return;
-    if (_haptic) HapticFeedback.heavyImpact();
+    if (_haptic) Haptics.play(HapticKind.complete);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

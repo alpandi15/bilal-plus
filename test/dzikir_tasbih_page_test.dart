@@ -32,12 +32,13 @@ void main() {
     );
     settings = AppSettingsController();
     haptics = [];
+    // getar lewat kanal native (lib/services/haptics.dart): catat polanya
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-          if (call.method == 'HapticFeedback.vibrate') {
-            haptics.add('${call.arguments}');
-          }
-          return null;
+        .setMockMethodCallHandler(const MethodChannel('bilalplus/haptics'), (
+          call,
+        ) async {
+          haptics.add('${call.arguments}');
+          return true;
         });
   });
   tearDown(() => db.close());
@@ -120,6 +121,8 @@ void main() {
       )..where((l) => l.itemId.equals(id))).getSingleOrNull(),
     );
     expect(log?.value, 1);
+    // selesai semua: pola getar "complete", beda dari hitungan biasa
+    expect(haptics, ['complete']);
   });
 
   testWidgets('dzikir: tombol hitung maju & bergetar', (tester) async {
@@ -135,7 +138,7 @@ void main() {
     await tester.tap(find.text('0/3').first);
     await settle(tester);
     expect(find.text('1/3'), findsOneWidget);
-    expect(haptics, isNotEmpty);
+    expect(haptics, ['tap']);
   });
 
   testWidgets('tasbih: ketuk layar menambah, getar bisa dimatikan', (
@@ -150,7 +153,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('1'), findsOneWidget);
     expect(saved, 1);
-    expect(haptics, hasLength(1));
+    expect(haptics, ['tap']);
 
     await tester.tap(find.byTooltip('Matikan getar'));
     await tester.pump();
@@ -165,6 +168,15 @@ void main() {
     expect(find.text('Masyaa Allah, selesai'), findsOneWidget);
     expect(haptics, isEmpty);
     expect(saved, 3);
+  });
+
+  testWidgets('tasbih: getar berbeda saat target tercapai', (tester) async {
+    await open(tester, const TasbihPage(title: 'Istighfar', target: 3));
+    for (var i = 0; i < 3; i++) {
+      await tester.tapAt(const Offset(200, 900));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    expect(haptics, ['tap', 'tap', 'target']);
   });
 
   testWidgets('tasbih bebas: pilih bacaan', (tester) async {
