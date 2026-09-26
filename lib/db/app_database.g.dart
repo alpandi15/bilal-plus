@@ -684,6 +684,18 @@ class $IbadahLogsTable extends IbadahLogs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _jamaahMeta = const VerificationMeta('jamaah');
+  @override
+  late final GeneratedColumn<bool> jamaah = GeneratedColumn<bool>(
+    'jamaah',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("jamaah" IN (0, 1))',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     date,
@@ -693,6 +705,7 @@ class $IbadahLogsTable extends IbadahLogs
     updatedAt,
     prayedAt,
     place,
+    jamaah,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -756,6 +769,12 @@ class $IbadahLogsTable extends IbadahLogs
         place.isAcceptableOrUnknown(data['place']!, _placeMeta),
       );
     }
+    if (data.containsKey('jamaah')) {
+      context.handle(
+        _jamaahMeta,
+        jamaah.isAcceptableOrUnknown(data['jamaah']!, _jamaahMeta),
+      );
+    }
     return context;
   }
 
@@ -793,6 +812,10 @@ class $IbadahLogsTable extends IbadahLogs
         DriftSqlType.string,
         data['${effectivePrefix}place'],
       ),
+      jamaah: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}jamaah'],
+      ),
     );
   }
 
@@ -817,6 +840,10 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
 
   /// Sholat wajib: 'masjid' / 'rumah' / 'lainnya'.
   final String? place;
+
+  /// Sholat wajib: true = berjama'ah, false = sendiri (munfarid). null =
+  /// belum dicatat (catatan dari sebelum fitur ini) - dihitung penuh.
+  final bool? jamaah;
   const IbadahLog({
     required this.date,
     required this.itemId,
@@ -825,6 +852,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     required this.updatedAt,
     this.prayedAt,
     this.place,
+    this.jamaah,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -842,6 +870,9 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     if (!nullToAbsent || place != null) {
       map['place'] = Variable<String>(place);
     }
+    if (!nullToAbsent || jamaah != null) {
+      map['jamaah'] = Variable<bool>(jamaah);
+    }
     return map;
   }
 
@@ -858,6 +889,9 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       place: place == null && nullToAbsent
           ? const Value.absent()
           : Value(place),
+      jamaah: jamaah == null && nullToAbsent
+          ? const Value.absent()
+          : Value(jamaah),
     );
   }
 
@@ -874,6 +908,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       prayedAt: serializer.fromJson<DateTime?>(json['prayedAt']),
       place: serializer.fromJson<String?>(json['place']),
+      jamaah: serializer.fromJson<bool?>(json['jamaah']),
     );
   }
   @override
@@ -887,6 +922,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'prayedAt': serializer.toJson<DateTime?>(prayedAt),
       'place': serializer.toJson<String?>(place),
+      'jamaah': serializer.toJson<bool?>(jamaah),
     };
   }
 
@@ -898,6 +934,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     DateTime? updatedAt,
     Value<DateTime?> prayedAt = const Value.absent(),
     Value<String?> place = const Value.absent(),
+    Value<bool?> jamaah = const Value.absent(),
   }) => IbadahLog(
     date: date ?? this.date,
     itemId: itemId ?? this.itemId,
@@ -906,6 +943,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     updatedAt: updatedAt ?? this.updatedAt,
     prayedAt: prayedAt.present ? prayedAt.value : this.prayedAt,
     place: place.present ? place.value : this.place,
+    jamaah: jamaah.present ? jamaah.value : this.jamaah,
   );
   IbadahLog copyWithCompanion(IbadahLogsCompanion data) {
     return IbadahLog(
@@ -916,6 +954,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       prayedAt: data.prayedAt.present ? data.prayedAt.value : this.prayedAt,
       place: data.place.present ? data.place.value : this.place,
+      jamaah: data.jamaah.present ? data.jamaah.value : this.jamaah,
     );
   }
 
@@ -928,14 +967,23 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
           ..write('note: $note, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('prayedAt: $prayedAt, ')
-          ..write('place: $place')
+          ..write('place: $place, ')
+          ..write('jamaah: $jamaah')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(date, itemId, value, note, updatedAt, prayedAt, place);
+  int get hashCode => Object.hash(
+    date,
+    itemId,
+    value,
+    note,
+    updatedAt,
+    prayedAt,
+    place,
+    jamaah,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -946,7 +994,8 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
           other.note == this.note &&
           other.updatedAt == this.updatedAt &&
           other.prayedAt == this.prayedAt &&
-          other.place == this.place);
+          other.place == this.place &&
+          other.jamaah == this.jamaah);
 }
 
 class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
@@ -957,6 +1006,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
   final Value<DateTime> updatedAt;
   final Value<DateTime?> prayedAt;
   final Value<String?> place;
+  final Value<bool?> jamaah;
   final Value<int> rowid;
   const IbadahLogsCompanion({
     this.date = const Value.absent(),
@@ -966,6 +1016,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     this.updatedAt = const Value.absent(),
     this.prayedAt = const Value.absent(),
     this.place = const Value.absent(),
+    this.jamaah = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   IbadahLogsCompanion.insert({
@@ -976,6 +1027,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     required DateTime updatedAt,
     this.prayedAt = const Value.absent(),
     this.place = const Value.absent(),
+    this.jamaah = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
        itemId = Value(itemId),
@@ -989,6 +1041,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? prayedAt,
     Expression<String>? place,
+    Expression<bool>? jamaah,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -999,6 +1052,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (prayedAt != null) 'prayed_at': prayedAt,
       if (place != null) 'place': place,
+      if (jamaah != null) 'jamaah': jamaah,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1011,6 +1065,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     Value<DateTime>? updatedAt,
     Value<DateTime?>? prayedAt,
     Value<String?>? place,
+    Value<bool?>? jamaah,
     Value<int>? rowid,
   }) {
     return IbadahLogsCompanion(
@@ -1021,6 +1076,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
       updatedAt: updatedAt ?? this.updatedAt,
       prayedAt: prayedAt ?? this.prayedAt,
       place: place ?? this.place,
+      jamaah: jamaah ?? this.jamaah,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1049,6 +1105,9 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     if (place.present) {
       map['place'] = Variable<String>(place.value);
     }
+    if (jamaah.present) {
+      map['jamaah'] = Variable<bool>(jamaah.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1065,6 +1124,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
           ..write('updatedAt: $updatedAt, ')
           ..write('prayedAt: $prayedAt, ')
           ..write('place: $place, ')
+          ..write('jamaah: $jamaah, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2987,6 +3047,7 @@ typedef $$IbadahLogsTableCreateCompanionBuilder =
       required DateTime updatedAt,
       Value<DateTime?> prayedAt,
       Value<String?> place,
+      Value<bool?> jamaah,
       Value<int> rowid,
     });
 typedef $$IbadahLogsTableUpdateCompanionBuilder =
@@ -2998,6 +3059,7 @@ typedef $$IbadahLogsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> prayedAt,
       Value<String?> place,
+      Value<bool?> jamaah,
       Value<int> rowid,
     });
 
@@ -3064,6 +3126,11 @@ class $$IbadahLogsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get jamaah => $composableBuilder(
+    column: $table.jamaah,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$IbadahItemsTableFilterComposer get itemId {
     final $$IbadahItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -3127,6 +3194,11 @@ class $$IbadahLogsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get jamaah => $composableBuilder(
+    column: $table.jamaah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$IbadahItemsTableOrderingComposer get itemId {
     final $$IbadahItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3177,6 +3249,9 @@ class $$IbadahLogsTableAnnotationComposer
 
   GeneratedColumn<String> get place =>
       $composableBuilder(column: $table.place, builder: (column) => column);
+
+  GeneratedColumn<bool> get jamaah =>
+      $composableBuilder(column: $table.jamaah, builder: (column) => column);
 
   $$IbadahItemsTableAnnotationComposer get itemId {
     final $$IbadahItemsTableAnnotationComposer composer = $composerBuilder(
@@ -3237,6 +3312,7 @@ class $$IbadahLogsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> prayedAt = const Value.absent(),
                 Value<String?> place = const Value.absent(),
+                Value<bool?> jamaah = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IbadahLogsCompanion(
                 date: date,
@@ -3246,6 +3322,7 @@ class $$IbadahLogsTableTableManager
                 updatedAt: updatedAt,
                 prayedAt: prayedAt,
                 place: place,
+                jamaah: jamaah,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3257,6 +3334,7 @@ class $$IbadahLogsTableTableManager
                 required DateTime updatedAt,
                 Value<DateTime?> prayedAt = const Value.absent(),
                 Value<String?> place = const Value.absent(),
+                Value<bool?> jamaah = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IbadahLogsCompanion.insert(
                 date: date,
@@ -3266,6 +3344,7 @@ class $$IbadahLogsTableTableManager
                 updatedAt: updatedAt,
                 prayedAt: prayedAt,
                 place: place,
+                jamaah: jamaah,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

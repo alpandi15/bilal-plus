@@ -69,7 +69,9 @@ Future<_FakeGeolocator> _openPicker(WidgetTester tester) async {
     'prayer_location':
         '{"id":51,"name":"Kota Medan","lat":3.5952,"long":98.6722,"source":"kabupaten"}',
   });
-  await tester.pumpWidget(const RinduRamadanApp(homeWidgets: false));
+  await tester.pumpWidget(
+    const RinduRamadanApp(homeWidgets: false, onboarding: false),
+  );
   await _settle(tester);
   await tester.tap(find.text('Kota Medan'));
   await _settle(tester);

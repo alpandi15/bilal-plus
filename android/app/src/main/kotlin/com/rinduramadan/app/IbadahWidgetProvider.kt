@@ -110,6 +110,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             /** onTime / late / qadha - hanya bila pencatatan waktu sholat aktif. */
             var status: String?,
             val prayed: String,
+            /** Bobot saat tuntas: sholat wajib sendiri < 1 (lihat ibadah_day.dart). */
+            val weight: Double,
         )
 
         private fun entries(arr: JSONArray?): MutableList<Entry> {
@@ -128,6 +130,7 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     time = o.optString("time", ""),
                     status = o.optString("status", "").ifEmpty { null },
                     prayed = o.optString("prayed", ""),
+                    weight = o.optDouble("w", 1.0),
                 )
             }.toMutableList()
         }
@@ -231,10 +234,14 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             val sholat = entries(day.optJSONArray("sholat"))
             val items = entries(day.optJSONArray("items"))
             var done = day.optInt("done", 0)
+            var score = day.optDouble("score", done.toDouble())
             for (e in sholat + items) {
                 val v = pending["$today|${e.id}"] ?: continue
                 val nowDone = if (e.kind == "counter") v >= e.target else v > 0
-                if (!e.excused && nowDone != e.done) done += if (nowDone) 1 else -1
+                if (!e.excused && nowDone != e.done) {
+                    done += if (nowDone) 1 else -1
+                    score += if (nowDone) e.weight else -e.weight
+                }
                 e.value = v
                 e.done = nowDone
                 // status baru diketahui sesudah Dart mencatat jamnya
@@ -246,7 +253,11 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             // kepala & kemajuan
             views.setTextViewText(R.id.ib_kicker, day.optString("kicker", "IBADAH HARIAN"))
             views.setTextViewText(R.id.ib_count, "$done/$total")
-            views.setProgressBar(R.id.ib_progress, 1000, if (total == 0) 0 else done * 1000 / total, false)
+            // bar = nilai tertimbang (sholat sendiri bernilai lebih kecil)
+            views.setProgressBar(
+                R.id.ib_progress, 1000,
+                if (total == 0) 0 else (score * 1000 / total).toInt().coerceIn(0, 1000), false,
+            )
             val streak = day.optInt("streak", 0)
             views.setTextViewText(
                 R.id.ib_streak,

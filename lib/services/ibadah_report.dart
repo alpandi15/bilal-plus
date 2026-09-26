@@ -12,12 +12,16 @@ class DayScore {
     required this.date,
     required this.done,
     required this.total,
+    double? score,
     required this.excused,
     required this.hasData,
     required this.sholat,
-  });
+  }) : score = score ?? done * 1.0;
 
   final String date;
+
+  /// Nilai tertimbang (sholat wajib sendiri bernilai lebih kecil).
+  final double score;
   final int done;
   final int total;
   final bool excused;
@@ -28,7 +32,7 @@ class DayScore {
   /// Sholat wajib yang tercentang (0..5).
   final int sholat;
 
-  double get fraction => total == 0 ? 0 : done / total;
+  double get fraction => total == 0 ? 0 : score / total;
 
   /// Lima waktu lengkap atau berhalangan (dasar streak).
   bool get kept => excused || sholat >= 5;
@@ -56,6 +60,9 @@ class SholatStat {
   int missed = 0;
   int delayMinutes = 0;
   final places = <String, int>{};
+
+  /// Tercentang berjama'ah / sendiri (yang belum dicatat tidak masuk).
+  int jamaah = 0, sendiri = 0;
 
   int get timed => onTime + late + qadha;
   int get total => timed + untimed + missed;
@@ -102,6 +109,10 @@ class IbadahReport {
     0,
     0,
   ), (a, s) => (a.$1 + s.onTime, a.$2 + s.late, a.$3 + s.qadha));
+
+  /// (berjama'ah, sendiri) semua waktu sholat.
+  (int, int) get jamaahTotals =>
+      sholat.fold((0, 0), (a, s) => (a.$1 + s.jamaah, a.$2 + s.sendiri));
 }
 
 /// Susun laporan [data] (hasil `IbadahDao.loadRange`). [today] membatasi
@@ -114,6 +125,7 @@ IbadahReport buildIbadahReport(
   double? latitude,
   double? longitude,
   int onTimeMinutes = defaultOnTimeMinutes,
+  double soloWeight = 1,
 }) {
   final last = data.to.compareTo(today) < 0 ? data.to : today;
   final first = data.firstDate;
@@ -142,18 +154,21 @@ IbadahReport buildIbadahReport(
     final day = ibadahDay(date, anchors);
     final hasTilawah = data.tilawah.contains(date);
     final visible = visibleItems(data.items, day, values);
-    final (done, total) = ibadahProgress(
+    final progress = ibadahProgress(
       visible,
       values,
       excused: excused,
       hasTilawah: hasTilawah,
+      logs: logs,
+      soloWeight: soloWeight,
     );
     final sholatDone = sholatItems.where((i) => (values[i.id] ?? 0) > 0).length;
     days.add(
       DayScore(
         date: date,
-        done: done,
-        total: total,
+        done: progress.done,
+        total: progress.total,
+        score: progress.score,
         excused: excused,
         hasData: hasData,
         sholat: sholatDone,
@@ -161,8 +176,8 @@ IbadahReport buildIbadahReport(
     );
     if (!hasData) continue;
 
-    if (!excused && total > 0) {
-      weekdaySum[d.weekday - 1] += done / total;
+    if (!excused && progress.total > 0) {
+      weekdaySum[d.weekday - 1] += progress.fraction;
       weekdayCount[d.weekday - 1]++;
     }
     for (final i in visible) {
@@ -183,6 +198,14 @@ IbadahReport buildIbadahReport(
         // hari ini: sholat yang waktunya belum tiba bukan "terlewat"
         if (date != today) stat.missed++;
         continue;
+      }
+      switch (log.jamaah) {
+        case true:
+          stat.jamaah++;
+        case false:
+          stat.sendiri++;
+        case null:
+          break;
       }
       final place = log.place;
       if (place != null) stat.places[place] = (stat.places[place] ?? 0) + 1;

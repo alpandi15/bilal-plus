@@ -28,6 +28,24 @@ const sholatPlaceLabel = {
   'lainnya': 'Lainnya',
 };
 
+/// Nilai sholat wajib sendiri dibanding berjama'ah (= 1): "Sholat
+/// berjama'ah lebih utama dari sholat sendirian dengan dua puluh tujuh
+/// derajat" (HR. Al-Bukhari & Muslim) - jadi bawaannya 1/27.
+const hadithSoloWeight = 1 / 27;
+
+/// Pilihan nilai sholat sendiri di Pengaturan.
+const soloWeightChoices = [hadithSoloWeight, 0.25, 0.5, 0.75, 1.0];
+
+/// "1/27 (≈4%)", "50%", ...
+String soloWeightLabel(double w) => w == hadithSoloWeight
+    ? '1/27 (≈${(w * 100).round()}%)'
+    : '${(w * 100).round()}%';
+
+/// Bobot satu sholat wajib yang sudah dikerjakan: berjama'ah atau belum
+/// tercatat = 1, sendiri = [soloWeight].
+double sholatWeight(bool? jamaah, double soloWeight) =>
+    jamaah == false ? soloWeight : 1;
+
 /// Batas bawaan "awal waktu", menit sesudah adzan.
 const defaultOnTimeMinutes = 15;
 

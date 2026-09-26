@@ -20,6 +20,10 @@ class AppSettings {
   static const showArtiKey = 'dzikir_show_arti';
   static const madzhabKey = 'sholat_madzhab';
   static const readerSizeKey = 'reader_arabic_size';
+  static const soloWeightKey = 'sholat_solo_weight';
+  static const lastJamaahKey = 'sholat_last_jamaah';
+  static const onboardedKey = 'onboarded';
+  static const userNameKey = 'user_name';
 }
 
 /// Batas ukuran teks Arab di pembaca bilal.
@@ -49,6 +53,19 @@ class AppSettingsController extends ChangeNotifier {
   Madzhab get madzhab => _madzhab;
 
   double _readerSize = readerSizeDefault;
+  double _soloWeight = hadithSoloWeight;
+  bool _lastJamaah = false;
+
+  /// Nilai sholat wajib sendiri dibanding berjama'ah (bawaan 1/27).
+  double get soloWeight => _soloWeight;
+
+  /// Nilai yang benar-benar dipakai menghitung: perempuan tidak dikurangi
+  /// (sholat di rumah lebih utama baginya).
+  double get effectiveSoloWeight => _gender == Gender.female ? 1 : _soloWeight;
+
+  /// Pilihan jama'ah terakhir - bawaan centang berikutnya (juga dari widget
+  /// & notifikasi).
+  bool get lastJamaah => _lastJamaah;
 
   /// Ukuran teks Arab di pembaca bilal tarawih.
   double get readerSize => _readerSize;
@@ -62,6 +79,15 @@ class AppSettingsController extends ChangeNotifier {
 
   /// null = belum dipilih (narasi umum).
   Gender? get gender => _gender;
+
+  bool _onboarded = false;
+  String? _userName;
+
+  /// Halaman setup awal sudah dilewati.
+  bool get onboarded => _onboarded;
+
+  /// Nama panggilan (untuk sapaan), null = tidak diisi.
+  String? get userName => _userName;
 
   /// Notifikasi adzan aktif.
   bool get adzan => _adzan;
@@ -85,7 +111,10 @@ class AppSettingsController extends ChangeNotifier {
 
   Future<void> init() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // batas waktu: splash tidak boleh tertahan bila penyimpanan macet
+      final prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 5),
+      );
       _sholatTime = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
       _onTimeMinutes =
           prefs.getInt(AppSettings.onTimeMinutesKey) ?? defaultOnTimeMinutes;
@@ -104,19 +133,49 @@ class AppSettingsController extends ChangeNotifier {
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
       _madzhab = Madzhab.parse(prefs.getString(AppSettings.madzhabKey));
+      _onboarded = prefs.getBool(AppSettings.onboardedKey) ?? false;
+      _userName = prefs.getString(AppSettings.userNameKey);
       _readerSize =
           prefs.getDouble(AppSettings.readerSizeKey) ?? readerSizeDefault;
+      _soloWeight =
+          prefs.getDouble(AppSettings.soloWeightKey) ?? hadithSoloWeight;
+      _lastJamaah = prefs.getBool(AppSettings.lastJamaahKey) ?? false;
       _loaded = true;
-      notifyListeners();
     } catch (e) {
       debugPrint('pengaturan gagal dibaca: $e');
     }
+    _ready = true;
+    notifyListeners();
   }
 
   bool _loaded = false;
+  bool _ready = false;
+
+  /// Pembacaan selesai - berhasil atau tidak (splash menunggu ini).
+  bool get ready => _ready;
 
   /// Sudah dibaca dari penyimpanan (sebelum itu nilainya bawaan).
   bool get loaded => _loaded;
+
+  Future<void> setUserName(String? v) async {
+    final name = v?.trim();
+    _userName = name == null || name.isEmpty ? null : name;
+    notifyListeners();
+    await _save(
+      (p) => _userName == null
+          ? p.remove(AppSettings.userNameKey)
+          : p.setString(AppSettings.userNameKey, _userName!),
+    );
+  }
+
+  /// Selesai setup awal: simpan nama & jenis kelamin, jangan tampilkan lagi.
+  Future<void> completeOnboarding({String? name, Gender? gender}) async {
+    await setUserName(name);
+    if (gender != null) await setGender(gender);
+    _onboarded = true;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.onboardedKey, true));
+  }
 
   Future<void> setGender(Gender v) async {
     _gender = v;
@@ -170,6 +229,19 @@ class AppSettingsController extends ChangeNotifier {
     _madzhab = v;
     notifyListeners();
     await _save((p) => p.setString(AppSettings.madzhabKey, v.name));
+  }
+
+  Future<void> setSoloWeight(double v) async {
+    _soloWeight = v.clamp(0, 1);
+    notifyListeners();
+    await _save((p) => p.setDouble(AppSettings.soloWeightKey, _soloWeight));
+  }
+
+  Future<void> setLastJamaah(bool v) async {
+    if (v == _lastJamaah) return;
+    _lastJamaah = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.lastJamaahKey, v));
   }
 
   Future<void> setReaderSize(double v) async {
@@ -228,4 +300,8 @@ class AppSettingsScope extends InheritedNotifier<AppSettingsController> {
   /// Seperti [of], tapi null bila tidak ada (mis. dalam uji halaman).
   static AppSettingsController? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AppSettingsScope>()?.notifier;
+
+  /// Tanpa berlangganan perubahan - untuk callback (mis. tombol).
+  static AppSettingsController? read(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<AppSettingsScope>()?.notifier;
 }

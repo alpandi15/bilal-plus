@@ -11,7 +11,12 @@ void main() {
   testWidgets('Kartu jadwal sholat & hitung mundur Ramadan tampil', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const RinduRamadanApp(homeWidgets: false));
+    await tester.pumpWidget(
+      const RinduRamadanApp(homeWidgets: false, onboarding: false),
+    );
+    // tanpa penyimpanan tiruan: pengaturan menyerah sesudah batas waktunya
+    // lalu splash berganti ke beranda
+    await tester.pump(const Duration(seconds: 6));
     // resolusi lokasi (shared_preferences + percobaan GPS yang gagal di
     // lingkungan uji) berjalan async - beri waktu sampai semuanya selesai.
     // Bukan `pumpAndSettle`: kartu ini punya timer berjalan terus tiap detik
@@ -33,7 +38,12 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const RinduRamadanApp(homeWidgets: false));
+    await tester.pumpWidget(
+      const RinduRamadanApp(homeWidgets: false, onboarding: false),
+    );
+    // splash -> beranda begitu pengaturan terbaca
+    await tester.pump();
+    await tester.pump();
     // berkas konfigurasi hijriah dibaca dari aset (I/O sungguhan) - beri
     // waktu nyata, bukan waktu palsu, supaya varian metodenya ikut termuat
     await tester.runAsync(

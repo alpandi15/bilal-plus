@@ -142,7 +142,9 @@ void main() {
     tester.view.physicalSize = const Size(411, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(RinduRamadanApp(database: db, homeWidgets: false));
+    await tester.pumpWidget(
+      RinduRamadanApp(database: db, homeWidgets: false, onboarding: false),
+    );
     await settle(tester);
 
     expect(find.text('JADWAL SHOLAT'), findsOneWidget);

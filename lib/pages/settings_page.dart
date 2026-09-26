@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/adzan_notifications.dart';
 import '../services/app_settings.dart';
 import '../services/hijri_config_scope.dart';
+import '../services/sholat_time.dart';
 import '../services/user_location_scope.dart';
 import '../widgets/hijri_settings_sheet.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
+import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/privacy_note.dart';
 import '../widgets/sub_header.dart';
 
@@ -58,6 +60,8 @@ class SettingsPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          const _NameField(),
+                          const SizedBox(height: 14),
                           const Text(
                             'Jenis kelamin',
                             style: TextStyle(
@@ -101,6 +105,72 @@ class SettingsPage extends StatelessWidget {
                 const _Title('SHOLAT WAJIB'),
                 _Group(
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Nilai sholat sendiri',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: _stone,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: "Berjama'ah atau sendiri?",
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => showJamaahInfo(
+                                  context,
+                                  soloWeight: settings.effectiveSoloWeight,
+                                  female: settings.gender == Gender.female,
+                                ),
+                                icon: const Icon(
+                                  Icons.help_outline_rounded,
+                                  size: 18,
+                                  color: _amber,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            settings.gender == Gender.female
+                                ? "Untuk perempuan, sholat sendiri tetap "
+                                      "bernilai penuh (sholat di rumah lebih "
+                                      "utama). Pilihan jama'ah tetap dicatat."
+                                : "Dibanding berjama'ah (100%) di persentase "
+                                      "harian & laporan. Bawaan 1/27: sholat "
+                                      "berjama'ah lebih utama 27 derajat "
+                                      "(HR. Al-Bukhari & Muslim).",
+                            style: const TextStyle(fontSize: 12, color: _muted),
+                          ),
+                          if (settings.gender != Gender.female) ...[
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                for (final w in soloWeightChoices)
+                                  ChoiceChip(
+                                    label: Text(soloWeightLabel(w)),
+                                    selected:
+                                        (settings.soloWeight - w).abs() <
+                                        0.0001,
+                                    selectedColor: const Color(0xFFFDE68A),
+                                    onSelected: (_) =>
+                                        settings.setSoloWeight(w),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: _line),
                     SwitchListTile.adaptive(
                       activeTrackColor: _amber,
                       value: settings.sholatTime,
@@ -389,4 +459,46 @@ class _AdzanGroup extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Nama panggilan untuk sapaan di Beranda - tersimpan saat selesai diketik.
+class _NameField extends StatefulWidget {
+  const _NameField();
+
+  @override
+  State<_NameField> createState() => _NameFieldState();
+}
+
+class _NameFieldState extends State<_NameField> {
+  late final _controller = TextEditingController(
+    text: AppSettingsScope.read(context)?.userName,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() => AppSettingsScope.read(context)?.setUserName(_controller.text);
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: _controller,
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.done,
+    maxLength: 30,
+    onSubmitted: (_) => _save(),
+    onTapOutside: (_) {
+      FocusScope.of(context).unfocus();
+      _save();
+    },
+    decoration: const InputDecoration(
+      labelText: 'Nama panggilan',
+      hintText: 'Untuk sapaan di Beranda',
+      counterText: '',
+      isDense: true,
+      prefixIcon: Icon(Icons.badge_outlined),
+    ),
+  );
 }

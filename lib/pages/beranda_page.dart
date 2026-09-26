@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../db/app_database.dart';
 import '../db/app_database_scope.dart';
+import '../services/app_settings.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
@@ -44,6 +45,18 @@ class BerandaPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (AppSettingsScope.maybeOf(context)?.userName
+                      case final name?) ...[
+                    Text(
+                      "Assalamu'alaikum, $name",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF44403C),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   const RamadanCountdown(),
                   const SizedBox(height: 24),
                   const PrayerTimesCard(),
@@ -198,7 +211,8 @@ class _TodayIbadahState extends State<_TodayIbadah> {
       stream: _stream,
       builder: (context, snap) {
         final data = snap.data;
-        var done = 0, total = 0, streak = 0;
+        var progress = const IbadahProgress(0, 0, 0);
+        var streak = 0;
         if (data != null) {
           final items = visibleItems(
             data.items,
@@ -206,22 +220,25 @@ class _TodayIbadahState extends State<_TodayIbadah> {
             data.values,
             qadhaRemaining: data.qadhaRemaining,
           );
-          (done, total) = ibadahProgress(
+          progress = ibadahProgress(
             items,
             data.values,
             excused: data.excused,
             hasTilawah: data.hasTilawah,
+            logs: data.logs,
+            soloWeight:
+                AppSettingsScope.maybeOf(context)?.effectiveSoloWeight ?? 1,
           );
           streak = ibadahStreak(data.summaries, today);
         }
         return _MiniCard(
           onTap: widget.onTap,
           kicker: 'IBADAH HARI INI',
-          ring: total == 0 ? 0 : done / total,
-          value: '$done/$total',
-          title: total > 0 && done >= total
+          ring: progress.fraction,
+          value: '${progress.percent}%',
+          title: progress.complete
               ? 'Tuntas semua'
-              : '${total - done} belum',
+              : '${progress.total - progress.done} belum',
           detail: streak > 0 ? '🔥 $streak hari terjaga' : 'Buka checklist',
         );
       },

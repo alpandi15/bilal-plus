@@ -115,6 +115,7 @@ class BackupService {
             'updatedAt': _iso(l.updatedAt),
             if (l.prayedAt != null) 'prayedAt': _iso(l.prayedAt!),
             if (l.place != null) 'place': l.place,
+            if (l.jamaah != null) 'jamaah': l.jamaah,
           },
       ],
       'dayStatuses': [
@@ -289,6 +290,7 @@ class BackupService {
                   l['prayedAt'] == null ? null : _date(l['prayedAt']),
                 ),
                 place: Value(l['place'] as String?),
+                jamaah: Value(l['jamaah'] as bool?),
               ),
             );
         ibadahCount++;

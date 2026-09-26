@@ -13,6 +13,7 @@ import '../services/ramadan_recap.dart';
 import '../services/sholat_time.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
 import '../widgets/ibadah/ramadan_notice_cards.dart';
+import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/ibadah/sholat_log_sheet.dart';
 import '../widgets/ibadah/sholat_nudge_card.dart';
 import '../widgets/quran/progress_ring.dart';
@@ -202,8 +203,9 @@ class _DayView extends StatelessWidget {
   final ValueChanged<String> onGo;
   final IbadahDao dao;
 
-  /// Ketuk sholat wajib: bila pencatatan waktu aktif, tanya jam & tempat;
-  /// kalau tidak, centang/batalkan langsung.
+  /// Ketuk sholat wajib: bila pencatatan waktu aktif, tanya jam, jama'ah &
+  /// tempat; kalau tidak, centang/batalkan langsung (berjama'ah atau sendiri
+  /// = pilihan terakhir, bisa diganti lewat pil di bawahnya).
   Future<void> _tapSholat(BuildContext context, IbadahItem item) async {
     final settings = AppSettingsScope.maybeOf(context);
     final value = data.values[item.id] ?? 0;
@@ -214,10 +216,16 @@ class _DayView extends StatelessWidget {
       longitude: longitude,
     );
     if (settings == null || !settings.sholatTime || window == null) {
-      await dao.setValue(data.date, item.id, value > 0 ? 0 : 1);
+      await dao.setValue(
+        data.date,
+        item.id,
+        value > 0 ? 0 : 1,
+        jamaah: value > 0 ? null : settings?.lastJamaah ?? false,
+      );
       return;
     }
     final log = data.logs[item.id];
+    final place = log?.place ?? settings.lastPlace;
     final result = await showSholatLogSheet(
       context,
       name: item.name,
@@ -226,20 +234,25 @@ class _DayView extends StatelessWidget {
       window: window,
       tz: calc.timezoneFromLongitude(longitude),
       onTimeMinutes: settings.onTimeMinutes,
-      place: log?.place ?? settings.lastPlace,
+      place: place,
+      // di masjid hampir selalu berjama'ah
+      jamaah: log?.jamaah ?? (place == 'masjid' || settings.lastJamaah),
+      soloWeight: settings.effectiveSoloWeight,
       prayedAt: log?.prayedAt,
       done: value > 0,
     );
     switch (result) {
-      case SholatLogSave(:final prayedAt, :final place):
+      case SholatLogSave(prayedAt: final at, place: final where, :final jamaah):
         await dao.setValue(
           data.date,
           item.id,
           1,
-          prayedAt: prayedAt,
-          place: place,
+          prayedAt: at,
+          place: where,
+          jamaah: jamaah,
         );
-        await settings.setLastPlace(place);
+        await settings.setLastPlace(where);
+        await settings.setLastJamaah(jamaah);
       case SholatLogRemove():
         await dao.setValue(data.date, item.id, 0);
       case null:
@@ -247,8 +260,17 @@ class _DayView extends StatelessWidget {
     }
   }
 
+  /// Ganti berjama'ah <-> sendiri pada sholat yang sudah dicentang.
+  Future<void> _toggleJamaah(BuildContext context, IbadahItem item) async {
+    final settings = AppSettingsScope.maybeOf(context);
+    final next = !(data.logs[item.id]?.jamaah ?? false);
+    await dao.setValue(data.date, item.id, 1, jamaah: next);
+    await settings?.setLastJamaah(next);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final settings = AppSettingsScope.maybeOf(context);
     final items = visibleItems(
       data.items,
       day,
@@ -268,11 +290,13 @@ class _DayView extends StatelessWidget {
         if (i.groupKey != sholatWajibGroup && i.groupKey != rawatibGroup) i,
     ];
 
-    final (done, total) = ibadahProgress(
+    final progress = ibadahProgress(
       items,
       data.values,
       excused: data.excused,
       hasTilawah: data.hasTilawah,
+      logs: data.logs,
+      soloWeight: settings?.effectiveSoloWeight ?? 1,
     );
 
     return SingleChildScrollView(
@@ -302,8 +326,7 @@ class _DayView extends StatelessWidget {
                 date: data.date,
                 today: today,
                 day: day,
-                done: done,
-                total: total,
+                progress: progress,
                 streak: ibadahStreak(data.summaries, today),
                 excused: data.excused,
                 onExcused: (v) => dao.setExcused(data.date, v),
@@ -321,6 +344,7 @@ class _DayView extends StatelessWidget {
                   longitude: longitude,
                   isToday: data.date == today,
                   onTap: (item) => _tapSholat(context, item),
+                  onToggleJamaah: (item) => _toggleJamaah(context, item),
                   rawatib: rawatib,
                   onToggleRawatib: (item) => dao.setValue(
                     data.date,
@@ -570,8 +594,7 @@ class _SummaryCard extends StatelessWidget {
     required this.date,
     required this.today,
     required this.day,
-    required this.done,
-    required this.total,
+    required this.progress,
     required this.streak,
     required this.excused,
     required this.onExcused,
@@ -579,14 +602,16 @@ class _SummaryCard extends StatelessWidget {
 
   final String date, today;
   final IbadahDay day;
-  final int done, total, streak;
+  final IbadahProgress progress;
+  final int streak;
   final bool excused;
   final ValueChanged<bool> onExcused;
 
   @override
   Widget build(BuildContext context) {
     final d = parseDateKey(date);
-    final all = total > 0 && done >= total;
+    final done = progress.done, total = progress.total;
+    final all = progress.complete;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
@@ -595,16 +620,25 @@ class _SummaryCard extends StatelessWidget {
           Row(
             children: [
               ProgressRing(
-                value: total == 0 ? 0 : done / total,
+                value: progress.fraction,
                 size: 88,
                 stroke: 9,
-                child: Text(
-                  '$done/$total',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: _stone,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${progress.percent}%',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: _stone,
+                      ),
+                    ),
+                    Text(
+                      '$done/$total',
+                      style: const TextStyle(fontSize: 10, color: _muted),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
@@ -700,11 +734,15 @@ class _SholatCard extends StatelessWidget {
     required this.longitude,
     required this.isToday,
     required this.onTap,
+    this.onToggleJamaah,
     this.rawatib = const [],
     this.onToggleRawatib,
   });
 
   final List<IbadahItem> items;
+
+  /// Ganti berjama'ah/sendiri pada sholat yang sudah dicentang.
+  final void Function(IbadahItem)? onToggleJamaah;
 
   /// Sholat sunnah rawatib yang aktif - ditampilkan di bawah kolom sholat
   /// wajibnya masing-masing.
@@ -757,24 +795,49 @@ class _SholatCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'SHOLAT LIMA WAKTU',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                  color: Color(0xCCB45309),
+              const Expanded(
+                child: Text(
+                  'SHOLAT LIMA WAKTU',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    color: Color(0xCCB45309),
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
                 excused ? 'berhalangan' : '$doneCount/${items.length}',
                 style: const TextStyle(fontSize: 11, color: _muted),
+              ),
+              const SizedBox(width: 2),
+              IconButton(
+                tooltip: "Berjama'ah atau sendiri?",
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 28,
+                  height: 28,
+                ),
+                onPressed: () => showJamaahInfo(
+                  context,
+                  soloWeight: settings?.effectiveSoloWeight ?? 1,
+                  female: settings?.gender == Gender.female,
+                ),
+                icon: const Icon(
+                  Icons.help_outline_rounded,
+                  size: 16,
+                  color: _amber,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
           Row(
+            // pil jama'ah menambah tinggi kolom - lingkaran tetap sejajar
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final item in items)
                 Expanded(
@@ -792,7 +855,11 @@ class _SholatCard extends StatelessWidget {
                           )
                         : null,
                     place: tracking ? logs[item.id]?.place : null,
+                    jamaah: logs[item.id]?.jamaah,
                     onTap: () => onTap(item),
+                    onToggleJamaah: onToggleJamaah == null
+                        ? null
+                        : () => onToggleJamaah!(item),
                   ),
                 ),
             ],
@@ -965,9 +1032,15 @@ class _PrayerDot extends StatelessWidget {
     this.status,
     this.prayedTime,
     this.place,
+    this.jamaah,
+    this.onToggleJamaah,
   });
 
   final String name, time;
+
+  /// Berjama'ah / sendiri (null = belum dicatat).
+  final bool? jamaah;
+  final VoidCallback? onToggleJamaah;
   final bool done, current, disabled;
   final VoidCallback onTap;
 
@@ -1058,6 +1131,8 @@ class _PrayerDot extends StatelessWidget {
               )
             else
               Text(time, style: const TextStyle(fontSize: 10, color: _muted)),
+            if (done && !disabled && onToggleJamaah != null)
+              JamaahPill(jamaah: jamaah, onTap: onToggleJamaah!),
           ],
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/prayer_calculator.dart' as calc;
 import '../../services/sholat_time.dart';
+import 'jamaah_info.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -26,18 +27,19 @@ sealed class SholatLogResult {
 }
 
 class SholatLogSave extends SholatLogResult {
-  const SholatLogSave(this.prayedAt, this.place);
+  const SholatLogSave(this.prayedAt, this.place, this.jamaah);
   final DateTime prayedAt;
   final String place;
+  final bool jamaah;
 }
 
 class SholatLogRemove extends SholatLogResult {
   const SholatLogRemove();
 }
 
-/// "Sholat Subuh jam berapa & di mana?" - jam bawaannya sekarang (atau
-/// adzan untuk hari yang sudah lewat), statusnya langsung ikut berubah
-/// saat jam diganti.
+/// "Sholat Subuh jam berapa, berjama'ah, & di mana?" - jam bawaannya
+/// sekarang (atau adzan untuk hari yang sudah lewat), statusnya langsung
+/// ikut berubah saat jam diganti.
 Future<SholatLogResult?> showSholatLogSheet(
   BuildContext context, {
   required String name,
@@ -47,6 +49,8 @@ Future<SholatLogResult?> showSholatLogSheet(
   required calc.TimezoneCode tz,
   required int onTimeMinutes,
   required String place,
+  required bool jamaah,
+  double soloWeight = 1,
   DateTime? prayedAt,
   required bool done,
 }) => showModalBottomSheet<SholatLogResult>(
@@ -62,6 +66,8 @@ Future<SholatLogResult?> showSholatLogSheet(
     tz: tz,
     onTimeMinutes: onTimeMinutes,
     place: place,
+    jamaah: jamaah,
+    soloWeight: soloWeight,
     prayedAt: prayedAt,
     done: done,
   ),
@@ -76,11 +82,15 @@ class _SholatLogSheet extends StatefulWidget {
     required this.tz,
     required this.onTimeMinutes,
     required this.place,
+    required this.jamaah,
+    required this.soloWeight,
     required this.prayedAt,
     required this.done,
   });
 
   final String name, itemKey, place;
+  final bool jamaah;
+  final double soloWeight;
   final DateTime date;
   final SholatWindow window;
   final calc.TimezoneCode tz;
@@ -95,11 +105,13 @@ class _SholatLogSheet extends StatefulWidget {
 class _SholatLogSheetState extends State<_SholatLogSheet> {
   late DateTime _at;
   late String _place;
+  late bool _jamaah;
 
   @override
   void initState() {
     super.initState();
     _place = widget.place;
+    _jamaah = widget.jamaah;
     final now = DateTime.now();
     _at =
         widget.prayedAt ??
@@ -242,6 +254,12 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
             const SizedBox(height: 6),
             Text(detail, style: TextStyle(fontSize: 12, color: color)),
             const SizedBox(height: 16),
+            JamaahChoice(
+              jamaah: _jamaah,
+              soloWeight: widget.soloWeight,
+              onChanged: (v) => setState(() => _jamaah = v),
+            ),
+            const SizedBox(height: 16),
             const Text(
               'DI MANA',
               style: TextStyle(
@@ -261,7 +279,12 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                       label: sholatPlaceLabel[p]!,
                       icon: sholatPlaceIcon[p]!,
                       selected: _place == p,
-                      onTap: () => setState(() => _place = p),
+                      onTap: () => setState(() {
+                        _place = p;
+                        // di masjid hampir selalu berjama'ah - tetap bisa
+                        // diganti bila sholat sendiri
+                        if (p == 'masjid') _jamaah = true;
+                      }),
                     ),
                   ),
                 ],
@@ -277,7 +300,7 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                 ),
               ),
               onPressed: () =>
-                  Navigator.pop(context, SholatLogSave(_at, _place)),
+                  Navigator.pop(context, SholatLogSave(_at, _place, _jamaah)),
               child: const Text(
                 'Simpan',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),

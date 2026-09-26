@@ -86,6 +86,10 @@ class IbadahLogs extends Table {
   /// Sholat wajib: 'masjid' / 'rumah' / 'lainnya'.
   TextColumn get place => text().nullable()();
 
+  /// Sholat wajib: true = berjama'ah, false = sendiri (munfarid). null =
+  /// belum dicatat (catatan dari sebelum fitur ini) - dihitung penuh.
+  BoolColumn get jamaah => boolean().nullable()();
+
   @override
   Set<Column> get primaryKey => {date, itemId};
 }
@@ -178,7 +182,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -195,6 +199,10 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "UPDATE ibadah_items SET active = 0 WHERE key = 'rawatib'",
         );
+      }
+      if (from < 4) {
+        // v4: sholat wajib berjama'ah / sendiri
+        await m.addColumn(ibadahLogs, ibadahLogs.jamaah);
       }
     },
     beforeOpen: (details) async {
@@ -569,14 +577,16 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       (select(quranLogs)..where((l) => l.date.isBetweenValues(from, to))).get();
 
   /// Setel nilai item; 0 = hapus catatannya.
-  /// [prayedAt]/[place] (sholat wajib) hanya ditulis bila diberikan - tanpa
-  /// keduanya, waktu & tempat yang sudah tercatat dipertahankan.
+  /// [prayedAt]/[place]/[jamaah] (sholat wajib) hanya ditulis bila
+  /// diberikan - tanpa itu, waktu, tempat & jama'ah yang sudah tercatat
+  /// dipertahankan.
   Future<void> setValue(
     String date,
     int itemId,
     int value, {
     DateTime? prayedAt,
     String? place,
+    bool? jamaah,
   }) async {
     if (value <= 0) {
       await (delete(
@@ -592,6 +602,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
         updatedAt: DateTime.now(),
         prayedAt: prayedAt == null ? const Value.absent() : Value(prayedAt),
         place: place == null ? const Value.absent() : Value(place),
+        jamaah: jamaah == null ? const Value.absent() : Value(jamaah),
       ),
     );
   }

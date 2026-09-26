@@ -78,6 +78,29 @@ class AdzanNotifications {
     if (launch?.didNotificationLaunchApp ?? false) onOpen?.call();
   }
 
+  /// Status izin saat ini: notifikasi & alarm tepat waktu (Android 14+
+  /// meminta izin terpisah; di versi lama selalu true).
+  Future<({bool notifications, bool exactAlarms})> permissionStatus() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android == null) return (notifications: false, exactAlarms: false);
+    return (
+      notifications: await android.areNotificationsEnabled() ?? false,
+      exactAlarms: await android.canScheduleExactNotifications() ?? true,
+    );
+  }
+
+  /// Buka halaman izin "Alarm & pengingat" (Android 14+).
+  Future<void> requestExactAlarms() async {
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestExactAlarmsPermission();
+  }
+
   /// Minta izin notifikasi (Android 13+) & alarm tepat waktu (Android
   /// 14+). true bila notifikasi diizinkan.
   Future<bool> requestPermissions() async {

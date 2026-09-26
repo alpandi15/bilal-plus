@@ -9,6 +9,7 @@ import '../services/prayer_calculator.dart' as calc;
 import '../services/sholat_time.dart';
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
+import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/ibadah/sholat_log_sheet.dart';
 import '../widgets/report/ibadah_heatmap.dart';
 import '../widgets/sub_header.dart';
@@ -108,6 +109,7 @@ class _ReportPageState extends State<ReportPage> {
                   longitude: location.long,
                   onTimeMinutes:
                       settings?.onTimeMinutes ?? defaultOnTimeMinutes,
+                  soloWeight: settings?.effectiveSoloWeight ?? 1,
                 );
                 return _ReportBody(
                   report: report,
@@ -115,7 +117,8 @@ class _ReportPageState extends State<ReportPage> {
                   onRange: (r) => setState(() => _range = r),
                   showSholat:
                       (settings?.sholatTime ?? false) ||
-                      report.sholatTotals != (0, 0, 0),
+                      report.sholatTotals != (0, 0, 0) ||
+                      report.jamaahTotals != (0, 0),
                 );
               },
             ),
@@ -483,6 +486,8 @@ class _SholatQualityCard extends StatelessWidget {
       0,
       (a, s) => a + s.places.values.fold<int>(0, (x, y) => x + y),
     );
+    final jamaah = stats.fold<int>(0, (a, s) => a + s.jamaah);
+    final withJamaah = stats.fold<int>(0, (a, s) => a + s.jamaah + s.sendiri);
 
     return _Card(
       title: 'KUALITAS SHOLAT WAJIB',
@@ -612,6 +617,20 @@ class _SholatQualityCard extends StatelessWidget {
                 Text(
                   '${(masjid * 100 / placed).round()}% di masjid '
                   '($masjid dari $placed sholat)',
+                  style: const TextStyle(fontSize: 12, color: _stone),
+                ),
+              ],
+            ),
+          ],
+          if (withJamaah > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(jamaahIcon(true), size: 16, color: _amber),
+                const SizedBox(width: 6),
+                Text(
+                  "${(jamaah * 100 / withJamaah).round()}% berjama'ah "
+                  '($jamaah dari $withJamaah sholat)',
                   style: const TextStyle(fontSize: 12, color: _stone),
                 ),
               ],

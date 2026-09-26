@@ -61,6 +61,8 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
   required double longitude,
   bool sholatTime = false,
   int onTimeMinutes = defaultOnTimeMinutes,
+  double soloWeight = 1,
+  bool lastJamaah = false,
 }) async {
   final tz = calc.timezoneFromLongitude(longitude);
   return {
@@ -68,6 +70,8 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
     'tzId': tzIds[tz],
     'sholatTime': sholatTime,
     'onTimeMinutes': onTimeMinutes,
+    'soloWeight': soloWeight,
+    'lastJamaah': lastJamaah,
     'days': [
       for (final date in [today, _tomorrow(today)])
         await ibadahWidgetDay(
@@ -78,6 +82,8 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
           longitude: longitude,
           sholatTime: sholatTime,
           onTimeMinutes: onTimeMinutes,
+          soloWeight: soloWeight,
+          lastJamaah: lastJamaah,
         ),
     ],
   };
@@ -91,6 +97,8 @@ Future<Map<String, Object?>> ibadahWidgetDay(
   required double longitude,
   bool sholatTime = false,
   int onTimeMinutes = defaultOnTimeMinutes,
+  double soloWeight = 1,
+  bool lastJamaah = false,
 }) async {
   final data = await db.ibadahDao.loadDay(
     date,
@@ -134,6 +142,8 @@ Future<Map<String, Object?>> ibadahWidgetDay(
       'target': i.target,
       'done': itemDone(i, value, hasTilawah: data.hasTilawah),
       'excused': data.excused && excusable(i),
+      if (i.groupKey == sholatWajibGroup)
+        'w': _weight(data.logs[i.id], value, soloWeight, lastJamaah),
       if (prayer != null) ...{
         'at': schedule.times[prayer]!.millisecondsSinceEpoch,
         'end': window!.end.millisecondsSinceEpoch,
@@ -150,11 +160,13 @@ Future<Map<String, Object?>> ibadahWidgetDay(
     };
   }
 
-  final (done, total) = ibadahProgress(
+  final progress = ibadahProgress(
     items,
     data.values,
     excused: data.excused,
     hasTilawah: data.hasTilawah,
+    logs: data.logs,
+    soloWeight: soloWeight,
   );
 
   return {
@@ -165,8 +177,9 @@ Future<Map<String, Object?>> ibadahWidgetDay(
     'hijri': day.hijri.format(),
     'excused': data.excused,
     'streak': ibadahStreak(data.summaries, date),
-    'done': done,
-    'total': total,
+    'done': progress.done,
+    'total': progress.total,
+    'score': progress.score,
     'sholat': [
       for (final i in items)
         if (i.groupKey == sholatWajibGroup) entry(i),
@@ -232,8 +245,11 @@ Future<Map<String, Object?>> patchIbadahPayload(
     for (final i in data.items)
       if (i.groupKey == rawatibGroup) i,
   ];
+  final soloWeight = (payload['soloWeight'] as num?)?.toDouble() ?? 1;
+  final lastJamaah = payload['lastJamaah'] == true;
   var done = 0;
   var total = 0;
+  var score = 0.0;
   for (final key in ['sholat', 'items']) {
     for (final e in (day[key] as List).cast<Map<String, Object?>>()) {
       if (e['id'] == rawatibSummaryId) {
@@ -245,6 +261,7 @@ Future<Map<String, Object?>> patchIbadahPayload(
         if (!data.excused) {
           total += rawatib.length;
           done += n;
+          score += n;
         }
         continue;
       }
@@ -255,6 +272,10 @@ Future<Map<String, Object?>> patchIbadahPayload(
       e['value'] = value;
       e['done'] = isDone;
       e['excused'] = data.excused && excusable(item);
+      final w = item.groupKey == sholatWajibGroup
+          ? _weight(data.logs[item.id], value, soloWeight, lastJamaah)
+          : 1.0;
+      if (item.groupKey == sholatWajibGroup) e['w'] = w;
       final prayedAt = data.logs[item.id]?.prayedAt;
       final at = e['at'], end = e['end'];
       if (payload['sholatTime'] == true &&
@@ -276,12 +297,16 @@ Future<Map<String, Object?>> patchIbadahPayload(
       }
       if (e['excused'] != true) {
         total++;
-        if (isDone) done++;
+        if (isDone) {
+          done++;
+          score += w;
+        }
       }
     }
   }
   day['done'] = done;
   day['total'] = total;
+  day['score'] = score;
   day['excused'] = data.excused;
   day['streak'] = ibadahStreak(data.summaries, date);
   payload['generatedAt'] = DateTime.now().millisecondsSinceEpoch;
@@ -362,3 +387,9 @@ Future<Map<String, Object?>> quranWidgetPayload(
     ],
   };
 }
+
+/// Bobot sholat wajib di widget: yang sudah dicentang sesuai catatannya;
+/// yang belum, sesuai pilihan jama'ah terakhir (dipakai bila dicentang dari
+/// widget).
+double _weight(IbadahLog? log, int value, double soloWeight, bool lastJamaah) =>
+    sholatWeight(value > 0 ? log?.jamaah : lastJamaah, soloWeight);

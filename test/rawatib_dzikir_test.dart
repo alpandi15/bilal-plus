@@ -54,6 +54,8 @@ void main() {
         (i) => i.key == 'rawatib',
       );
       await db.ibadahDao.setValue('2026-09-01', old.id, 1);
+      // kembalikan ke bentuk v2: kolom jama'ah (v4) belum ada
+      await db.customStatement('ALTER TABLE ibadah_logs DROP COLUMN jamaah');
       await db.customStatement('PRAGMA user_version = 2');
       await db.close();
 

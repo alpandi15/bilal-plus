@@ -1,6 +1,7 @@
 import '../db/app_database.dart';
 import '../utils/date_key.dart';
 import 'hijri_calendar.dart';
+import 'sholat_time.dart';
 
 /// Keterangan ibadah sebuah hari kalender Masehi - SELALU diturunkan dari
 /// jangkar hijriah saat ditampilkan, tidak pernah disimpan (lihat
@@ -139,20 +140,43 @@ int ibadahStreak(Map<String, IbadahDaySummary> days, String today) {
   return streak;
 }
 
-/// (selesai, jumlah) dari [items] yang tampil - ibadah yang gugur karena
-/// berhalangan tidak dihitung.
-(int, int) ibadahProgress(
+/// Kemajuan ibadah satu hari.
+class IbadahProgress {
+  const IbadahProgress(this.done, this.total, this.score);
+
+  /// Item yang tuntas / yang dihitung.
+  final int done, total;
+
+  /// Nilai tertimbang (0..[total]): sholat wajib sendiri bernilai
+  /// `soloWeight`, selain itu 1 per item tuntas.
+  final double score;
+
+  double get fraction => total == 0 ? 0 : score / total;
+  int get percent => (fraction * 100).floor();
+  bool get complete => total > 0 && done >= total;
+}
+
+/// Kemajuan dari [items] yang tampil - ibadah yang gugur karena berhalangan
+/// tidak dihitung. [logs] memberi status jama'ah sholat wajib; sholat
+/// sendiri bernilai [soloWeight] (1 = sama dengan berjama'ah).
+IbadahProgress ibadahProgress(
   List<IbadahItem> items,
   Map<int, int> values, {
   required bool excused,
   required bool hasTilawah,
+  Map<int, IbadahLog> logs = const {},
+  double soloWeight = 1,
 }) {
-  final counted = [
-    for (final i in items)
-      if (!(excused && excusable(i))) i,
-  ];
-  final done = counted
-      .where((i) => itemDone(i, values[i.id] ?? 0, hasTilawah: hasTilawah))
-      .length;
-  return (done, counted.length);
+  var done = 0, total = 0;
+  var score = 0.0;
+  for (final i in items) {
+    if (excused && excusable(i)) continue;
+    total++;
+    if (!itemDone(i, values[i.id] ?? 0, hasTilawah: hasTilawah)) continue;
+    done++;
+    score += i.groupKey == sholatWajibGroup
+        ? sholatWeight(logs[i.id]?.jamaah, soloWeight)
+        : 1;
+  }
+  return IbadahProgress(done, total, score);
 }

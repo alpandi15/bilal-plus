@@ -111,6 +111,8 @@ class TrackerWidgetSync {
         longitude: loc.long,
         sholatTime: settings.sholatTime,
         onTimeMinutes: settings.onTimeMinutes,
+        soloWeight: settings.effectiveSoloWeight,
+        lastJamaah: settings.lastJamaah,
       );
       final quran = await quranWidgetPayload(
         db,
@@ -142,19 +144,24 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
 
   final db = AppDatabase();
   try {
-    // sholat wajib dicentang dari widget: jam = saat diketuk, tempat = yang
-    // terakhir dipilih (bila pencatatan waktu aktif)
+    // sholat wajib dicentang dari widget/notifikasi: berjama'ah atau sendiri
+    // = pilihan terakhir; jam = saat diketuk & tempat = yang terakhir dipilih
+    // (bila pencatatan waktu aktif)
     DateTime? prayedAt;
     String? place;
+    bool? jamaah;
     if (value > 0) {
       final prefs = await SharedPreferences.getInstance();
       final tracking = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
       final row = await (db.select(
         db.ibadahItems,
       )..where((i) => i.id.equals(item))).getSingleOrNull();
-      if (tracking && row?.groupKey == sholatWajibGroup) {
-        prayedAt = DateTime.now();
-        place = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
+      if (row?.groupKey == sholatWajibGroup) {
+        jamaah = prefs.getBool(AppSettings.lastJamaahKey) ?? false;
+        if (tracking) {
+          prayedAt = DateTime.now();
+          place = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
+        }
       }
     }
     await db.ibadahDao.setValue(
@@ -163,6 +170,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       value,
       prayedAt: prayedAt,
       place: place,
+      jamaah: jamaah,
     );
     final raw = await HomeWidget.getWidgetData<String>(_ibadahKey);
     if (raw != null) {

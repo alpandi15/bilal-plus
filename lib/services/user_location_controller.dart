@@ -137,7 +137,9 @@ class UserLocationController extends ChangeNotifier {
   bool get deniedGps => _deniedGps;
 
   /// Dipanggil sekali di awal (mis. dari `initState` halaman utama).
-  Future<void> init() async {
+  /// [autoGps] false: belum ada lokasi tersimpan -> pakai bawaan dulu tanpa
+  /// meminta izin (izin diminta di halaman setup awal, dengan penjelasan).
+  Future<void> init({bool autoGps = true}) async {
     if (_resolved) return;
     _resolved = true;
 
@@ -157,7 +159,11 @@ class UserLocationController extends ChangeNotifier {
       return;
     }
 
-    await requestGps(fallbackToDefault: true);
+    if (autoGps) {
+      await requestGps(fallbackToDefault: true);
+    } else {
+      await _apply(UserLocation.defaultLocation, persist: false);
+    }
   }
 
   Future<void> _apply(UserLocation next, {bool persist = true}) async {

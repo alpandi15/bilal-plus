@@ -22,7 +22,9 @@ void main() {
     // yang tak pernah ada di lingkungan uji - macet selamanya, bukan error.
     SharedPreferences.setMockInitialValues({});
 
-    await tester.pumpWidget(const RinduRamadanApp(homeWidgets: false));
+    await tester.pumpWidget(
+      const RinduRamadanApp(homeWidgets: false, onboarding: false),
+    );
     await _settle(tester);
 
     // default sebelum lokasi lain dipilih (GPS gagal di lingkungan uji)

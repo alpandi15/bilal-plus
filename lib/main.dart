@@ -17,14 +17,21 @@ import 'pages/backup_page.dart';
 import 'pages/hijri_calendar_page.dart';
 import 'pages/home_shell.dart';
 import 'pages/ibadah_page.dart';
+import 'pages/onboarding_page.dart';
 import 'pages/quran_tracker_page.dart';
+import 'pages/splash_view.dart';
 
 void main() {
   runApp(const RinduRamadanApp());
 }
 
 class RinduRamadanApp extends StatefulWidget {
-  const RinduRamadanApp({super.key, this.database, this.homeWidgets = true});
+  const RinduRamadanApp({
+    super.key,
+    this.database,
+    this.homeWidgets = true,
+    this.onboarding = true,
+  });
 
   /// Basis data pengganti (mis. in-memory untuk uji); null = berkas SQLite
   /// aplikasi.
@@ -33,6 +40,9 @@ class RinduRamadanApp extends StatefulWidget {
   /// Sinkron & tangani ketukan widget layar utama Ibadah/Al-Qur'an. Uji
   /// mematikannya karena plugin `home_widget` tidak tersedia di sana.
   final bool homeWidgets;
+
+  /// Tampilkan setup awal pada pemakaian pertama. Uji mematikannya.
+  final bool onboarding;
 
   @override
   State<RinduRamadanApp> createState() => _RinduRamadanAppState();
@@ -68,9 +78,12 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   @override
   void initState() {
     super.initState();
-    _location.init();
     _hijri.init();
-    _settings.init();
+    // lokasi menunggu pengaturan: sebelum setup awal selesai, izin GPS
+    // diminta di halaman setup (dengan penjelasan), bukan langsung saat buka
+    _settings.init().then(
+      (_) => _location.init(autoGps: _settings.onboarded || !widget.onboarding),
+    );
     if (widget.homeWidgets) {
       _widgetSync
         ..start()
@@ -173,7 +186,11 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
                 'quran' => const QuranTrackerPage(),
                 'ibadah' => const IbadahPage(),
                 'backup' => const BackupPage(),
-                _ => HomeShell(key: _shell),
+                'onboarding' => const OnboardingPage(),
+                _ => StartGate(
+                  onboarding: widget.onboarding,
+                  home: HomeShell(key: _shell),
+                ),
               },
             ),
           ),
