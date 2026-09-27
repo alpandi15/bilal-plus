@@ -1,0 +1,110 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:rindu_ramadan/services/tajweed.dart';
+
+/// Potongan berwarna saja: (teks, hukum).
+List<(String, TajweedRule)> colored(String ayah) => [
+  for (final s in tajweedSegments(ayah))
+    if (s.rule != null) (s.text.trim(), s.rule!),
+];
+
+Set<TajweedRule> rulesOf(String ayah) => {for (final c in colored(ayah)) c.$2};
+
+/// Ayat asli dari data MSI (surah:ayat).
+final _ayah =
+    (jsonDecode(File('assets/quran/quran.json').readAsStringSync())
+            as Map)['ayah']
+        as List;
+String msi(int surah, int ayah) {
+  const counts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111];
+  var index = ayah - 1;
+  for (var s = 1; s < surah; s++) {
+    index += counts[s - 1];
+  }
+  return _ayah[index][0] as String;
+}
+
+void main() {
+  test('teks tidak berubah setelah dipecah', () {
+    const a =
+        'وَالَّذِيْنَ يُؤْمِنُوْنَ بِمَآ اُنْزِلَ اِلَيْكَ وَمَآ اُنْزِلَ '
+        'مِنْ قَبْلِكَ ۚ وَبِالْاٰخِرَةِ هُمْ يُوْقِنُوْنَۗ';
+    expect(tajweedSegments(a).map((s) => s.text).join(), a);
+  });
+
+  test("nun sukun & tanwin: ikhfa', idgham, iqlab, izhar", () {
+    // 2:4 مِنْ قَبْلِكَ = ikhfa (nun + qaf)
+    expect(
+      colored(msi(2, 4)),
+      containsAll([('نْ', TajweedRule.ikhfa), ('قَ', TajweedRule.ikhfa)]),
+    );
+    // 2:5 هُدًى مِّنْ رَّبِّهِمْ = idgham bighunnah & bilaghunnah
+    final r = rulesOf('عَلٰى هُدًى مِّنْ رَّبِّهِمْ');
+    expect(
+      r,
+      containsAll([TajweedRule.idghamGhunnah, TajweedRule.idghamBilaGhunnah]),
+    );
+    // 2:19 مُحِيْطٌۢ بِالْكٰفِرِيْنَ = iqlab
+    expect(
+      rulesOf('وَاللّٰهُ مُحِيْطٌۢ بِالْكٰفِرِيْنَ'),
+      contains(TajweedRule.iqlab),
+    );
+    // izhar: مَنْ اٰمَنَ (hamzah) - tidak diwarnai
+    expect(colored('مَنْ اٰمَنَ'), isEmpty);
+    // izhar mutlak: nun sukun + ya dalam satu kata
+    expect(colored('الدُّنْيَا'), isEmpty);
+    // tanwin + alif washal: tidak ada hukum nun
+    expect(colored('اَحَدٌ اللّٰهُ'), isNot(contains(TajweedRule.ikhfa)));
+  });
+
+  test('mim sukun, ghunnah, qalqalah', () {
+    expect(
+      rulesOf('تَرْمِيْهِمْ بِحِجَارَةٍ'),
+      contains(TajweedRule.ikhfaSyafawi),
+    );
+    expect(
+      rulesOf('لَهُمْ مَّا يَشَاۤءُوْنَ'),
+      contains(TajweedRule.idghamMimi),
+    );
+    expect(rulesOf('اِنَّ الَّذِيْنَ'), contains(TajweedRule.ghunnah));
+    // qalqalah sughra (jim sukun) & kubra di akhir ayat (112:1 اَحَدٌ)
+    expect(rulesOf('يَجْعَلُوْنَ'), contains(TajweedRule.qalqalah));
+    expect(colored('قُلْ هُوَ اللّٰهُ اَحَدٌۚ').last, (
+      'دٌۚ',
+      TajweedRule.qalqalah,
+    ));
+    // berakhir fathatan + alif (اَبَدًا) dibaca panjang - bukan qalqalah
+    expect(
+      rulesOf('خٰلِدِيْنَ فِيْهَآ اَبَدًا'),
+      isNot(contains(TajweedRule.qalqalah)),
+    );
+  });
+
+  test('mad wajib, jaiz, lazim (tanda MSI)', () {
+    // 2:19 السَّمَاۤءِ, 2:4 بِمَآ اُنْزِلَ
+    expect(rulesOf(msi(2, 19)), contains(TajweedRule.madWajib));
+    expect(rulesOf(msi(2, 4)), contains(TajweedRule.madJaiz));
+    // 2:1 الۤمّۤ: mad lazim mengalahkan ghunnah pada مّۤ
+    final alm = colored(msi(2, 1));
+    expect(alm.map((c) => c.$2).toSet(), {TajweedRule.madLazim});
+  });
+
+  test('seluruh mushaf: tiap ayat bisa diwarnai tanpa mengubah teks', () {
+    final data =
+        jsonDecode(File('assets/quran/quran.json').readAsStringSync()) as Map;
+    final counts = <TajweedRule, int>{};
+    for (final a in data['ayah'] as List) {
+      final text = a[0] as String;
+      final segs = tajweedSegments(text);
+      expect(segs.map((s) => s.text).join(), text);
+      for (final s in segs) {
+        if (s.rule != null) counts[s.rule!] = (counts[s.rule!] ?? 0) + 1;
+      }
+    }
+    // semua hukum muncul
+    expect(counts.keys.toSet(), TajweedRule.values.toSet());
+  });
+}

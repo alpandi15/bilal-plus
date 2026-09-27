@@ -2604,6 +2604,402 @@ class QuranLogsCompanion extends UpdateCompanion<QuranLog> {
   }
 }
 
+class $QuranNotesTable extends QuranNotes
+    with TableInfo<$QuranNotesTable, QuranNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuranNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _fromAyahMeta = const VerificationMeta(
+    'fromAyah',
+  );
+  @override
+  late final GeneratedColumn<int> fromAyah = GeneratedColumn<int>(
+    'from_ayah',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toAyahMeta = const VerificationMeta('toAyah');
+  @override
+  late final GeneratedColumn<int> toAyah = GeneratedColumn<int>(
+    'to_ayah',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    fromAyah,
+    toAyah,
+    body,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quran_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuranNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('from_ayah')) {
+      context.handle(
+        _fromAyahMeta,
+        fromAyah.isAcceptableOrUnknown(data['from_ayah']!, _fromAyahMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fromAyahMeta);
+    }
+    if (data.containsKey('to_ayah')) {
+      context.handle(
+        _toAyahMeta,
+        toAyah.isAcceptableOrUnknown(data['to_ayah']!, _toAyahMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toAyahMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuranNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuranNote(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      fromAyah: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}from_ayah'],
+      )!,
+      toAyah: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}to_ayah'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QuranNotesTable createAlias(String alias) {
+    return $QuranNotesTable(attachedDatabase, alias);
+  }
+}
+
+class QuranNote extends DataClass implements Insertable<QuranNote> {
+  final int id;
+  final int fromAyah;
+  final int toAyah;
+  final String body;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const QuranNote({
+    required this.id,
+    required this.fromAyah,
+    required this.toAyah,
+    required this.body,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['from_ayah'] = Variable<int>(fromAyah);
+    map['to_ayah'] = Variable<int>(toAyah);
+    map['body'] = Variable<String>(body);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  QuranNotesCompanion toCompanion(bool nullToAbsent) {
+    return QuranNotesCompanion(
+      id: Value(id),
+      fromAyah: Value(fromAyah),
+      toAyah: Value(toAyah),
+      body: Value(body),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory QuranNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuranNote(
+      id: serializer.fromJson<int>(json['id']),
+      fromAyah: serializer.fromJson<int>(json['fromAyah']),
+      toAyah: serializer.fromJson<int>(json['toAyah']),
+      body: serializer.fromJson<String>(json['body']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'fromAyah': serializer.toJson<int>(fromAyah),
+      'toAyah': serializer.toJson<int>(toAyah),
+      'body': serializer.toJson<String>(body),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  QuranNote copyWith({
+    int? id,
+    int? fromAyah,
+    int? toAyah,
+    String? body,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => QuranNote(
+    id: id ?? this.id,
+    fromAyah: fromAyah ?? this.fromAyah,
+    toAyah: toAyah ?? this.toAyah,
+    body: body ?? this.body,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  QuranNote copyWithCompanion(QuranNotesCompanion data) {
+    return QuranNote(
+      id: data.id.present ? data.id.value : this.id,
+      fromAyah: data.fromAyah.present ? data.fromAyah.value : this.fromAyah,
+      toAyah: data.toAyah.present ? data.toAyah.value : this.toAyah,
+      body: data.body.present ? data.body.value : this.body,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuranNote(')
+          ..write('id: $id, ')
+          ..write('fromAyah: $fromAyah, ')
+          ..write('toAyah: $toAyah, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, fromAyah, toAyah, body, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuranNote &&
+          other.id == this.id &&
+          other.fromAyah == this.fromAyah &&
+          other.toAyah == this.toAyah &&
+          other.body == this.body &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class QuranNotesCompanion extends UpdateCompanion<QuranNote> {
+  final Value<int> id;
+  final Value<int> fromAyah;
+  final Value<int> toAyah;
+  final Value<String> body;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const QuranNotesCompanion({
+    this.id = const Value.absent(),
+    this.fromAyah = const Value.absent(),
+    this.toAyah = const Value.absent(),
+    this.body = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  QuranNotesCompanion.insert({
+    this.id = const Value.absent(),
+    required int fromAyah,
+    required int toAyah,
+    required String body,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : fromAyah = Value(fromAyah),
+       toAyah = Value(toAyah),
+       body = Value(body),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<QuranNote> custom({
+    Expression<int>? id,
+    Expression<int>? fromAyah,
+    Expression<int>? toAyah,
+    Expression<String>? body,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (fromAyah != null) 'from_ayah': fromAyah,
+      if (toAyah != null) 'to_ayah': toAyah,
+      if (body != null) 'body': body,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  QuranNotesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? fromAyah,
+    Value<int>? toAyah,
+    Value<String>? body,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return QuranNotesCompanion(
+      id: id ?? this.id,
+      fromAyah: fromAyah ?? this.fromAyah,
+      toAyah: toAyah ?? this.toAyah,
+      body: body ?? this.body,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (fromAyah.present) {
+      map['from_ayah'] = Variable<int>(fromAyah.value);
+    }
+    if (toAyah.present) {
+      map['to_ayah'] = Variable<int>(toAyah.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuranNotesCompanion(')
+          ..write('id: $id, ')
+          ..write('fromAyah: $fromAyah, ')
+          ..write('toAyah: $toAyah, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2613,6 +3009,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RamadanRecapsTable ramadanRecaps = $RamadanRecapsTable(this);
   late final $QuranCyclesTable quranCycles = $QuranCyclesTable(this);
   late final $QuranLogsTable quranLogs = $QuranLogsTable(this);
+  late final $QuranNotesTable quranNotes = $QuranNotesTable(this);
   late final QuranDao quranDao = QuranDao(this as AppDatabase);
   late final IbadahDao ibadahDao = IbadahDao(this as AppDatabase);
   @override
@@ -2626,6 +3023,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ramadanRecaps,
     quranCycles,
     quranLogs,
+    quranNotes,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4436,6 +4834,216 @@ typedef $$QuranLogsTableProcessedTableManager =
       QuranLog,
       PrefetchHooks Function({bool cycleId})
     >;
+typedef $$QuranNotesTableCreateCompanionBuilder =
+    QuranNotesCompanion Function({
+      Value<int> id,
+      required int fromAyah,
+      required int toAyah,
+      required String body,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+    });
+typedef $$QuranNotesTableUpdateCompanionBuilder =
+    QuranNotesCompanion Function({
+      Value<int> id,
+      Value<int> fromAyah,
+      Value<int> toAyah,
+      Value<String> body,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+class $$QuranNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $QuranNotesTable> {
+  $$QuranNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fromAyah => $composableBuilder(
+    column: $table.fromAyah,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get toAyah => $composableBuilder(
+    column: $table.toAyah,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuranNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuranNotesTable> {
+  $$QuranNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fromAyah => $composableBuilder(
+    column: $table.fromAyah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get toAyah => $composableBuilder(
+    column: $table.toAyah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuranNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuranNotesTable> {
+  $$QuranNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get fromAyah =>
+      $composableBuilder(column: $table.fromAyah, builder: (column) => column);
+
+  GeneratedColumn<int> get toAyah =>
+      $composableBuilder(column: $table.toAyah, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$QuranNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuranNotesTable,
+          QuranNote,
+          $$QuranNotesTableFilterComposer,
+          $$QuranNotesTableOrderingComposer,
+          $$QuranNotesTableAnnotationComposer,
+          $$QuranNotesTableCreateCompanionBuilder,
+          $$QuranNotesTableUpdateCompanionBuilder,
+          (
+            QuranNote,
+            BaseReferences<_$AppDatabase, $QuranNotesTable, QuranNote>,
+          ),
+          QuranNote,
+          PrefetchHooks Function()
+        > {
+  $$QuranNotesTableTableManager(_$AppDatabase db, $QuranNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuranNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuranNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuranNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> fromAyah = const Value.absent(),
+                Value<int> toAyah = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => QuranNotesCompanion(
+                id: id,
+                fromAyah: fromAyah,
+                toAyah: toAyah,
+                body: body,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int fromAyah,
+                required int toAyah,
+                required String body,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+              }) => QuranNotesCompanion.insert(
+                id: id,
+                fromAyah: fromAyah,
+                toAyah: toAyah,
+                body: body,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuranNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuranNotesTable,
+      QuranNote,
+      $$QuranNotesTableFilterComposer,
+      $$QuranNotesTableOrderingComposer,
+      $$QuranNotesTableAnnotationComposer,
+      $$QuranNotesTableCreateCompanionBuilder,
+      $$QuranNotesTableUpdateCompanionBuilder,
+      (QuranNote, BaseReferences<_$AppDatabase, $QuranNotesTable, QuranNote>),
+      QuranNote,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4452,11 +5060,14 @@ class $AppDatabaseManager {
       $$QuranCyclesTableTableManager(_db, _db.quranCycles);
   $$QuranLogsTableTableManager get quranLogs =>
       $$QuranLogsTableTableManager(_db, _db.quranLogs);
+  $$QuranNotesTableTableManager get quranNotes =>
+      $$QuranNotesTableTableManager(_db, _db.quranNotes);
 }
 
 mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
   $QuranCyclesTable get quranCycles => attachedDatabase.quranCycles;
   $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
+  $QuranNotesTable get quranNotes => attachedDatabase.quranNotes;
   QuranDaoManager get managers => QuranDaoManager(this);
 }
 
@@ -4467,6 +5078,8 @@ class QuranDaoManager {
       $$QuranCyclesTableTableManager(_db.attachedDatabase, _db.quranCycles);
   $$QuranLogsTableTableManager get quranLogs =>
       $$QuranLogsTableTableManager(_db.attachedDatabase, _db.quranLogs);
+  $$QuranNotesTableTableManager get quranNotes =>
+      $$QuranNotesTableTableManager(_db.attachedDatabase, _db.quranNotes);
 }
 
 mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {

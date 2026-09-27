@@ -212,6 +212,11 @@ class AdzanNotifications {
                 _reminderChannel.name,
                 channelDescription: _reminderChannel.description,
                 color: const Color(0xFFB45309),
+                // teks panjang bisa dibuka penuh (tarik ke bawah / panah)
+                styleInformation: BigTextStyleInformation(
+                  m.body,
+                  contentTitle: m.title,
+                ),
                 timeoutAfter: before * 60 * 1000,
               ),
             ),

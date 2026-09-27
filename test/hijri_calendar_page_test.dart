@@ -35,7 +35,11 @@ void main() {
     // buka halaman kalender dari tab Lainnya
     await tester.tap(find.text('Lainnya'));
     await _settle(tester);
-    await tester.ensureVisible(find.text('Kalender Hijriah'));
+    await tester.scrollUntilVisible(
+      find.text('Kalender Hijriah'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     await _settle(tester);
     await tester.tap(find.text('Kalender Hijriah'));
     await _settle(tester);

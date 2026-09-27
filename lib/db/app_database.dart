@@ -157,6 +157,17 @@ class QuranLogs extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+/// Catatan pribadi pada rentang ayat (nomor ayat global 1..6236, inklusif).
+@DataClassName('QuranNote')
+class QuranNotes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get fromAyah => integer()();
+  IntColumn get toAyah => integer()();
+  TextColumn get body => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
 @DriftDatabase(
   tables: [
     IbadahItems,
@@ -165,6 +176,7 @@ class QuranLogs extends Table {
     RamadanRecaps,
     QuranCycles,
     QuranLogs,
+    QuranNotes,
   ],
   daos: [QuranDao, IbadahDao],
 )
@@ -182,7 +194,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -203,6 +215,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         // v4: sholat wajib berjama'ah / sendiri
         await m.addColumn(ibadahLogs, ibadahLogs.jamaah);
+      }
+      if (from < 5) {
+        // v5: catatan pribadi per rentang ayat
+        await m.createTable(quranNotes);
       }
     },
     beforeOpen: (details) async {
@@ -718,9 +734,62 @@ class QuranProgress {
   int? get nextAyah => lastAyah >= totalAyahs ? null : lastAyah + 1;
 }
 
-@DriftAccessor(tables: [QuranCycles, QuranLogs])
+@DriftAccessor(tables: [QuranCycles, QuranLogs, QuranNotes])
 class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
   QuranDao(super.db);
+
+  /// Semua catatan ayat, urut mushaf lalu yang terbaru.
+  Stream<List<QuranNote>> watchNotes() =>
+      (select(quranNotes)..orderBy([
+            (n) => OrderingTerm.asc(n.fromAyah),
+            (n) => OrderingTerm.desc(n.updatedAt),
+          ]))
+          .watch();
+
+  /// Catatan yang menyentuh ayat [from]..[to] (mis. satu surah).
+  Stream<List<QuranNote>> watchNotesBetween(int from, int to) =>
+      (select(quranNotes)
+            ..where(
+              (n) =>
+                  n.fromAyah.isSmallerOrEqualValue(to) &
+                  n.toAyah.isBiggerOrEqualValue(from),
+            )
+            ..orderBy([(n) => OrderingTerm.asc(n.fromAyah)]))
+          .watch();
+
+  /// Simpan catatan baru ([id] null) atau perbarui yang ada.
+  Future<int> saveNote({
+    int? id,
+    required int fromAyah,
+    required int toAyah,
+    required String body,
+  }) async {
+    assert(fromAyah >= 1 && toAyah <= totalAyahs && fromAyah <= toAyah);
+    final now = DateTime.now();
+    if (id == null) {
+      return into(quranNotes).insert(
+        QuranNotesCompanion.insert(
+          fromAyah: fromAyah,
+          toAyah: toAyah,
+          body: body,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    await (update(quranNotes)..where((n) => n.id.equals(id))).write(
+      QuranNotesCompanion(
+        fromAyah: Value(fromAyah),
+        toAyah: Value(toAyah),
+        body: Value(body),
+        updatedAt: Value(now),
+      ),
+    );
+    return id;
+  }
+
+  Future<void> deleteNote(int id) =>
+      (delete(quranNotes)..where((n) => n.id.equals(id))).go();
 
   Future<QuranCycle?> _openCycle() =>
       (select(quranCycles)

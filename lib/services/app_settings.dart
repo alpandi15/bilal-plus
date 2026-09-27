@@ -24,6 +24,8 @@ class AppSettings {
   static const lastJamaahKey = 'sholat_last_jamaah';
   static const onboardedKey = 'onboarded';
   static const userNameKey = 'user_name';
+  static const quranTajweedKey = 'quran_tajweed';
+  static const quranLastReadKey = 'quran_last_read';
 }
 
 /// Batas ukuran teks Arab di pembaca bilal.
@@ -80,6 +82,15 @@ class AppSettingsController extends ChangeNotifier {
   /// null = belum dipilih (narasi umum).
   Gender? get gender => _gender;
 
+  bool _quranTajweed = true;
+  int? _quranLastRead;
+
+  /// Warna hukum tajwid di pembaca Al-Qur'an.
+  bool get quranTajweed => _quranTajweed;
+
+  /// Ayat global terakhir yang dibuka di pembaca (untuk "Lanjutkan").
+  int? get quranLastRead => _quranLastRead;
+
   bool _onboarded = false;
   String? _userName;
 
@@ -134,6 +145,8 @@ class AppSettingsController extends ChangeNotifier {
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
       _madzhab = Madzhab.parse(prefs.getString(AppSettings.madzhabKey));
       _onboarded = prefs.getBool(AppSettings.onboardedKey) ?? false;
+      _quranTajweed = prefs.getBool(AppSettings.quranTajweedKey) ?? true;
+      _quranLastRead = prefs.getInt(AppSettings.quranLastReadKey);
       _userName = prefs.getString(AppSettings.userNameKey);
       _readerSize =
           prefs.getDouble(AppSettings.readerSizeKey) ?? readerSizeDefault;
@@ -156,6 +169,19 @@ class AppSettingsController extends ChangeNotifier {
 
   /// Sudah dibaca dari penyimpanan (sebelum itu nilainya bawaan).
   bool get loaded => _loaded;
+
+  Future<void> setQuranTajweed(bool v) async {
+    _quranTajweed = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.quranTajweedKey, v));
+  }
+
+  Future<void> setQuranLastRead(int index) async {
+    if (index == _quranLastRead) return;
+    _quranLastRead = index;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.quranLastReadKey, index));
+  }
 
   Future<void> setUserName(String? v) async {
     final name = v?.trim();

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
+import 'quran_index.dart';
 
 /// Versi format berkas cadangan. Naikkan bila bentuknya berubah dan
 /// tambahkan pembacaan versi lama di [BackupService.import] - berkas lama
@@ -85,6 +86,7 @@ class BackupService {
     final recaps = await db.select(db.ramadanRecaps).get();
     final cycles = await db.select(db.quranCycles).get();
     final qlogs = await db.select(db.quranLogs).get();
+    final notes = await db.select(db.quranNotes).get();
 
     return {
       'app': _appId,
@@ -158,6 +160,16 @@ class BackupService {
             'createdAt': _iso(l.createdAt),
           },
       ],
+      'quranNotes': [
+        for (final n in notes)
+          {
+            'fromAyah': n.fromAyah,
+            'toAyah': n.toAyah,
+            'body': n.body,
+            'createdAt': _iso(n.createdAt),
+            'updatedAt': _iso(n.updatedAt),
+          },
+      ],
     };
   }
 
@@ -219,6 +231,7 @@ class BackupService {
     final replace = mode == ImportMode.replace;
     try {
       if (replace) {
+        await db.delete(db.quranNotes).go();
         await db.delete(db.quranLogs).go();
         await db.delete(db.quranCycles).go();
         await db.delete(db.ibadahLogs).go();
@@ -341,6 +354,7 @@ class BackupService {
       }
 
       final quranCount = await _importQuran(data, replace: replace);
+      await _importNotes(data);
 
       return ImportResult(
         ibadahLogs: ibadahCount,
@@ -352,6 +366,49 @@ class BackupService {
     } catch (e) {
       // tipe/bentuk tak terduga: batalkan seluruh transaksi
       throw BackupException('Isi berkas cadangan rusak ($e).');
+    }
+  }
+
+  /// Catatan ayat dicocokkan lewat (rentang ayat, waktu dibuat); yang sama
+  /// diambil yang paling baru diperbarui. Berkas lama tanpa catatan: dilewati.
+  Future<void> _importNotes(Map<String, dynamic> data) async {
+    for (final n in _list(data, 'quranNotes')) {
+      final from = n['fromAyah'] as int, to = n['toAyah'] as int;
+      if (from < 1 || to > totalAyahs || from > to) {
+        throw const BackupException('Rentang ayat catatan tidak valid.');
+      }
+      final created = _date(n['createdAt']);
+      final updated = _date(n['updatedAt']);
+      final existing =
+          await (db.select(db.quranNotes)..where(
+                (x) =>
+                    x.fromAyah.equals(from) &
+                    x.toAyah.equals(to) &
+                    x.createdAt.equals(created),
+              ))
+              .getSingleOrNull();
+      if (existing == null) {
+        await db
+            .into(db.quranNotes)
+            .insert(
+              QuranNotesCompanion.insert(
+                fromAyah: from,
+                toAyah: to,
+                body: n['body'] as String,
+                createdAt: created,
+                updatedAt: updated,
+              ),
+            );
+      } else if (updated.isAfter(existing.updatedAt)) {
+        await (db.update(
+          db.quranNotes,
+        )..where((x) => x.id.equals(existing.id))).write(
+          QuranNotesCompanion(
+            body: Value(n['body'] as String),
+            updatedAt: Value(updated),
+          ),
+        );
+      }
     }
   }
 

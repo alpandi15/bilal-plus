@@ -10,6 +10,8 @@ import '../utils/date_key.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/quran/quran_log_sheet.dart';
 import '../widgets/sub_header.dart';
+import 'quran/quran_home_page.dart';
+import 'quran/quran_notes_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -263,6 +265,8 @@ class _Body extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
               ],
+              const _ReadCard(),
+              const SizedBox(height: 14),
               _HeroCard(progress: data.progress, onLog: () => onLog()),
               const SizedBox(height: 14),
               target == null
@@ -843,4 +847,93 @@ class _EmptyHistory extends StatelessWidget {
       style: TextStyle(fontSize: 12, color: _muted, height: 1.4),
     ),
   );
+}
+
+/// Pintu ke mushaf (baca + tajwid) & catatan pribadi.
+class _ReadCard extends StatelessWidget {
+  const _ReadCard();
+
+  void _push(BuildContext context, Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF00503C), Color(0xFF0C3A33)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33064E3B),
+            blurRadius: 24,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.menu_book_rounded, color: Color(0xFFF2D38A)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Baca Al-Qur'an",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Mushaf Standar Indonesia dengan warna tajwid, terjemahan, dan '
+            'catatan pribadi per ayat.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: Color(0xCCFFFFFF),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFF2D38A),
+                    foregroundColor: const Color(0xFF0C3A33),
+                  ),
+                  onPressed: () => _push(context, const QuranHomePage()),
+                  icon: const Icon(Icons.auto_stories_rounded, size: 18),
+                  label: const Text('Buka mushaf'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0x66FFFFFF)),
+                  ),
+                  onPressed: () => _push(context, const QuranNotesPage()),
+                  icon: const Icon(Icons.sticky_note_2_outlined, size: 18),
+                  label: const Text('Catatan'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

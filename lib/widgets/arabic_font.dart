@@ -18,9 +18,20 @@ class ArabicText extends StatelessWidget {
     this.textAlign = TextAlign.right,
     this.maxLines,
     this.overflow,
-  });
+  }) : parts = null;
+
+  /// Teks berwarna per potongan (mis. hukum tajwid); warna null = biasa.
+  const ArabicText.rich(
+    List<({String text, Color? color})> this.parts, {
+    super.key,
+    required this.style,
+    this.textAlign = TextAlign.right,
+    this.maxLines,
+    this.overflow,
+  }) : text = '';
 
   final String text;
+  final List<({String text, Color? color})>? parts;
 
   /// Gaya dasar; [arabicFont] dipasang otomatis.
   final TextStyle style;
@@ -30,6 +41,26 @@ class ArabicText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spans = parts == null
+        ? _spans(text)
+        : [
+            for (final p in parts!)
+              TextSpan(
+                style: p.color == null ? null : TextStyle(color: p.color),
+                children: _spans(p.text),
+              ),
+          ];
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: textAlign,
+      textDirection: TextDirection.rtl,
+      maxLines: maxLines,
+      overflow: overflow,
+      style: style.copyWith(fontFamily: arabicFont),
+    );
+  }
+
+  static List<InlineSpan> _spans(String text) {
     final spans = <InlineSpan>[];
     var last = 0;
     for (final m in _punctuation.allMatches(text)) {
@@ -45,13 +76,6 @@ class ArabicText extends StatelessWidget {
       last = m.end;
     }
     if (last < text.length) spans.add(TextSpan(text: text.substring(last)));
-    return Text.rich(
-      TextSpan(children: spans),
-      textAlign: textAlign,
-      textDirection: TextDirection.rtl,
-      maxLines: maxLines,
-      overflow: overflow,
-      style: style.copyWith(fontFamily: arabicFont),
-    );
+    return spans;
   }
 }

@@ -1,0 +1,402 @@
+[
+    {
+        "id": 1,
+        "title": "Doa Masuk Bulan Rajab dan Sya'ban",
+        "tema": "rajab",
+        "image": "/images/rajab.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "doa ini tidak ada di dalam hadits nabi",
+                "arabic": "اللَّهُمَّ بَارِكْ لَنَا فِيْ رَجَبَ وَشَعْبَانَ وَبَلِّغْنَا رَمَضَانَ",
+                "latin": "Allâhumma bârik lanâ fî rajaba wasya'bâna waballighnâ ramadlânâ.",
+                "indonesia": "Duhai Allah, berkahilah kami pada bulan Rajab dan bulan Sya'ban dan pertemukanlah kami dengan bulan Ramadhan.",
+                "perawih": "",
+                "is_hadits": false
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "Doa Buka Puasa",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "",
+                "arabic": "ذَهَبَ الظَّمَأُ وَابْتَلَّتْ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ",
+                "latin": "Dzahabazh zhama’u wabtallatil ‘uruuqu, wa tsabatal ajru in syaa Allah",
+                "indonesia": "Telah hilang dahaga, dan telah basah tenggorokan, dan telah ditetapkan pahala insya Allah.",
+                "perawih": "<p>HR. Abu Daud no. <a href='https://bilal-tarawih.vercel.app/bacaan/hadits/abu-daud?number=2010' target='__blank'>2010</a></p>",
+                "is_hadits": true
+            },
+            {
+                "description": "",
+                "note": "",
+                "arabic": "اللَّهُمَّ لَكَ صُمْتُ، وَعَلَى رِزْقِكَ أَفْطَرْتُ",
+                "latin": "Allahumma laka shumtu wa ‘alaa rizqika afthartu",
+                "indonesia": "Ya Allah, untuk-Mu aku berpuasa, dan dengan rezeki-Mu aku berbuka.",
+                "perawih": "<p>HR. Abu Daud no. <a href='https://bilal-tarawih.vercel.app/bacaan/hadits/abu-daud?number=2011' target='__blank'>2011</a></p>",
+                "is_hadits": true
+            },
+            {
+                "description": "",
+                "note": "",
+                "arabic": "اللّهُمَّ لَكَ صُمْتُ وَبِكَ آمَنْتُ وَعَلَى رِزْقِكَ أَفْطَرْت بِرَحْمَتِكَ يَا اَرْحَمَ الرَّحِمِيْنَ",
+                "latin": "Allahummalakasumtu wabika aamantu wa’alarizqika afthortu birohmatikaya ar-hamarrahimin",
+                "indonesia": "Ya Allah Dzat yang Maha Pemurah dari segalanya, untuk-Mu aku berpuasa dan dengan rizki dan kasih sayang-Mu aku berbuka.",
+                "perawih": "",
+                "is_hadits": false
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Niat Puasa Ramadhan",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "Dibaca pada malam hari, sebelum terbit fajar",
+                "note": "Lafal ini bukan dari hadits Nabi shallallaahu 'alaihi wa sallam — disusun sebagian ulama fikih untuk memudahkan. Niat puasa cukup di dalam hati dan tidak wajib dilafalkan.",
+                "arabic": "نَوَيْتُ صَوْمَ غَدٍ عَنْ أَدَاءِ فَرْضِ شَهْرِ رَمَضَانَ هَذِهِ السَّنَةِ لِلَّهِ تَعَالَى",
+                "latin": "Nawaitu shauma ghadin 'an adaa'i fardhi syahri ramadhaana haadzihis sanati lillaahi ta'aalaa.",
+                "indonesia": "Aku niat berpuasa esok hari untuk menunaikan kewajiban bulan Ramadhan tahun ini, karena Allah Ta'ala.",
+                "perawih": "",
+                "is_hadits": false
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "title": "Doa Melihat Hilal Ramadhan",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Dibaca ketika melihat hilal (bulan sabit) awal bulan, termasuk awal Ramadhan.",
+                "arabic": "اللَّهُمَّ أَهِلَّهُ عَلَيْنَا بِالْيُمْنِ وَالْإِيمَانِ، وَالسَّلَامَةِ وَالْإِسْلَامِ، رَبِّي وَرَبُّكَ اللَّهُ",
+                "latin": "Allaahumma ahillahu 'alainaa bil yumni wal iimaani, was salaamati wal islaami. Rabbii wa rabbukallaah.",
+                "indonesia": "Ya Allah, terbitkanlah hilal itu kepada kami dengan membawa keberkahan dan keimanan, keselamatan, dan Islam. Tuhanku dan Tuhanmu -wahai hilal- adalah Allah.",
+                "perawih": "<p>HR. Tirmidzi no. 3451, Ahmad, dan Ad-Darimi. Dinilai hasan oleh Syaikh Al-Albani.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Doa Malam Lailatul Qadar",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Diajarkan Rasulullah shallallaahu 'alaihi wa sallam kepada Aisyah RA ketika beliau bertanya, doa apa yang sebaiknya dibaca jika mendapati malam Lailatul Qadar.",
+                "arabic": "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي",
+                "latin": "Allaahumma innaka 'afuwwun tuhibbul 'afwa fa'fu 'annii.",
+                "indonesia": "Ya Allah, sesungguhnya Engkau Maha Pemaaf, Engkau menyukai maaf, maka maafkanlah aku.",
+                "perawih": "<p>HR. Tirmidzi no. 3513 (dinilai hasan shahih oleh At-Tirmidzi) dan Ibnu Majah no. 3850, dari Aisyah radhiyallahu 'anha.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "title": "Niat Zakat Fitrah",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "Pemberi (muzakki), untuk diri sendiri — diucapkan saat menyerahkan kepada mustahik atau panitia",
+                "note": "Lafal niat ini adalah kebiasaan sebagian ulama fikih untuk memudahkan, bukan dari hadits Nabi shallallaahu 'alaihi wa sallam. Yang wajib adalah niat di dalam hati.",
+                "arabic": "نَوَيْتُ أَنْ أُخْرِجَ زَكَاةَ الْفِطْرِ عَنْ نَفْسِي فَرْضًا لِلَّهِ تَعَالَى",
+                "latin": "Nawaitu an ukhrija zakaatal fitri 'an nafsii fardhan lillaahi ta'aalaa.",
+                "indonesia": "Aku niat mengeluarkan zakat fitrah untuk diriku sendiri, fardu karena Allah Ta'ala.",
+                "perawih": "",
+                "is_hadits": false,
+                "role": "pemberi"
+            },
+            {
+                "description": "Pemberi (muzakki), untuk diri dan keluarga — diucapkan saat menyerahkan kepada mustahik atau panitia",
+                "note": "Lafal niat ini adalah kebiasaan sebagian ulama fikih, bukan dari hadits Nabi shallallaahu 'alaihi wa sallam.",
+                "arabic": "نَوَيْتُ أَنْ أُخْرِجَ زَكَاةَ الْفِطْرِ عَنِّي وَعَنْ جَمِيعِ مَا يَلْزَمُنِي نَفَقَاتُهُمْ شَرْعًا فَرْضًا لِلَّهِ تَعَالَى",
+                "latin": "Nawaitu an ukhrija zakaatal fitri 'annii wa 'an jamii'i maa yalzimunii nafaqootuhum syar'an fardhan lillaahi ta'aalaa.",
+                "indonesia": "Aku niat mengeluarkan zakat fitrah untuk diriku dan semua orang yang nafkahnya menjadi tanggunganku secara syar'i, fardu karena Allah Ta'ala.",
+                "perawih": "",
+                "is_hadits": false,
+                "role": "pemberi"
+            }
+        ]
+    },
+    {
+        "id": 7,
+        "title": "Doa Sebelum Makan",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "Bacaan utama",
+                "note": "",
+                "arabic": "بِسْمِ اللَّهِ",
+                "latin": "Bismillaah.",
+                "indonesia": "Dengan menyebut nama Allah.",
+                "perawih": "<p>HR. Abu Daud, Tirmidzi, dan Ibnu Majah, dari Aisyah radhiyallahu 'anha.</p>",
+                "is_hadits": true
+            },
+            {
+                "description": "Jika lupa membaca Bismillah di awal",
+                "note": "",
+                "arabic": "بِسْمِ اللَّهِ أَوَّلَهُ وَآخِرَهُ",
+                "latin": "Bismillaahi awwalahu wa aakhirahu.",
+                "indonesia": "Dengan menyebut nama Allah pada awal dan akhirnya.",
+                "perawih": "<p>HR. Abu Daud no. 3767, Tirmidzi no. 1858 (hasan shahih), dan Ibnu Majah no. 3264, dari Aisyah radhiyallahu 'anha. Dinilai shahih oleh Syaikh Al-Albani.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 8,
+        "title": "Doa Sesudah Makan",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "Bacaan singkat",
+                "note": "",
+                "arabic": "الْحَمْدُ لِلَّهِ",
+                "latin": "Alhamdulillaah.",
+                "indonesia": "Segala puji bagi Allah.",
+                "perawih": "<p>HR. Muslim no. 2734, dari Anas bin Malik radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            },
+            {
+                "description": "Bacaan yang biasa diucapkan Nabi shallallaahu 'alaihi wa sallam",
+                "note": "",
+                "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ",
+                "latin": "Alhamdulillaahilladzii ath'amanii haadzaa wa razaqaniihi min ghairi haulin minnii wa laa quwwatin.",
+                "indonesia": "Segala puji bagi Allah yang telah memberiku makan ini dan memberiku rezeki tanpa daya dan kekuatan dariku.",
+                "perawih": "<p>HR. Tirmidzi no. 3458 dan Ibnu Majah no. 3285, dari Mu'adz bin Anas radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            },
+            {
+                "description": "Bacaan yang lebih panjang",
+                "note": "",
+                "arabic": "الْحَمْدُ لِلَّهِ حَمْدًا كَثِيرًا طَيِّبًا مُبَارَكًا فِيهِ غَيْرَ مَكْفِيٍّ وَلَا مُوَدَّعٍ وَلَا مُسْتَغْنًى عَنْهُ رَبَّنَا",
+                "latin": "Alhamdulillaahi hamdan katsiiran thayyiban mubaarakan fiihi ghaira makfiyyin wa laa muwadda'in wa laa mustaghnan 'anhu rabbanaa.",
+                "indonesia": "Segala puji bagi Allah dengan pujian yang banyak, baik, dan penuh berkah, yang tidak bisa dicukupi, tidak ditinggalkan, dan tidak bisa tidak butuh kepada-Nya, wahai Tuhan kami.",
+                "perawih": "<p>HR. Bukhari no. 5458, dari Abu Umamah radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 9,
+        "title": "Doa Masuk Kamar Mandi (WC)",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "",
+                "arabic": "بِسْمِ اللَّهِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ",
+                "latin": "Bismillaah, Allaahumma innii a'uudzu bika minal khubutsi wal khabaa-its.",
+                "indonesia": "Dengan menyebut nama Allah. Ya Allah, sesungguhnya aku berlindung kepada-Mu dari godaan setan laki-laki dan setan perempuan.",
+                "perawih": "<p>HR. Bukhari dan Muslim, dari Anas bin Malik radhiyallahu 'anhu. Bacaan \"Bismillah\" di awalnya berdasarkan riwayat Tirmidzi no. 606.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "title": "Doa Keluar Kamar Mandi (WC)",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "",
+                "arabic": "غُفْرَانَكَ",
+                "latin": "Ghufraanaka.",
+                "indonesia": "(Ya Allah, aku memohon) ampunan-Mu.",
+                "perawih": "<p>HR. Abu Daud no. 30, Tirmidzi no. 7, dan Ibnu Majah no. 300, dari Aisyah radhiyallahu 'anha. Dinilai shahih oleh Syaikh Al-Albani.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 11,
+        "title": "Doa Sebelum dan Bangun Tidur",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "Sebelum tidur",
+                "note": "",
+                "arabic": "بِاسْمِكَ اللَّهُمَّ أَحْيَا وَأَمُوتُ",
+                "latin": "Bismika allaahumma ahyaa wa amuutu.",
+                "indonesia": "Dengan nama-Mu ya Allah aku hidup dan aku mati.",
+                "perawih": "<p>HR. Bukhari no. 6314 dan Muslim no. 2711, dari Hudzaifah radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            },
+            {
+                "description": "Setelah bangun tidur",
+                "note": "",
+                "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+                "latin": "Alhamdulillaahilladzii ahyaanaa ba'da maa amaatanaa wa ilaihin nusyuur.",
+                "indonesia": "Segala puji bagi Allah yang telah menghidupkan kami setelah mematikan kami, dan hanya kepada-Nya kami dibangkitkan (kembali).",
+                "perawih": "<p>HR. Bukhari no. 6314 dan Muslim no. 2711, dari Hudzaifah radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 12,
+        "title": "Doa Keluar Rumah",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "",
+                "arabic": "بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ، لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+                "latin": "Bismillaahi tawakkaltu 'alallaahi, laa haula wa laa quwwata illaa billaah.",
+                "indonesia": "Dengan nama Allah aku bertawakal kepada Allah, tiada daya dan tiada kekuatan kecuali dengan (pertolongan) Allah.",
+                "perawih": "<p>HR. Abu Daud dan Tirmidzi no. 3348, dari Anas bin Malik radhiyallahu 'anhu. Dinilai shahih oleh Syaikh Al-Albani.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 13,
+        "title": "Doa Masuk Rumah",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Status sanadnya diperselisihkan ulama: Syaikh Al-Albani menilainya dhaif (lemah) karena ada keterputusan sanad, namun sebagian ulama seperti Syaikh Ibnu Baz menghasankannya karena ada penguat dari riwayat lain.",
+                "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ الْمَوْلِجِ وَخَيْرَ الْمَخْرَجِ، بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا",
+                "latin": "Allaahumma innii as-aluka khairal mawliji wa khairal makhraji, bismillaahi walajnaa, wa bismillaahi kharajnaa, wa 'alallaahi rabbinaa tawakkalnaa.",
+                "indonesia": "Ya Allah, sesungguhnya aku memohon kepada-Mu sebaik-baik tempat masuk dan sebaik-baik tempat keluar. Dengan menyebut nama Allah kami masuk, dan dengan menyebut nama Allah kami keluar, dan hanya kepada Allah Tuhan kami, kami bertawakal.",
+                "perawih": "<p>HR. Abu Daud no. 5096.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 14,
+        "title": "Doa Naik Kendaraan / Safar",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "",
+                "arabic": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ",
+                "latin": "Subhaanalladzii sakhkhara lanaa haadzaa wa maa kunnaa lahuu muqriniina, wa innaa ilaa rabbinaa lamunqalibuun.",
+                "indonesia": "Mahasuci Allah yang telah menundukkan kendaraan ini untuk kami, padahal kami sebelumnya tidak mampu menguasainya, dan sesungguhnya kami akan kembali kepada Tuhan kami.",
+                "perawih": "<p>Berdasarkan QS. Az-Zukhruf: 13-14. Rasulullah shallallaahu 'alaihi wa sallam membacanya setiap kali menaiki kendaraan, sebagaimana diriwayatkan dalam HR. Muslim, Abu Daud, dan Tirmidzi, dari sahabat Ali bin Abi Thalib radhiyallahu 'anhu.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 15,
+        "title": "Doa Kafaratul Majelis (Penutup Majelis)",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Dibaca sebagai penutup suatu majelis/pertemuan; berfungsi sebagai kafarah (penebus) atas kesia-siaan yang terjadi selama majelis berlangsung.",
+                "arabic": "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ",
+                "latin": "Subhaanakallaahumma wa bihamdika, asyhadu allaa ilaaha illaa anta, astaghfiruka wa atuubu ilaik.",
+                "indonesia": "Mahasuci Engkau ya Allah, dan dengan memuji-Mu aku bersaksi tidak ada sesembahan yang berhak disembah selain Engkau. Aku memohon ampun dan bertaubat kepada-Mu.",
+                "perawih": "<p>HR. Tirmidzi no. 3433 dan Abu Daud no. 4859, dari Aisyah radhiyallahu 'anha. Dinilai shahih oleh Al-Hafizh Abu Thahir.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 16,
+        "title": "Doa Nabi Yunus (Dzun Nun)",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Doa yang dipanjatkan Nabi Yunus 'alaihissalam ketika berada di dalam perut ikan. Rasulullah shallallaahu 'alaihi wa sallam bersabda, tidaklah seorang muslim berdoa dengan doa ini untuk suatu perkara melainkan Allah mengabulkannya.",
+                "arabic": "لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ",
+                "latin": "Laa ilaaha illaa anta subhaanaka innii kuntu minazh zhaalimiin.",
+                "indonesia": "Tidak ada sesembahan yang berhak disembah selain Engkau. Mahasuci Engkau, sesungguhnya aku termasuk orang-orang yang zalim.",
+                "perawih": "<p>HR. Tirmidzi no. 3505, dinilai shahih oleh Syaikh Al-Albani. Disebutkan pula dalam Al-Qur'an surat Al-Anbiya ayat 87.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 17,
+        "title": "Doa Memohon Ilmu yang Bermanfaat",
+        "tema": "umum",
+        "image": "/images/umum.jpg",
+        "values": [
+            {
+                "description": "",
+                "note": "Dibaca Rasulullah shallallaahu 'alaihi wa sallam setiap selesai shalat Subuh.",
+                "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا",
+                "latin": "Allaahumma innii as-aluka 'ilman naafi'an, wa rizqan thayyiban, wa 'amalan mutaqabbalan.",
+                "indonesia": "Ya Allah, sesungguhnya aku memohon kepada-Mu ilmu yang bermanfaat, rezeki yang baik, dan amal yang diterima.",
+                "perawih": "<p>HR. Ibnu Majah no. 925, dari Ummu Salamah radhiyallahu 'anha. Dinilai shahih oleh Syaikh Al-Albani.</p>",
+                "is_hadits": true
+            }
+        ]
+    },
+    {
+        "id": 18,
+        "title": "Niat Fidyah Puasa",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "Pemberi, untuk diri sendiri — diucapkan saat menyerahkan kepada mustahik atau panitia",
+                "note": "Lafal ini adalah kebiasaan sebagian ulama fikih untuk memudahkan, bukan dari hadits Nabi shallallaahu 'alaihi wa sallam. Fidyah wajib bagi yang tidak berpuasa karena uzur yang tidak memungkinkan qadha (mis. sakit menahun, lansia), berupa pemberian makanan kepada orang miskin.",
+                "arabic": "نَوَيْتُ أَنْ أُخْرِجَ هَذِهِ الْفِدْيَةَ لِإِفْطَارِ صَوْمِ رَمَضَانَ فَرْضًا لِلَّهِ تَعَالَى",
+                "latin": "Nawaitu an ukhrija haadzihil fidyata li ifthaari shaumi ramadhaana fardhan lillaahi ta'aalaa.",
+                "indonesia": "Aku niat mengeluarkan fidyah ini karena (uzur) tidak berpuasa Ramadhan, fardu karena Allah Ta'ala.",
+                "perawih": "",
+                "is_hadits": false,
+                "role": "pemberi"
+            }
+        ]
+    },
+    {
+        "id": 19,
+        "title": "Doa Menerima Zakat Fitrah (Amil/Panitia)",
+        "tema": "ramadan",
+        "image": "/images/ramadan.jpg",
+        "values": [
+            {
+                "description": "Penerima (amil/panitia) — lafal yang paling kuat sanadnya",
+                "note": "Ini pola lafal yang diucapkan Rasulullah shallallaahu 'alaihi wa sallam ketika ayah sahabat Abdullah bin Abi Aufa menyerahkan zakatnya (Nabi menyebut \"Abu Aufa\"); kata \"Fulan\" pada teks ini diganti dengan nama pemberi zakat.",
+                "arabic": "اللَّهُمَّ صَلِّ عَلَى آلِ فُلَانٍ",
+                "latin": "Allaahumma shalli 'alaa aali fulaanin. (\"Fulan\" diganti nama pemberi zakat)",
+                "indonesia": "Ya Allah, limpahkanlah shalawat (rahmat) kepada keluarga Fulan.",
+                "perawih": "<p>HR. Bukhari no. 4166 dan Muslim no. 1078, dari Abdullah bin Abi Aufa radhiyallahu 'anhu.</p>",
+                "is_hadits": true,
+                "role": "penerima"
+            },
+            {
+                "description": "Penerima (amil/panitia) — versi yang populer diamalkan",
+                "note": "Lafal ini luas diamalkan lembaga amil zakat di Indonesia. Referensi hadits untuk redaksi persis ini tidak dapat dipastikan; yang berdasar hadits shahih adalah anjuran mendoakan pemberi zakat sebagaimana pada lafal pertama.",
+                "arabic": "آجَرَكَ اللَّهُ فِيمَا أَعْطَيْتَ، وَبَارَكَ فِيمَا أَبْقَيْتَ، وَجَعَلَهُ لَكَ طَهُورًا",
+                "latin": "Aajarakallaahu fiimaa a'thaita, wa baaraka fiimaa abqaita, wa ja'alahu laka thahuuran.",
+                "indonesia": "Semoga Allah memberi ganjaran atas apa yang telah engkau berikan, memberkahi harta yang engkau sisakan, dan menjadikan (zakat itu) sebagai penyuci bagimu.",
+                "perawih": "",
+                "is_hadits": false,
+                "role": "penerima"
+            }
+        ]
+    }
+]

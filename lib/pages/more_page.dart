@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../widgets/menu_card.dart';
 import '../widgets/sub_header.dart';
 import 'backup_page.dart';
+import 'doa_page.dart';
+import 'hadits_page.dart';
 import 'bilal_tarawih_page.dart';
 import 'dzikir_page.dart';
 import 'hijri_calendar_page.dart';
@@ -39,6 +41,24 @@ class MorePage extends StatelessWidget {
         const [Color(0xFFECFDF5), Colors.white, Color(0xFFF0FDF4)],
         const Color(0x736EE7B7),
         const DzikirPage(),
+      ),
+      (
+        'Hadits',
+        '9 kitab · unduh sekali, baca offline',
+        Icons.format_quote_rounded,
+        const [Color(0xFF0EA5E9), Color(0xFF0369A1)],
+        const [Color(0xFFF0F9FF), Colors.white, Color(0xFFE0F2FE)],
+        const Color(0x7338BDF8),
+        const HaditsPage(),
+      ),
+      (
+        "Kumpulan Do'a",
+        "Do'a harian & Ramadan",
+        Icons.volunteer_activism_rounded,
+        const [Color(0xFFF472B6), Color(0xFFDB2777)],
+        const [Color(0xFFFDF2F8), Colors.white, Color(0xFFFCE7F3)],
+        const Color(0x73F9A8D4),
+        const DoaPage(),
       ),
       (
         'Bacaan Sholat',
