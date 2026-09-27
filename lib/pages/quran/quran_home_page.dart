@@ -8,6 +8,7 @@ import '../../widgets/arabic_font.dart';
 import '../../widgets/quran/quran_note_sheet.dart';
 import '../../widgets/sub_header.dart';
 import 'quran_notes_page.dart';
+import 'mushaf_page.dart';
 import 'quran_reader_page.dart';
 
 const _amber = Color(0xFFB45309);
@@ -69,6 +70,22 @@ class _QuranHomePageState extends State<QuranHomePage> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  tooltip: 'Mode Mushaf',
+                  onPressed: () {
+                    final s = AppSettingsScope.read(context);
+                    s?.setQuranMode(mushaf: true);
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (_) => MushafPage(page: s?.quranLastPage ?? 1),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.menu_book_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
                 IconButton(
                   tooltip: 'Keterangan warna tajwid',
                   onPressed: () => showTajweedLegend(context),

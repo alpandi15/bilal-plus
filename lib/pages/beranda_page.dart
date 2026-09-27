@@ -11,13 +11,12 @@ import '../services/quran_index.dart';
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
 import '../widgets/feature_menu.dart';
+import '../widgets/quran/quran_goto.dart';
 import '../widgets/ibadah/sholat_nudge_card.dart';
 import '../widgets/prayer_times_card.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/ramadan_countdown.dart';
 import 'home_shell.dart';
-import 'quran/quran_home_page.dart';
-import 'quran/quran_reader_page.dart';
 
 const _stone = Color(0xFF44403C);
 const _muted = Color(0xFF78716C);
@@ -336,10 +335,6 @@ class _QuranCardState extends State<_QuranCard> {
     });
     final lastRead = AppSettingsScope.maybeOf(context)?.quranLastRead;
 
-    void open(Widget page) => Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => page));
-
     return StreamBuilder<(QuranProgress, double)>(
       stream: _stream,
       builder: (context, snap) {
@@ -367,7 +362,7 @@ class _QuranCardState extends State<_QuranCard> {
             type: MaterialType.transparency,
             child: InkWell(
               borderRadius: BorderRadius.circular(26),
-              onTap: () => open(const QuranHomePage()),
+              onTap: () => showQuranModeSheet(context),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -464,14 +459,9 @@ class _QuranCardState extends State<_QuranCard> {
                               backgroundColor: const Color(0xFFF2D38A),
                               foregroundColor: const Color(0xFF0C3A33),
                             ),
-                            onPressed: () {
-                              if (lastRead == null) {
-                                open(const QuranHomePage());
-                              } else {
-                                final (s, a) = surahAyahOf(lastRead);
-                                open(QuranReaderPage(surah: s, ayah: a));
-                              }
-                            },
+                            onPressed: () => lastRead == null
+                                ? showQuranModeSheet(context)
+                                : continueQuran(context),
                             icon: const Icon(
                               Icons.auto_stories_rounded,
                               size: 18,

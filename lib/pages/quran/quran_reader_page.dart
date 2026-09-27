@@ -14,16 +14,19 @@ import '../../services/tajweed.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
 import '../../widgets/arabic_font.dart';
+import '../../widgets/quran/quran_goto.dart';
 import '../../widgets/quran/quran_note_sheet.dart';
+import '../../widgets/quran/quran_ornaments.dart';
 import '../../widgets/sub_header.dart';
+import 'mushaf_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
 const _muted = Color(0xFF78716C);
 const _line = Color(0xFFF1E4CF);
-const _emerald = Color(0xFF047857);
 
-/// Pembaca satu surah: teks Mushaf Standar Indonesia (warna tajwid bisa
+/// Pembaca Al-Qur'an per surah: tab nama surah yang bisa digeser (kanan ke
+/// kiri seperti mushaf), teks Mushaf Standar Indonesia (warna tajwid bisa
 /// dinyalakan), terjemahan Kemenag, catatan pribadi per rentang ayat, dan
 /// "catat bacaan sampai ayat ini" ke tracker tilawah.
 class QuranReaderPage extends StatefulWidget {
@@ -38,12 +41,25 @@ class QuranReaderPage extends StatefulWidget {
   State<QuranReaderPage> createState() => _QuranReaderPageState();
 }
 
-class _QuranReaderPageState extends State<QuranReaderPage> {
+/// Permintaan lompat ke ayat; [token] berubah tiap permintaan baru.
+typedef _Jump = ({int surah, int ayah, int token});
+
+class _QuranReaderPageState extends State<QuranReaderPage>
+    with SingleTickerProviderStateMixin {
   QuranText? _text;
-  final _items = ItemScrollController();
-  final _positions = ItemPositionsListener.create();
+  late final _tabs = TabController(
+    length: 114,
+    vsync: this,
+    initialIndex: widget.surah - 1,
+  );
+  late int _surah = widget.surah;
+  late _Jump? _jump = widget.ayah == null
+      ? null
+      : (surah: widget.surah, ayah: widget.ayah!, token: 0);
+
+  /// Ayat global teratas yang terlihat di surah yang sedang dibuka.
+  late int _visible = ayahIndex(widget.surah, widget.ayah ?? 1);
   Timer? _saveLast;
-  late int? _focus = widget.ayah;
 
   @override
   void initState() {
@@ -51,36 +67,291 @@ class _QuranReaderPageState extends State<QuranReaderPage> {
     QuranText.load().then((t) {
       if (mounted) setState(() => _text = t);
     });
+    _tabs.addListener(() {
+      final s = _tabs.index + 1;
+      if (s == _surah) return;
+      setState(() {
+        _surah = s;
+        _visible = ayahIndex(s, _jump?.surah == s ? _jump!.ayah : 1);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    _saveLast?.cancel();
+    super.dispose();
+  }
+
+  void _onVisible(int surah, int index) {
+    if (surah != _surah) return;
+    if (index != _visible) setState(() => _visible = index);
+    _saveLast?.cancel();
+    _saveLast = Timer(const Duration(milliseconds: 800), () {
+      AppSettingsScope.read(context)?.setQuranLastRead(index);
+    });
+  }
+
+  void _go(int surah, int ayah) {
+    setState(() {
+      _jump = (surah: surah, ayah: ayah, token: (_jump?.token ?? 0) + 1);
+      if (surah == _surah) _visible = ayahIndex(surah, ayah);
+    });
+    if (surah != _surah) _tabs.animateTo(surah - 1);
+  }
+
+  Future<void> _goto() async {
+    final text = _text;
+    if (text == null) return;
+    final t = await showQuranGoto(
+      context,
+      surah: _surah,
+      page: text.pageOfAyah(_visible),
+    );
+    if (t == null) return;
+    final (s, a) = surahAyahOf(targetAyahIndex(text, t));
+    _go(s, a);
+  }
+
+  void _openMushaf() {
+    final text = _text;
+    if (text == null) return;
+    AppSettingsScope.read(context)?.setQuranMode(mushaf: true);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => MushafPage(page: text.pageOfAyah(_visible)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _text;
+    final settings = AppSettingsScope.maybeOf(context);
+    final tajweed = settings?.quranTajweed ?? true;
+    final showArti = settings?.showArti ?? true;
+    final size = settings?.readerSize ?? 28;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFAF3),
+      body: Column(
+        children: [
+          SubHeader(
+            title: text == null
+                ? '$_surah. ${surahName(_surah)}'
+                : 'Juz ${juzOf(_visible)} | Hlm. ${text.pageOfAyah(_visible)}',
+            subtitle:
+                '$_surah. ${surahName(_surah)} · ${ayahCount(_surah)} ayat',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Pergi ke',
+                  onPressed: _goto,
+                  icon: const Icon(
+                    Icons.move_down_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Tampilan',
+                  icon: const Icon(
+                    Icons.tune_rounded,
+                    color: Color(0xFF92400E),
+                  ),
+                  onSelected: (v) {
+                    switch (v) {
+                      case 'tajweed':
+                        settings?.setQuranTajweed(!tajweed);
+                      case 'arti':
+                        settings?.setShowArti(!showArti);
+                      case 'bigger':
+                        settings?.setReaderSize(size + 2);
+                      case 'smaller':
+                        settings?.setReaderSize(size - 2);
+                      case 'legend':
+                        showTajweedLegend(context);
+                      case 'mushaf':
+                        _openMushaf();
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    CheckedPopupMenuItem(
+                      value: 'tajweed',
+                      checked: tajweed,
+                      child: const Text('Warna tajwid'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: 'arti',
+                      checked: showArti,
+                      child: const Text('Tampilkan terjemahan'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'legend',
+                      child: Text('Keterangan warna tajwid'),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'bigger',
+                      child: Text('Perbesar teks'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'smaller',
+                      child: Text('Perkecil teks'),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'mushaf',
+                      child: Text('Buka mode Mushaf'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // tab & halaman kanan-ke-kiri: surah berikutnya ada di kiri
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Material(
+              color: const Color(0xFFFFFBF3),
+              child: TabBar(
+                controller: _tabs,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: _amber,
+                unselectedLabelColor: _muted,
+                indicatorColor: _amber,
+                indicatorWeight: 3,
+                dividerColor: _line,
+                labelStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: [
+                  for (var s = 1; s <= 114; s++)
+                    Tab(
+                      // label Latin tetap kiri-ke-kanan walau baris tab RTL
+                      child: Text(
+                        '$s. ${surahName(s)}',
+                        textDirection: TextDirection.ltr,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: text == null
+                ? const Center(child: CircularProgressIndicator())
+                : Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: TabBarView(
+                      controller: _tabs,
+                      children: [
+                        for (var s = 1; s <= 114; s++)
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: _SurahView(
+                              key: ValueKey(s),
+                              text: text,
+                              surah: s,
+                              jump: _jump?.surah == s ? _jump : null,
+                              tajweed: tajweed,
+                              showArti: showArti,
+                              size: size,
+                              onVisible: (i) => _onVisible(s, i),
+                              onOpenSurah: (n) => _tabs.animateTo(n - 1),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Isi satu surah: spanduk, basmalah, lalu ayat-ayatnya.
+class _SurahView extends StatefulWidget {
+  const _SurahView({
+    super.key,
+    required this.text,
+    required this.surah,
+    required this.jump,
+    required this.tajweed,
+    required this.showArti,
+    required this.size,
+    required this.onVisible,
+    required this.onOpenSurah,
+  });
+
+  final QuranText text;
+  final int surah;
+  final _Jump? jump;
+  final bool tajweed, showArti;
+  final double size;
+  final ValueChanged<int> onVisible;
+  final ValueChanged<int> onOpenSurah;
+
+  @override
+  State<_SurahView> createState() => _SurahViewState();
+}
+
+class _SurahViewState extends State<_SurahView> {
+  final _items = ItemScrollController();
+  final _positions = ItemPositionsListener.create();
+  late int? _focus = widget.jump?.ayah;
+  Stream<List<QuranNote>>? _notes;
+
+  @override
+  void initState() {
+    super.initState();
     _positions.itemPositions.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(_SurahView old) {
+    super.didUpdateWidget(old);
+    final j = widget.jump;
+    if (j != null && j.token != old.jump?.token) {
+      setState(() => _focus = j.ayah);
+      if (_items.isAttached) {
+        _items.scrollTo(
+          index: j.ayah,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _positions.itemPositions.removeListener(_onScroll);
-    _saveLast?.cancel();
     super.dispose();
   }
 
-  // posisi terakhir dibaca = ayat teratas yang terlihat (disimpan sesudah
-  // gulir berhenti sebentar)
+  // ayat teratas yang terlihat -> kepala halaman & posisi terakhir dibaca
   void _onScroll() {
     final visible = _positions.itemPositions.value.where(
-      (p) => p.itemTrailingEdge > 0.15,
+      (p) => p.itemTrailingEdge > 0.05,
     );
     if (visible.isEmpty) return;
-    final first = visible.map((p) => p.index).reduce((a, b) => a < b ? a : b);
-    final ayah = first.clamp(1, ayahCount(widget.surah));
-    _saveLast?.cancel();
-    _saveLast = Timer(const Duration(milliseconds: 800), () {
-      AppSettingsScope.read(
-        context,
-      )?.setQuranLastRead(ayahIndex(widget.surah, ayah));
-    });
+    // ayat yang tepi atasnya paling dekat ke atas layar (bukan yang hanya
+    // tersisa ujungnya)
+    final top = visible.reduce(
+      (a, b) => a.itemLeadingEdge.abs() <= b.itemLeadingEdge.abs() ? a : b,
+    );
+    final ayah = top.index.clamp(1, ayahCount(widget.surah));
+    widget.onVisible(ayahIndex(widget.surah, ayah));
   }
-
-  void _openSurah(int surah) => Navigator.of(context).pushReplacement(
-    MaterialPageRoute<void>(builder: (_) => QuranReaderPage(surah: surah)),
-  );
 
   Future<void> _logReading(QuranAyah a) async {
     final loc = UserLocationScope.of(context).location;
@@ -114,181 +385,68 @@ class _QuranReaderPageState extends State<QuranReaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final text = _text;
-    final settings = AppSettingsScope.maybeOf(context);
-    final tajweed = settings?.quranTajweed ?? true;
-    final showArti = settings?.showArti ?? true;
-    final size = settings?.readerSize ?? 28;
-    final meta = (
-      name: surahName(widget.surah),
-      count: ayahCount(widget.surah),
-    );
     final dao = AppDatabaseScope.of(context).quranDao;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF3),
-      body: Column(
-        children: [
-          SubHeader(
-            title: '${widget.surah}. ${meta.name}',
-            subtitle: text == null
-                ? '${meta.count} ayat'
-                : '${text.surah(widget.surah).makkiyah ? 'Makkiyah' : 'Madaniyah'}'
-                      ' · ${meta.count} ayat',
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.tune_rounded, color: Color(0xFF92400E)),
-              onSelected: (v) {
-                switch (v) {
-                  case 'tajweed':
-                    settings?.setQuranTajweed(!tajweed);
-                  case 'arti':
-                    settings?.setShowArti(!showArti);
-                  case 'bigger':
-                    settings?.setReaderSize(size + 2);
-                  case 'smaller':
-                    settings?.setReaderSize(size - 2);
-                  case 'legend':
-                    showTajweedLegend(context);
-                  case 'jump':
-                    _jump();
-                }
-              },
-              itemBuilder: (_) => [
-                CheckedPopupMenuItem(
-                  value: 'tajweed',
-                  checked: tajweed,
-                  child: const Text('Warna tajwid'),
-                ),
-                CheckedPopupMenuItem(
-                  value: 'arti',
-                  checked: showArti,
-                  child: const Text('Tampilkan terjemahan'),
-                ),
-                const PopupMenuItem(
-                  value: 'legend',
-                  child: Text('Keterangan warna tajwid'),
-                ),
-                const PopupMenuDivider(),
-                const PopupMenuItem(
-                  value: 'bigger',
-                  child: Text('Perbesar teks'),
-                ),
-                const PopupMenuItem(
-                  value: 'smaller',
-                  child: Text('Perkecil teks'),
-                ),
-                const PopupMenuItem(value: 'jump', child: Text('Ke ayat…')),
+    final surah = widget.text.surah(widget.surah);
+    final ayahs = widget.text.ayahsOf(widget.surah);
+    _notes ??= dao.watchNotesBetween(
+      ayahIndex(widget.surah, 1),
+      ayahIndex(widget.surah, surah.ayahCount),
+    );
+    return StreamBuilder<List<QuranNote>>(
+      stream: _notes,
+      builder: (context, snap) {
+        final notes = snap.data ?? const <QuranNote>[];
+        return ScrollablePositionedList.builder(
+          itemScrollController: _items,
+          itemPositionsListener: _positions,
+          initialScrollIndex: (widget.jump?.ayah ?? 0).clamp(
+            0,
+            surah.ayahCount,
+          ),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            24 + MediaQuery.paddingOf(context).bottom,
+          ),
+          itemCount: ayahs.length + 2,
+          itemBuilder: (context, i) {
+            if (i == 0) return _SurahHead(surah: surah);
+            if (i == ayahs.length + 1) {
+              return _SurahNav(surah: widget.surah, onOpen: widget.onOpenSurah);
+            }
+            final a = ayahs[i - 1];
+            return _AyahTile(
+              ayah: a,
+              tajweed: widget.tajweed,
+              showArti: widget.showArti,
+              size: widget.size,
+              focused: _focus == a.number,
+              notes: [
+                for (final n in notes)
+                  if (n.toAyah == a.index ||
+                      (a.number == surah.ayahCount && n.toAyah > a.index))
+                    n,
               ],
-            ),
-          ),
-          Expanded(
-            child: text == null
-                ? const Center(child: CircularProgressIndicator())
-                : StreamBuilder<List<QuranNote>>(
-                    stream: dao.watchNotesBetween(
-                      ayahIndex(widget.surah, 1),
-                      ayahIndex(widget.surah, meta.count),
-                    ),
-                    builder: (context, snap) {
-                      final notes = snap.data ?? const <QuranNote>[];
-                      final surah = text.surah(widget.surah);
-                      final ayahs = text.ayahsOf(widget.surah);
-                      return ScrollablePositionedList.builder(
-                        itemScrollController: _items,
-                        itemPositionsListener: _positions,
-                        initialScrollIndex: (widget.ayah ?? 0).clamp(
-                          0,
-                          meta.count,
-                        ),
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          24 + MediaQuery.paddingOf(context).bottom,
-                        ),
-                        itemCount: ayahs.length + 2,
-                        itemBuilder: (context, i) {
-                          if (i == 0) return _SurahHead(surah: surah);
-                          if (i == ayahs.length + 1) {
-                            return _SurahNav(
-                              surah: widget.surah,
-                              onOpen: _openSurah,
-                            );
-                          }
-                          final a = ayahs[i - 1];
-                          return _AyahTile(
-                            ayah: a,
-                            tajweed: tajweed,
-                            showArti: showArti,
-                            size: size,
-                            focused: _focus == a.number,
-                            notes: [
-                              for (final n in notes)
-                                if (n.toAyah == a.index ||
-                                    (a.number == meta.count &&
-                                        n.toAyah > a.index))
-                                  n,
-                            ],
-                            onNote: () => showQuranNoteSheet(
-                              context,
-                              dao: dao,
-                              surah: widget.surah,
-                              fromAyah: a.number,
-                            ),
-                            onOpenNote: (n) => showQuranNoteSheet(
-                              context,
-                              dao: dao,
-                              surah: widget.surah,
-                              fromAyah: a.number,
-                              note: n,
-                            ),
-                            onLog: () => _logReading(a),
-                            onCopy: () => _copy(a, surah),
-                          );
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _jump() async {
-    final count = ayahCount(widget.surah);
-    final controller = TextEditingController();
-    final ayah = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ke ayat'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: '1–$count'),
-          onSubmitted: (v) => Navigator.pop(context, int.tryParse(v)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, int.tryParse(controller.text)),
-            child: const Text('Buka'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (ayah == null || ayah < 1 || ayah > count) return;
-    setState(() => _focus = ayah);
-    _items.scrollTo(
-      index: ayah,
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
+              onNote: () => showQuranNoteSheet(
+                context,
+                dao: dao,
+                surah: widget.surah,
+                fromAyah: a.number,
+              ),
+              onOpenNote: (n) => showQuranNoteSheet(
+                context,
+                dao: dao,
+                surah: widget.surah,
+                fromAyah: a.number,
+                note: n,
+              ),
+              onLog: () => _logReading(a),
+              onCopy: () => _copy(a, surah),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -302,97 +460,55 @@ class _SurahHead extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF00503C), Color(0xFF0C3A33)],
-              ),
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x33064E3B),
-                  blurRadius: 24,
-                  offset: Offset(0, 12),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                ArabicText(
-                  surah.arabic,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 34,
-                    height: 1.6,
-                    color: Color(0xFFF2D38A),
-                  ),
-                ),
-                Text(
-                  surah.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
+          SurahBanner(surah: surah),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
                   '${surah.meaning} · '
                   '${surah.makkiyah ? 'Makkiyah' : 'Madaniyah'} · '
                   '${surah.ayahCount} ayat',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xCCFFFFFF),
-                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: _muted),
                 ),
-                if (surah.description.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFF2D38A),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    onPressed: () => showModalBottomSheet<void>(
-                      context: context,
-                      showDragHandle: true,
-                      isScrollControlled: true,
-                      backgroundColor: const Color(0xFFFFFAF3),
-                      builder: (_) => SafeArea(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                          child: Text(
-                            surah.description,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.6,
-                              color: _stone,
-                            ),
+              ),
+              if (surah.description.isNotEmpty)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: _amber,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    showDragHandle: true,
+                    isScrollControlled: true,
+                    backgroundColor: const Color(0xFFFFFAF3),
+                    builder: (_) => SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Text(
+                          surah.description,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.6,
+                            color: _stone,
                           ),
                         ),
                       ),
                     ),
-                    child: const Text('Tentang surah ini'),
                   ),
-                ],
-              ],
-            ),
+                  child: const Text('Tentang surah'),
+                ),
+            ],
           ),
           if (surah.hasBasmalah)
             const Padding(
-              padding: EdgeInsets.only(top: 18),
-              child: ArabicText(
-                'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  height: 2,
-                  color: Color(0xFF1C1917),
-                ),
-              ),
+              padding: EdgeInsets.only(top: 6),
+              child: BasmalahLine(fontSize: 26),
             ),
         ],
       ),
@@ -440,25 +556,7 @@ class _AyahTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                constraints: const BoxConstraints(minWidth: 34),
-                height: 34,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0xFFA7F3D0)),
-                ),
-                child: Text(
-                  '${ayah.number}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: _emerald,
-                  ),
-                ),
-              ),
+              AyahMedallion(number: ayah.number, size: 38, arabicDigits: false),
               const SizedBox(width: 8),
               Text(
                 'Juz ${ayah.juz} · Hal ${ayah.page}',
@@ -570,6 +668,7 @@ class _AyahTile extends StatelessWidget {
   }
 }
 
+/// Pindah surah di akhir bacaan - seperti mushaf: berikutnya di kiri.
 class _SurahNav extends StatelessWidget {
   const _SurahNav({required this.surah, required this.onOpen});
   final int surah;
@@ -581,22 +680,6 @@ class _SurahNav extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          if (surah > 1)
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _amber,
-                  minimumSize: const Size.fromHeight(48),
-                ),
-                onPressed: () => onOpen(surah - 1),
-                icon: const Icon(Icons.chevron_left_rounded),
-                label: Text(
-                  surahName(surah - 1),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          if (surah > 1 && surah < 114) const SizedBox(width: 10),
           if (surah < 114)
             Expanded(
               child: FilledButton.icon(
@@ -605,10 +688,26 @@ class _SurahNav extends StatelessWidget {
                   minimumSize: const Size.fromHeight(48),
                 ),
                 onPressed: () => onOpen(surah + 1),
+                icon: const Icon(Icons.chevron_left_rounded),
+                label: Text(
+                  surahName(surah + 1),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          if (surah > 1 && surah < 114) const SizedBox(width: 10),
+          if (surah > 1)
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _amber,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: () => onOpen(surah - 1),
                 iconAlignment: IconAlignment.end,
                 icon: const Icon(Icons.chevron_right_rounded),
                 label: Text(
-                  surahName(surah + 1),
+                  surahName(surah - 1),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

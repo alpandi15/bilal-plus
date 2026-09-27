@@ -76,10 +76,27 @@ class QuranSearchHit {
 /// tool/gen_quran_text.py dari data web Bilal Tarawih). Dimuat sekali di
 /// isolate terpisah lalu disimpan di memori.
 class QuranText {
-  QuranText._(this.surahs, this._ayahs);
+  QuranText._(this.surahs, this._ayahs) : _pageStart = _pageStarts(_ayahs);
+
+  /// Indeks (0-based) ayat pertama tiap halaman mushaf 1..604 (+ ujung).
+  static List<int> _pageStarts(List<QuranAyah> ayahs) {
+    final starts = List<int>.filled(totalPages + 2, ayahs.length);
+    for (var i = ayahs.length - 1; i >= 0; i--) {
+      starts[ayahs[i].page] = i;
+    }
+    return starts;
+  }
 
   final List<QuranSurah> surahs;
   final List<QuranAyah> _ayahs;
+  final List<int> _pageStart;
+
+  /// Ayat-ayat di halaman mushaf [page] (1..604), urut.
+  List<QuranAyah> ayahsOnPage(int page) =>
+      _ayahs.sublist(_pageStart[page], _pageStart[page + 1]);
+
+  /// Halaman mushaf tempat ayat global [index] berada.
+  int pageOfAyah(int index) => _ayahs[index - 1].page;
 
   static Future<QuranText>? _loading;
 

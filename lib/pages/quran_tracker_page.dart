@@ -10,7 +10,7 @@ import '../utils/date_key.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/quran/quran_log_sheet.dart';
 import '../widgets/sub_header.dart';
-import 'quran/quran_home_page.dart';
+import '../widgets/quran/quran_goto.dart';
 import 'quran/quran_notes_page.dart';
 
 const _amber = Color(0xFFB45309);
@@ -913,7 +913,7 @@ class _ReadCard extends StatelessWidget {
                     backgroundColor: const Color(0xFFF2D38A),
                     foregroundColor: const Color(0xFF0C3A33),
                   ),
-                  onPressed: () => _push(context, const QuranHomePage()),
+                  onPressed: () => showQuranModeSheet(context),
                   icon: const Icon(Icons.auto_stories_rounded, size: 18),
                   label: const Text('Buka mushaf'),
                 ),

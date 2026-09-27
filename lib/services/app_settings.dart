@@ -26,6 +26,8 @@ class AppSettings {
   static const userNameKey = 'user_name';
   static const quranTajweedKey = 'quran_tajweed';
   static const quranLastReadKey = 'quran_last_read';
+  static const quranModeKey = 'quran_mode';
+  static const quranLastPageKey = 'quran_last_page';
 }
 
 /// Batas ukuran teks Arab di pembaca bilal.
@@ -91,6 +93,15 @@ class AppSettingsController extends ChangeNotifier {
   /// Ayat global terakhir yang dibuka di pembaca (untuk "Lanjutkan").
   int? get quranLastRead => _quranLastRead;
 
+  bool _quranMushaf = false;
+  int? _quranLastPage;
+
+  /// Mode baca terakhir: true = Mushaf (per halaman), false = per surah.
+  bool get quranMushaf => _quranMushaf;
+
+  /// Halaman mushaf terakhir dibuka (1..604).
+  int? get quranLastPage => _quranLastPage;
+
   bool _onboarded = false;
   String? _userName;
 
@@ -147,6 +158,8 @@ class AppSettingsController extends ChangeNotifier {
       _onboarded = prefs.getBool(AppSettings.onboardedKey) ?? false;
       _quranTajweed = prefs.getBool(AppSettings.quranTajweedKey) ?? true;
       _quranLastRead = prefs.getInt(AppSettings.quranLastReadKey);
+      _quranMushaf = prefs.getString(AppSettings.quranModeKey) == 'mushaf';
+      _quranLastPage = prefs.getInt(AppSettings.quranLastPageKey);
       _userName = prefs.getString(AppSettings.userNameKey);
       _readerSize =
           prefs.getDouble(AppSettings.readerSizeKey) ?? readerSizeDefault;
@@ -181,6 +194,22 @@ class AppSettingsController extends ChangeNotifier {
     _quranLastRead = index;
     notifyListeners();
     await _save((p) => p.setInt(AppSettings.quranLastReadKey, index));
+  }
+
+  Future<void> setQuranMode({required bool mushaf}) async {
+    if (mushaf == _quranMushaf) return;
+    _quranMushaf = mushaf;
+    notifyListeners();
+    await _save(
+      (p) => p.setString(AppSettings.quranModeKey, mushaf ? 'mushaf' : 'surah'),
+    );
+  }
+
+  Future<void> setQuranLastPage(int page) async {
+    if (page == _quranLastPage) return;
+    _quranLastPage = page;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.quranLastPageKey, page));
   }
 
   Future<void> setUserName(String? v) async {
