@@ -13,7 +13,6 @@ import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/ibadah/sholat_log_sheet.dart';
 import '../widgets/report/ibadah_heatmap.dart';
 import '../widgets/sub_header.dart';
-import 'ramadan_recap_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -217,28 +216,6 @@ class _ReportBody extends StatelessWidget {
                 const SizedBox(height: 14),
                 _ItemsCard(items: report.items),
               ],
-              const SizedBox(height: 14),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _amber,
-                  side: const BorderSide(color: _line),
-                  backgroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const RamadanRecapPage(),
-                  ),
-                ),
-                icon: const Icon(Icons.nightlight_round),
-                label: const Text(
-                  'Rekap Ramadan & hutang puasa',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
             ],
           ),
         ),

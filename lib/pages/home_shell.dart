@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'beranda_page.dart';
 import 'ibadah_page.dart';
-import 'more_page.dart';
 import 'quran_tracker_page.dart';
+import 'ramadan_recap_page.dart';
 import 'report_page.dart';
 
 /// Tab navigasi bawah.
-enum HomeTab { beranda, ibadah, quran, laporan, lainnya }
+enum HomeTab { beranda, ibadah, quran, laporan, ramadan }
 
-/// Kerangka aplikasi: lima tab dengan navigasi bawah. Tiap tab tetap
-/// hidup (IndexedStack) supaya posisi gulir & tanggal yang dibuka tidak
-/// hilang saat berpindah tab.
+/// Kerangka aplikasi: lima tab dengan navigasi bawah. Tiap tab yang pernah
+/// dibuka tetap hidup (IndexedStack) supaya posisi gulir & tanggal yang
+/// dibuka tidak hilang saat berpindah tab.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -22,11 +22,28 @@ class HomeShell extends StatefulWidget {
 class HomeShellState extends State<HomeShell> {
   HomeTab _tab = HomeTab.beranda;
 
+  /// Tab yang pernah dibuka - dibangun saat pertama dikunjungi (bukan
+  /// semuanya sekaligus saat aplikasi dibuka), lalu tetap hidup.
+  final _visited = {HomeTab.beranda};
+
+  void _select(HomeTab tab) => setState(() {
+    _tab = tab;
+    _visited.add(tab);
+  });
+
   /// Pindah tab (dari kartu di beranda atau ketukan widget layar utama).
   void goTo(HomeTab tab) {
     Navigator.of(context).popUntil((r) => r.isFirst);
-    setState(() => _tab = tab);
+    _select(tab);
   }
+
+  static Widget _page(HomeTab tab) => switch (tab) {
+    HomeTab.beranda => const BerandaPage(),
+    HomeTab.ibadah => const IbadahPage(showBack: false),
+    HomeTab.quran => const QuranTrackerPage(showBack: false),
+    HomeTab.laporan => const ReportPage(showBack: false),
+    HomeTab.ramadan => const RamadanRecapPage(showBack: false),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -36,18 +53,14 @@ class HomeShellState extends State<HomeShell> {
         backgroundColor: const Color(0xFFFFFAF3),
         body: IndexedStack(
           index: _tab.index,
-          children: const [
-            BerandaPage(),
-            IbadahPage(showBack: false),
-            QuranTrackerPage(showBack: false),
-            ReportPage(showBack: false),
-            MorePage(),
+          children: [
+            for (final t in HomeTab.values)
+              _visited.contains(t) ? _page(t) : const SizedBox.shrink(),
           ],
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _tab.index,
-          onDestinationSelected: (i) =>
-              setState(() => _tab = HomeTab.values[i]),
+          onDestinationSelected: (i) => _select(HomeTab.values[i]),
           backgroundColor: const Color(0xFFFFFBF3),
           indicatorColor: const Color(0xFFFDE68A),
           surfaceTintColor: Colors.transparent,
@@ -84,12 +97,12 @@ class HomeShellState extends State<HomeShell> {
               label: 'Laporan',
             ),
             NavigationDestination(
-              icon: Icon(Icons.grid_view_outlined),
+              icon: Icon(Icons.nightlight_outlined),
               selectedIcon: Icon(
-                Icons.grid_view_rounded,
+                Icons.nightlight_round,
                 color: Color(0xFF92400E),
               ),
-              label: 'Lainnya',
+              label: 'Ramadan',
             ),
           ],
         ),

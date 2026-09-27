@@ -159,10 +159,7 @@ class QuranText {
       return const [];
     }
     // ejaan yang lazim dipakai -> ejaan terjemahan Kemenag
-    final words = [
-      for (final w in q.split(RegExp(r'\s+')))
-        _spelling[w] ?? w,
-    ];
+    final words = [for (final w in q.split(RegExp(r'\s+'))) _spelling[w] ?? w];
     final hits = <QuranSearchHit>[];
     for (final a in _ayahs) {
       final t = a.translation.toLowerCase();

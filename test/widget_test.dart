@@ -25,7 +25,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
     }
 
-    expect(find.text('JADWAL SHOLAT'), findsOneWidget);
+    expect(find.text("Assalamu'alaikum"), findsOneWidget);
     expect(find.textContaining('🌙'), findsOneWidget);
   });
 

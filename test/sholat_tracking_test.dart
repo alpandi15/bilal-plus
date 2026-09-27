@@ -147,7 +147,7 @@ void main() {
     );
     await settle(tester);
 
-    expect(find.text('JADWAL SHOLAT'), findsOneWidget);
+    expect(find.text("Assalamu'alaikum"), findsOneWidget);
     for (final (tab, title) in [
       ('Ibadah', 'Ibadah Harian'),
       ("Qur'an", "Tilawah Al-Qur'an"),
@@ -157,14 +157,28 @@ void main() {
       await settle(tester);
       expect(find.text(title), findsOneWidget, reason: tab);
     }
-    await tester.tap(find.text('Lainnya').last);
+    // tab kelima: Rekap Ramadan
+    await tester.tap(find.text('Ramadan').last);
     await settle(tester);
+    expect(find.text('Rekap Ramadan'), findsOneWidget);
+
+    // menu fitur di Beranda + lembar "Lainnya"
+    await tester.tap(find.text('Beranda'));
+    await settle(tester);
+    // tombol sudah dibangun di area cache (di luar layar) - gulir sampai
+    // benar-benar terlihat
+    await tester.ensureVisible(find.text('Lainnya'));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Bacaan Sholat'), findsOneWidget);
+    await tester.tap(find.text('Lainnya'));
+    await settle(tester);
+    expect(find.text('Semua menu'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Pengaturan'),
       300,
       scrollable: find.byType(Scrollable).last,
     );
+    expect(find.text('Takbiran'), findsOneWidget);
     expect(find.text('Pengaturan'), findsOneWidget);
   });
 }

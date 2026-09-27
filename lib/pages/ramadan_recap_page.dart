@@ -60,7 +60,10 @@ class _RecapData {
 /// Rekap Ramadan per tahun hijriah (grid hari puasa, tarawih, tilawah,
 /// khatam), hutang puasa qadha, dan heatmap lima waktu per bulan.
 class RamadanRecapPage extends StatefulWidget {
-  const RamadanRecapPage({super.key, this.hijriYear});
+  const RamadanRecapPage({super.key, this.hijriYear, this.showBack = true});
+
+  /// false saat menjadi tab "Ramadan" di navigasi bawah.
+  final bool showBack;
 
   /// Tahun yang dibuka pertama kali; null = Ramadan yang sedang/terakhir
   /// berjalan.
@@ -156,8 +159,9 @@ class _RamadanRecapPageState extends State<RamadanRecapPage> {
       backgroundColor: const Color(0xFFFFFAF3),
       body: Column(
         children: [
-          const SubHeader(
+          SubHeader(
             title: 'Rekap Ramadan',
+            showBack: widget.showBack,
             subtitle: 'Puasa, tarawih, tilawah & hutang qadha',
           ),
           Expanded(

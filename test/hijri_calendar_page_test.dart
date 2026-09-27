@@ -1,4 +1,4 @@
-// Uji halaman kalender: dibuka dari tab Lainnya, menampilkan tanggal
+// Uji halaman kalender: dibuka dari menu Lainnya, menampilkan tanggal
 // hijriah hari ini, grid bulan berjalan, dan bisa berpindah bulan.
 
 import 'package:flutter/material.dart';
@@ -32,7 +32,11 @@ void main() {
     );
     expect(anyHijriMonth, findsWidgets);
 
-    // buka halaman kalender dari tab Lainnya
+    // buka halaman kalender dari menu "Lainnya" di Beranda
+    // tombol sudah dibangun di area cache (di luar layar) - gulir sampai
+    // benar-benar terlihat
+    await tester.ensureVisible(find.text('Lainnya'));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Lainnya'));
     await _settle(tester);
     await tester.scrollUntilVisible(

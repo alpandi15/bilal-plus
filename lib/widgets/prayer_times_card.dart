@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/prayer_models.dart';
 import '../pages/hijri_calendar_page.dart';
@@ -20,7 +21,14 @@ import 'sun_position_arc.dart';
 /// ini di atas pohon widget (lihat `main.dart`) - padanan `useUserLocation`
 /// di web, dipakai bersama oleh kartu ini dan hitung mundur Ramadan.
 class PrayerTimesCard extends StatefulWidget {
-  const PrayerTimesCard({super.key});
+  const PrayerTimesCard({super.key, this.hero = false, this.greeting});
+
+  /// Beranda: kartu selebar layar, tembus ke balik status bar, hanya sudut
+  /// bawah yang membulat.
+  final bool hero;
+
+  /// Sapaan di kepala kartu hero (mis. "Assalamu'alaikum, Ahmad").
+  final String? greeting;
 
   @override
   State<PrayerTimesCard> createState() => _PrayerTimesCardState();
@@ -117,8 +125,11 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
       });
     }
 
-    final radius = BorderRadius.circular(24);
-    return DecoratedBox(
+    final hero = widget.hero;
+    final radius = hero
+        ? const BorderRadius.vertical(bottom: Radius.circular(30))
+        : BorderRadius.circular(24);
+    final card = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
         boxShadow: const [
@@ -140,14 +151,16 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
             ),
           ),
           // garis tepi dilukis di atas langit/skyline, bukan di bawahnya
-          foregroundDecoration: BoxDecoration(
-            borderRadius: radius,
-            border: Border.all(
-              color: night
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.white.withOpacity(0.7),
-            ),
-          ),
+          foregroundDecoration: hero
+              ? null
+              : BoxDecoration(
+                  borderRadius: radius,
+                  border: Border.all(
+                    color: night
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.white.withOpacity(0.7),
+                  ),
+                ),
           child: Stack(
             children: [
               // atmosfer: kabut, awan, bintang, layang-layang, kota+masjid -
@@ -156,6 +169,14 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                 child: SkyAtmosphere(
                   phase: phase,
                   hour: int.parse(clockHHMM.substring(0, 2)),
+                  // kota & masjid lebih besar, boleh meluber ke samping -
+                  // sama dengan widget layar utama
+                  tiles: 2,
+                  skylineHeightFactor: hero ? 0.3 : 0.34,
+                  skylineCover: true,
+                  // hero: isi turun karena status bar - bulan di celah di
+                  // bawah hitung mundur supaya tidak menutupi teks
+                  moonAt: hero ? const Alignment(0.7, 0.02) : null,
                 ),
               ),
 
@@ -173,10 +194,14 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+                padding: hero
+                    ? EdgeInsets.fromLTRB(
+                        20,
+                        MediaQuery.paddingOf(context).top + 12,
+                        20,
+                        20,
+                      )
+                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,15 +210,31 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'JADWAL SHOLAT',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.6,
-                            color: style.accent,
+                        if (hero && widget.greeting != null)
+                          Flexible(
+                            child: Text(
+                              widget.greeting!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: night
+                                    ? Colors.white
+                                    : const Color(0xFF1C1917),
+                              ),
+                            ),
+                          )
+                        else
+                          Text(
+                            'JADWAL SHOLAT',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.6,
+                              color: style.accent,
+                            ),
                           ),
-                        ),
                         GestureDetector(
                           onTap: () => showLocationPicker(context),
                           child: Container(
@@ -272,7 +313,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                                         clockHHMM,
                                         style: TextStyle(
                                           fontFamily: 'monospace',
-                                          fontSize: 26,
+                                          fontSize: hero ? 36 : 26,
                                           fontWeight: FontWeight.bold,
                                           height: 1,
                                           color: night
@@ -284,7 +325,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                                         ':$clockSS',
                                         style: TextStyle(
                                           fontFamily: 'monospace',
-                                          fontSize: 14,
+                                          fontSize: hero ? 18 : 14,
                                           fontWeight: FontWeight.w600,
                                           height: 1,
                                           color: style.accent,
@@ -474,6 +515,13 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
           ),
         ),
       ),
+    );
+    if (!hero) return card;
+    // ikon status bar mengikuti langit: terang saat malam, gelap saat siang
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (night ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
+      child: card,
     );
   }
 }

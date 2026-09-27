@@ -94,7 +94,11 @@ class SkyAtmosphere extends StatelessWidget {
     this.creatures = true,
     this.skylineHeightFactor = 0.26,
     this.skylineCover = false,
+    this.moonAt,
   });
+
+  /// Posisi bulan (null = [SkySizing.moonAt]).
+  final Alignment? moonAt;
 
   final DayPhase phase;
 
@@ -171,7 +175,7 @@ class SkyAtmosphere extends StatelessWidget {
                       clock: clock,
                       size: SkySizing.moon,
                       cardSize: cardSize,
-                      at: SkySizing.moonAt,
+                      at: moonAt ?? SkySizing.moonAt,
                     ),
                   ],
 
@@ -239,6 +243,7 @@ class SkyAtmosphere extends StatelessWidget {
                           tiles: tiles,
                           quiet: quiet,
                           clockMs: clock.ms,
+                          cover: skylineCover,
                         ),
                       ),
                     ),
