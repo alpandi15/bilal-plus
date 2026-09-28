@@ -74,7 +74,8 @@ void main() {
 
   testWidgets('pencatatan aktif: Subuh ditanya jam & tempat', (tester) async {
     await open(tester, const IbadahPage());
-    expect(find.text('Awal waktu'), findsOneWidget); // legenda
+    // tanpa legenda warna: sholat tercentang selalu hijau
+    expect(find.text('Terlambat'), findsNothing);
 
     await tester.tap(find.text('Subuh'));
     await settle(tester);

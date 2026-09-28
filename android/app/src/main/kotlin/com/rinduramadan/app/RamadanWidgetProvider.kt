@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -36,8 +37,8 @@ private class RamadanItem(
     val tentative: Boolean,
     val overridden: Boolean,
     val startsAt: Long,
-    val startLabel: String,
-    val endLabel: String,
+    val startShort: String,
+    val endShort: String,
 )
 
 class RamadanWidgetProvider : HomeWidgetProvider() {
@@ -85,9 +86,10 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
             return Triple(p[0].toInt(), p[1].toInt(), p[2].toInt())
         }
 
-        private fun labelOf(ymd: String): String {
+        /** "8 Feb 2027" - muat di pil tanggal widget 2x2. */
+        private fun shortLabelOf(ymd: String): String {
             val (y, m, d) = parseYmd(ymd)
-            return "$d ${BULAN[m - 1]} $y"
+            return "$d ${BULAN[m - 1].take(3)} $y"
         }
 
         private fun parse(json: String?): Pair<String, List<RamadanItem>>? {
@@ -108,8 +110,8 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                         tentative = o.optBoolean("tentative", false),
                         overridden = o.optBoolean("overridden", false),
                         startsAt = o.getLong("startsAt"),
-                        startLabel = labelOf(o.getString("start")),
-                        endLabel = labelOf(o.getString("end")),
+                        startShort = shortLabelOf(o.getString("start")),
+                        endShort = shortLabelOf(o.getString("end")),
                     )
                 }
                 if (items.isEmpty()) null else root.optString("tzId", "Asia/Jakarta") to items
@@ -119,13 +121,14 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
         }
 
         /** Narasi menuju Ramadan, bertingkat menurut sisa hari. */
+        // narasi dibatasi ±45 huruf agar muat 2 baris di widget selebar 2 sel
         private fun noteBefore(days: Int): String = when {
-            days > 100 -> "Masih jauh, tapi hati yang bersiap tak pernah terlalu dini."
-            days > 30 -> "Perbanyak amal dan lunasi puasa yang tertinggal sebelum tamu agung tiba."
-            days > 7 -> "Sebentar lagi. Rapikan niat, siapkan diri lahir dan batin."
+            days > 100 -> "Hati yang bersiap tak pernah terlalu dini."
+            days > 30 -> "Lunasi utang puasa sebelum tamu agung tiba."
+            days > 7 -> "Sebentar lagi. Rapikan niat, siapkan diri."
             days > 1 -> "Tinggal hitungan hari. Marhaban ya Ramadan."
-            days == 1 -> "Ramadan dimulai nanti Maghrib. Marhaban ya Ramadan."
-            else -> "Malam pertama Ramadan. Selamat menunaikan tarawih."
+            days == 1 -> "Mulai nanti Maghrib. Marhaban ya Ramadan."
+            else -> "Malam pertama. Selamat menunaikan tarawih."
         }
 
         /** Keterangan status tanggal, sama dengan `RamadanDate.statusLabel` di Flutter. */
@@ -138,9 +141,9 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
 
         /** Narasi selama Ramadan: tiga fase sepuluh hari. */
         private fun noteDuring(day: Int): String = when {
-            day <= 10 -> "Sepuluh hari pertama, hari-hari penuh rahmat."
-            day <= 20 -> "Sepuluh hari kedua, hari-hari maghfirah. Perbanyak istighfar."
-            else -> "Sepuluh hari terakhir. Hidupkan malam, raih Lailatul Qadar."
+            day <= 10 -> "Sepuluh hari pertama, penuh rahmat."
+            day <= 20 -> "Sepuluh hari kedua, perbanyak istighfar."
+            else -> "Sepuluh hari terakhir, raih Lailatul Qadar."
         }
 
         fun buildViews(context: Context, prefs: SharedPreferences, options: Bundle, now: Long): RemoteViews {
@@ -150,17 +153,50 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                 HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java),
             )
 
-            // widget pendek (2 baris di launcher bersel kecil): narasi disembunyikan
+            // Ukuran menentukan apa yang tampil, supaya tak ada teks terpotong:
+            // - sempit (< 140dp, 1-2 sel kecil): angka mengecil, satuan pindah
+            //   ke baris judul, tanggal & status disembunyikan
+            // - pendek (< 140dp): tanggal disembunyikan; narasi hanya >= 190dp
+            // - status tanggal (perkiraan / pilihanmu) hanya bila cukup lebar
+            val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: 160
             val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: 150
-            views.setViewVisibility(R.id.ramadan_note, if (heightDp < 132) View.GONE else View.VISIBLE)
+            val narrow = widthDp < 140
+            val short = heightDp < 140
+            val compact = narrow || short
+            val pad = ((if (compact) 12 else 16) * context.resources.displayMetrics.density).toInt()
+            views.setViewPadding(R.id.ramadan_content, pad, pad * 7 / 8, pad, pad * 7 / 8)
+            views.setTextViewTextSize(
+                R.id.ramadan_number,
+                TypedValue.COMPLEX_UNIT_SP,
+                if (narrow) 34f else if (short) 38f else 46f,
+            )
+            views.setViewVisibility(R.id.ramadan_unit, if (narrow) View.GONE else View.VISIBLE)
+            views.setViewVisibility(R.id.ramadan_date, if (compact) View.GONE else View.VISIBLE)
+            views.setViewVisibility(R.id.ramadan_note, if (compact || heightDp < 190) View.GONE else View.VISIBLE)
+            val showStatus = widthDp >= 200
+
+            /** Isi teks; di widget sempit satuan menjadi judul & kepala dipendekkan. */
+            fun fill(
+                kicker: String,
+                shortKicker: String,
+                number: String,
+                unit: String,
+                title: String,
+                shortTitle: String,
+            ) {
+                views.setTextViewText(R.id.ramadan_kicker, if (narrow) shortKicker else kicker)
+                views.setTextViewText(R.id.ramadan_number, number)
+                views.setTextViewText(R.id.ramadan_unit, unit)
+                views.setTextViewText(
+                    R.id.ramadan_title,
+                    if (narrow) shortTitle else title,
+                )
+            }
 
             val parsed = parse(prefs.getString("ramadan_json", null))
             if (parsed == null) {
-                views.setTextViewText(R.id.ramadan_kicker, "MENUJU RAMADAN")
-                views.setTextViewText(R.id.ramadan_number, "—")
-                views.setTextViewText(R.id.ramadan_unit, "HARI LAGI")
-                views.setTextViewText(R.id.ramadan_title, "Ramadan")
-                views.setTextViewText(R.id.ramadan_date, "Buka aplikasi untuk menyinkronkan")
+                fill("MENUJU RAMADAN", "RAMADAN", "—", "HARI\nLAGI", "Ramadan", "Hari lagi")
+                views.setTextViewText(R.id.ramadan_date, "Buka aplikasi")
                 views.setTextViewText(R.id.ramadan_note, "")
                 return views
             }
@@ -181,26 +217,19 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
             val eid = items.firstOrNull { (todayJdn - it.endJdn + 1 + shift) in 1..EID_DAYS }
             if (eid != null) {
                 val syawal = todayJdn - eid.endJdn + 1 + shift
-                val next = items.firstOrNull { it.endJdn > eid.endJdn }
-                views.setTextViewText(R.id.ramadan_kicker, "IDULFITRI ${eid.hijriYear} H")
-                views.setTextViewText(R.id.ramadan_number, "$syawal")
-                views.setTextViewText(R.id.ramadan_unit, "SYAWAL")
-                views.setTextViewText(
-                    R.id.ramadan_title,
+                fill(
+                    "IDULFITRI ${eid.hijriYear} H", "IDULFITRI", "$syawal", "SYAWAL",
                     if (todayJdn < eid.endJdn) "Malam takbiran" else "Selamat Idulfitri",
+                    "Syawal",
                 )
-                views.setTextViewText(R.id.ramadan_date, "Taqabbalallahu minna wa minkum")
-                views.setTextViewText(
-                    R.id.ramadan_note,
-                    if (next != null) "Mohon maaf lahir dan batin. Ramadan berikutnya insyaa Allah ${next.startLabel}."
-                    else "Mohon maaf lahir dan batin.",
-                )
+                views.setTextViewText(R.id.ramadan_date, "Idulfitri ${eid.endShort}")
+                views.setTextViewText(R.id.ramadan_note, "Taqabbalallahu minna wa minkum.")
                 return views
             }
 
             // Ramadan pertama yang Idulfitrinya masih di depan
             val r = items.firstOrNull { it.endJdn > todayJdn } ?: items.last()
-            val status = statusSuffix(r)
+            val status = if (showStatus) statusSuffix(r) else ""
             val started = now >= r.startsAt
 
             if (!started) {
@@ -208,19 +237,13 @@ class RamadanWidgetProvider : HomeWidgetProvider() {
                 // malam sebelum 1 Ramadan, dibulatkan ke bawah per 24 jam - bukan
                 // selisih tanggal kalender (yang lebih besar 1 sampai jam Maghrib)
                 val days = ((r.startsAt - now) / DAY_MS).toInt().coerceAtLeast(0)
-                views.setTextViewText(R.id.ramadan_kicker, "MENUJU RAMADAN")
-                views.setTextViewText(R.id.ramadan_number, "$days")
-                views.setTextViewText(R.id.ramadan_unit, "HARI LAGI")
-                views.setTextViewText(R.id.ramadan_title, "Ramadan ${r.hijriYear} H")
-                views.setTextViewText(R.id.ramadan_date, "Insyaa Allah ${r.startLabel}$status")
+                fill("MENUJU RAMADAN", "RAMADAN", "$days", "HARI\nLAGI", "Ramadan ${r.hijriYear} H", "Hari lagi")
+                views.setTextViewText(R.id.ramadan_date, "Mulai ${r.startShort}$status")
                 views.setTextViewText(R.id.ramadan_note, noteBefore(days))
             } else {
                 val day = (todayJdn - r.startJdn + 1 + (if (afterMaghrib) 1 else 0)).coerceIn(1, r.days)
-                views.setTextViewText(R.id.ramadan_kicker, "RAMADAN ${r.hijriYear} H")
-                views.setTextViewText(R.id.ramadan_number, "$day")
-                views.setTextViewText(R.id.ramadan_unit, "HARI RAMADAN")
-                views.setTextViewText(R.id.ramadan_title, "Alhamdulillah, hari ke-$day")
-                views.setTextViewText(R.id.ramadan_date, "Idulfitri insyaa Allah ${r.endLabel}$status")
+                fill("RAMADAN ${r.hijriYear} H", "RAMADAN", "$day", "HARI\nRAMADAN", "Selamat berpuasa", "Hari puasa")
+                views.setTextViewText(R.id.ramadan_date, "Idulfitri ${r.endShort}$status")
                 views.setTextViewText(R.id.ramadan_note, noteDuring(day))
             }
             return views

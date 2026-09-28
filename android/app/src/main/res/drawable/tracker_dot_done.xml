@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sudah dicentang: bulatan emas penuh dengan centang zamrud. -->
+<!-- Sudah dicentang (tepat waktu, terlambat, maupun qadha - satu warna):
+     bulatan champagne penuh dengan centang biru malam. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="oval">
             <gradient
                 android:angle="315"
-                android:startColor="#F2D38A"
-                android:endColor="#D9A441" />
+                android:startColor="#F6DFA4"
+                android:endColor="#D9A94E" />
         </shape>
     </item>
     <item

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
@@ -207,6 +208,9 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             views.setOnClickPendingIntent(R.id.ib_more, openApp(context, "ibadah"))
 
             val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: 220
+            // sempit (< 140dp): teks dipendekkan & diperkecil supaya tak ada yang terpotong
+            val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: 150
+            val narrow = widthDp < 140
 
             val root = prefs.getString("ibadah_json", null)?.let {
                 try { JSONObject(it) } catch (_: Exception) { null }
@@ -251,7 +255,16 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             val excused = day.optBoolean("excused", false)
 
             // kepala & kemajuan
-            views.setTextViewText(R.id.ib_kicker, day.optString("kicker", "IBADAH HARIAN"))
+            val kicker = day.optString("kicker", "IBADAH HARIAN")
+            views.setTextViewText(
+                R.id.ib_kicker,
+                when {
+                    !narrow -> kicker
+                    // "RAMADAN · HARI 5" -> "RAMADAN 5", "SENIN · 28 SEP" -> "SENIN"
+                    kicker.startsWith("RAMADAN · HARI ") -> "RAMADAN " + kicker.removePrefix("RAMADAN · HARI ")
+                    else -> kicker.substringBefore(" · ")
+                },
+            )
             views.setTextViewText(R.id.ib_count, "$done/$total")
             // bar = nilai tertimbang (sholat sendiri bernilai lebih kecil)
             views.setProgressBar(
@@ -262,16 +275,26 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             views.setTextViewText(
                 R.id.ib_streak,
                 when {
-                    excused -> "Sedang berhalangan · streak tetap terjaga"
-                    total > 0 && done >= total -> "Masyaa Allah, semua tuntas"
-                    streak > 0 -> "🔥 $streak hari terjaga"
-                    else -> day.optString("hijri", "")
+                    excused -> if (narrow) "Berhalangan" else "Berhalangan · streak aman"
+                    total > 0 && done >= total -> if (narrow) "Semua tuntas" else "Masyaa Allah, semua tuntas"
+                    streak > 0 -> if (narrow) "🔥 $streak hari" else "🔥 $streak hari terjaga"
+                    // "15 Rabiul Akhir 1448 H" -> tanpa tahun bila sempit
+                    else -> day.optString("hijri", "").let {
+                        if (narrow) it.replace(Regex("""\s+\d+\s*H$"""), "") else it
+                    }
                 },
             )
             views.setViewVisibility(R.id.ib_streak, if (heightDp < 200) View.GONE else View.VISIBLE)
 
-            // lima waktu: waktu yang sedang berjalan disorot
+            // lima waktu: waktu yang sedang berjalan disorot. Bulatan mengisi
+            // lebar kolomnya (maks. 24dp) - dipersempit lewat padding agar
+            // tetap bulat & tak saling tumpuk di widget sempit.
             val currentId = sholat.lastOrNull { it.at in 1..now }?.id
+            val density = context.resources.displayMetrics.density
+            val colDp = (widthDp - 24) / sholat.size.coerceIn(1, 5).toFloat()
+            val dotDp = (colDp - 3).coerceIn(12f, 24f)
+            val padX = (((colDp - dotDp) / 2).coerceAtLeast(0f) * density).toInt()
+            val padY = (((24 - dotDp) / 2) * density).toInt()
             SHOLAT_IDS.forEachIndexed { i, (col, dot, name) ->
                 val e = sholat.getOrNull(i)
                 if (e == null) {
@@ -279,13 +302,11 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     return@forEachIndexed
                 }
                 views.setViewVisibility(col, View.VISIBLE)
-                views.setTextViewText(name, e.name)
+                views.setViewPadding(dot, padX, padY, padX, padY)
                 views.setImageViewResource(
                     dot,
                     when {
                         e.excused -> R.drawable.tracker_dot_off
-                        e.done && e.status == "qadha" -> R.drawable.tracker_dot_qadha
-                        e.done && e.status == "late" -> R.drawable.tracker_dot_late
                         e.done -> R.drawable.tracker_dot_done
                         e.id == currentId -> R.drawable.tracker_dot_now
                         else -> R.drawable.tracker_dot_todo
@@ -301,8 +322,16 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     dot,
                     "${e.name} ${e.time}" + (if (e.done) ", sudah" else "") + statusLabel,
                 )
-                // jam sholat yang dicatat menggantikan nama saat sudah dikerjakan
-                views.setTextViewText(name, if (e.done && e.prayed.isNotEmpty()) e.prayed else e.name)
+                // jam sholat yang dicatat menggantikan nama saat sudah dikerjakan;
+                // di widget sempit cukup huruf awalnya
+                views.setTextViewText(
+                    name,
+                    when {
+                        narrow -> e.name.take(1)
+                        e.done && e.prayed.isNotEmpty() -> e.prayed
+                        else -> e.name
+                    },
+                )
                 if (!e.excused) {
                     views.setOnClickPendingIntent(col, setIntent(context, today, e.id, if (e.done) 0 else 1))
                 }
@@ -321,8 +350,14 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 }
                 views.setViewVisibility(row, View.VISIBLE)
                 views.setTextViewText(name, e.name)
-                views.setTextColor(name, if (e.excused) 0x80F7F1E1.toInt() else 0xFFF7F1E1.toInt())
-                if (e.kind == "counter") {
+                views.setTextColor(name, if (e.excused) 0x80F4F1EA.toInt() else 0xFFF4F1EA.toInt())
+                // sempit: nama dua baris lebih kecil, hitungan x/y disembunyikan
+                views.setInt(name, "setMaxLines", if (narrow) 2 else 1)
+                views.setTextViewTextSize(name, TypedValue.COMPLEX_UNIT_SP, if (narrow) 9.5f else 11f)
+                if (narrow) {
+                    views.setViewVisibility(meta, View.GONE)
+                    views.setViewVisibility(check, View.VISIBLE)
+                } else if (e.kind == "counter") {
                     views.setViewVisibility(meta, View.VISIBLE)
                     views.setTextViewText(meta, "${e.value}/${e.target}")
                     views.setViewVisibility(check, if (e.done) View.VISIBLE else View.GONE)

@@ -912,35 +912,6 @@ class _SholatCard extends StatelessWidget {
               ],
             ),
           ],
-          if (tracking) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 4,
-              children: [
-                for (final st in SholatStatus.values)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: sholatStatusColor[st],
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        sholatStatusLabel[st]!,
-                        style: const TextStyle(fontSize: 10, color: _muted),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -1051,7 +1022,9 @@ class _PrayerDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final doneColor = status == null ? _amber : sholatStatusColor[status]!;
+    // sudah dicentang = hijau, apa pun ketepatan waktunya (rinciannya ada
+    // di lembar catat & laporan)
+    const doneColor = _green;
     final fill = disabled
         ? const Color(0xFFF5F5F4)
         : done

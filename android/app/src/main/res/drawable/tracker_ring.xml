@@ -8,7 +8,7 @@
             android:innerRadiusRatio="2.7"
             android:thicknessRatio="11"
             android:useLevel="false">
-            <solid android:color="#2EE3BE6A" />
+            <solid android:color="#2EE9C77E" />
         </shape>
     </item>
     <item android:id="@android:id/progress">
@@ -24,8 +24,8 @@
                 android:useLevel="true">
                 <gradient
                     android:type="sweep"
-                    android:startColor="#F2D38A"
-                    android:endColor="#D9A441" />
+                    android:startColor="#F6DFA4"
+                    android:endColor="#D9A94E" />
             </shape>
         </rotate>
     </item>

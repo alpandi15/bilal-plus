@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Latar widget Ibadah Harian & Al-Qur'an: biru malam pekat bergradasi
+     (midnight), cahaya champagne lembut di pojok kanan atas, semburat
+     indigo di kiri bawah, dan garis tepi emas tipis. Tanpa ornamen di
+     belakang isi supaya daftar tetap bersih & mudah dibaca. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <gradient
+                android:angle="315"
+                android:startColor="#141E3F"
+                android:centerColor="#1B2552"
+                android:endColor="#0B1128" />
+        </shape>
+    </item>
+    <item
+        android:gravity="top|end"
+        android:width="180dp"
+        android:height="180dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="90dp"
+                android:startColor="#4DE9C77E"
+                android:centerColor="#14E9C77E"
+                android:endColor="#00E9C77E" />
+        </shape>
+    </item>
+    <item
+        android:gravity="bottom|start"
+        android:width="160dp"
+        android:height="160dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="80dp"
+                android:startColor="#406D6BE8"
+                android:endColor="#006D6BE8" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <stroke android:width="1dp" android:color="#4DE9C77E" />
+        </shape>
+    </item>
+</layer-list>
