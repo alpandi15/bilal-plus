@@ -7,6 +7,10 @@ import 'package:flutter/widgets.dart';
 /// sistem (lihat [ArabicText]).
 const arabicFont = 'LPMQ';
 
+/// Font mode Mushaf: KFGQPC Uthmanic Script HAFS v18 (Kompleks Percetakan
+/// Al-Qur'an Raja Fahd), pasangan teks Utsmani di assets/quran/uthmani.json.
+const uthmanicFont = 'UthmanicHafs';
+
 final _punctuation = RegExp('[،؛؟]');
 
 /// Teks Arab kanan-ke-kiri dengan font LPMQ.

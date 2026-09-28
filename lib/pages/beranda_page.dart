@@ -8,6 +8,7 @@ import '../services/hijri_config_scope.dart';
 import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/quran_index.dart';
+import '../services/sholat_time.dart';
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
 import '../widgets/feature_menu.dart';
@@ -17,10 +18,6 @@ import '../widgets/prayer_times_card.dart';
 import '../widgets/quran/progress_ring.dart';
 import '../widgets/ramadan_countdown.dart';
 import 'home_shell.dart';
-
-const _stone = Color(0xFF44403C);
-const _muted = Color(0xFF78716C);
-const _line = Color(0xFFF1E4CF);
 
 /// Tab Beranda: hitung mundur Ramadan, jadwal sholat, pengingat sholat,
 /// dan ringkasan hari ini (ibadah & bacaan Al-Qur'an) yang membawa ke tab
@@ -43,7 +40,7 @@ class _BerandaPageState extends State<BerandaPage> {
   void initState() {
     super.initState();
     _scroll.addListener(() {
-      final scrolled = _scroll.offset > 280;
+      final scrolled = _scroll.offset > 40;
       if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
     });
   }
@@ -119,6 +116,11 @@ class _BerandaPageState extends State<BerandaPage> {
                 children: [
                   const RamadanCountdown(),
                   const SizedBox(height: 18),
+                  // ibadah hari ini paling menonjol: di atas Al-Qur'an & menu
+                  _TodayIbadah(onTap: () => shell?.goTo(HomeTab.ibadah)),
+                  const SizedBox(height: 12),
+                  SholatNudgeCards(onLog: (_) => shell?.goTo(HomeTab.ibadah)),
+                  const SizedBox(height: 6),
                   _QuranCard(onTracker: () => shell?.goTo(HomeTab.quran)),
                   const SizedBox(height: 16),
                   FeatureGrid(
@@ -132,105 +134,12 @@ class _BerandaPageState extends State<BerandaPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  SholatNudgeCards(onLog: (_) => shell?.goTo(HomeTab.ibadah)),
-                  _TodayIbadah(onTap: () => shell?.goTo(HomeTab.ibadah)),
                 ],
               ),
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MiniCard extends StatelessWidget {
-  const _MiniCard({
-    required this.onTap,
-    required this.kicker,
-    required this.ring,
-    required this.value,
-    required this.title,
-    required this.detail,
-  });
-
-  final VoidCallback onTap;
-  final String kicker, value, title, detail;
-  final double ring;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                kicker,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  color: Color(0xCCB45309),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  ProgressRing(
-                    value: ring,
-                    size: 48,
-                    stroke: 6,
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: _stone,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: _stone,
-                          ),
-                        ),
-                        Text(
-                          detail,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11, color: _muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -289,17 +198,344 @@ class _TodayIbadahState extends State<_TodayIbadah> {
           );
           streak = ibadahStreak(data.summaries, today);
         }
-        return _MiniCard(
+        final day = ibadahDay(today, anchors);
+        final sholat = [
+          for (final i in data?.items ?? const <IbadahItem>[])
+            if (i.groupKey == sholatWajibGroup) i,
+        ];
+        return _IbadahCard(
           onTap: widget.onTap,
-          kicker: 'IBADAH HARI INI',
-          ring: progress.fraction,
-          value: '${progress.percent}%',
-          title: progress.complete
-              ? 'Tuntas semua'
-              : '${progress.total - progress.done} belum',
-          detail: streak > 0 ? '🔥 $streak hari terjaga' : 'Buka checklist',
+          progress: progress,
+          streak: streak,
+          excused: data?.excused ?? false,
+          dayLabel: day.isRamadan
+              ? 'Ramadan hari ke-${day.ramadanDay}'
+              : day.hijri.format(),
+          sholat: [
+            for (final i in sholat)
+              (
+                key: i.key,
+                name: i.name,
+                done: (data?.values[i.id] ?? 0) > 0,
+                jamaah: data?.logs[i.id]?.jamaah == true,
+              ),
+          ],
+          current: _currentSholat(location.lat, location.long),
         );
       },
+    );
+  }
+
+  /// Kunci sholat wajib yang waktunya sedang berjalan.
+  String? _currentSholat(double lat, double long) {
+    final t = calc.calculatePrayerTimes(latitude: lat, longitude: long);
+    final now = DateTime.now();
+    String? current;
+    for (final e in sholatPrayerKey.entries) {
+      final at = t.times[e.value];
+      if (at != null && !now.isBefore(at)) current = e.key;
+    }
+    return current;
+  }
+}
+
+typedef _SholatDot = ({String key, String name, bool done, bool jamaah});
+
+/// Kartu utama ibadah hari ini: persentase, lima waktu, streak.
+class _IbadahCard extends StatelessWidget {
+  const _IbadahCard({
+    required this.onTap,
+    required this.progress,
+    required this.streak,
+    required this.excused,
+    required this.dayLabel,
+    required this.sholat,
+    required this.current,
+  });
+
+  final VoidCallback onTap;
+  final IbadahProgress progress;
+  final int streak;
+  final bool excused;
+  final String dayLabel;
+  final List<_SholatDot> sholat;
+  final String? current;
+
+  static const _gold = Color(0xFFF2D38A);
+
+  @override
+  Widget build(BuildContext context) {
+    final done = sholat.where((s) => s.done).length;
+    final jamaah = sholat.where((s) => s.jamaah).length;
+    final left = progress.total - progress.done;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFB45309), Color(0xFF7C2D12)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x40B45309),
+            blurRadius: 26,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.task_alt_rounded, color: _gold, size: 18),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'IBADAH HARI INI',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.8,
+                        color: _gold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Spacer(),
+                    Flexible(
+                      flex: 100,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x26FFFFFF),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          streak > 0 ? '🔥 $streak hari' : dayLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    ProgressRing(
+                      value: progress.fraction,
+                      size: 84,
+                      stroke: 9,
+                      color: _gold,
+                      track: const Color(0x33FFFFFF),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${progress.percent}%',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '${progress.done}/${progress.total}',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xCCFFFFFF),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            excused
+                                ? 'Sedang berhalangan'
+                                : progress.complete
+                                ? 'Masyaa Allah, tuntas semua'
+                                : '$left ibadah lagi hari ini',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              height: 1.25,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            excused
+                                ? 'Sholat & puasa tidak dihitung hari ini'
+                                : "Sholat $done/${sholat.length}"
+                                      "${jamaah > 0 ? " · $jamaah berjama'ah" : ''}",
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xDDFFFFFF),
+                            ),
+                          ),
+                          if (streak > 0)
+                            Text(
+                              dayLabel,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0x99FFFFFF),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (sholat.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0x1FFFFFFF),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        for (final s in sholat)
+                          Expanded(
+                            child: _SholatDotView(
+                              dot: s,
+                              current: s.key == current,
+                              excused: excused,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text(
+                      'Buka checklist',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: _gold,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 16, color: _gold),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SholatDotView extends StatelessWidget {
+  const _SholatDotView({
+    required this.dot,
+    required this.current,
+    required this.excused,
+  });
+  final _SholatDot dot;
+  final bool current, excused;
+
+  @override
+  Widget build(BuildContext context) {
+    final done = dot.done;
+    return Semantics(
+      label:
+          '${dot.name}${done ? ', sudah' : ', belum'}'
+          '${dot.jamaah ? ", berjama'ah" : ''}',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: excused
+                      ? const Color(0x1AFFFFFF)
+                      : done
+                      ? const Color(0xFF16A34A)
+                      : const Color(0x14FFFFFF),
+                  border: Border.all(
+                    color: current && !done
+                        ? const Color(0xFFF2D38A)
+                        : done
+                        ? const Color(0xFF86EFAC)
+                        : const Color(0x55FFFFFF),
+                    width: current && !done ? 2.5 : 1.5,
+                  ),
+                ),
+                child: Icon(
+                  done ? Icons.check_rounded : Icons.circle_outlined,
+                  size: done ? 22 : 8,
+                  color: done ? Colors.white : const Color(0x88FFFFFF),
+                ),
+              ),
+              if (dot.jamaah)
+                Positioned(
+                  right: -4,
+                  bottom: -3,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF2D38A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.groups_rounded,
+                      size: 11,
+                      color: Color(0xFF7C2D12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            dot.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: current ? FontWeight.w800 : FontWeight.w600,
+              color: current ? const Color(0xFFF2D38A) : Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

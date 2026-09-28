@@ -242,15 +242,33 @@ class _BannerPainter extends CustomPainter {
 
 /// Basmalah di awal surah (kecuali Al-Fatihah - sudah ayat 1 - & At-Taubah).
 class BasmalahLine extends StatelessWidget {
-  const BasmalahLine({super.key, required this.fontSize});
+  const BasmalahLine({super.key, required this.fontSize, this.uthmani = false});
   final double fontSize;
 
+  /// Rasm Utsmani & font Hafs (mode Mushaf).
+  final bool uthmani;
+
+  static const msi = 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ';
+  static const uthmaniText = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+
   @override
-  Widget build(BuildContext context) => ArabicText(
-    'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
-    textAlign: TextAlign.center,
-    style: TextStyle(fontSize: fontSize, height: 1.9, color: mushafInk),
-  );
+  Widget build(BuildContext context) => uthmani
+      ? Text(
+          uthmaniText,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: TextStyle(
+            fontFamily: uthmanicFont,
+            fontSize: fontSize,
+            height: 1.9,
+            color: mushafInk,
+          ),
+        )
+      : ArabicText(
+          msi,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: fontSize, height: 1.9, color: mushafInk),
+        );
 }
 
 /// Bingkai halaman mushaf: garis ganda emas-merah dengan titik ornamen.

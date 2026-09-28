@@ -21,6 +21,7 @@ import 'package:rindu_ramadan/widgets/quran/quran_ornaments.dart';
 void main() {
   final quran = QuranText.parse(
     File('assets/quran/quran.json').readAsStringSync(),
+    File('assets/quran/uthmani.json').readAsStringSync(),
   );
 
   group('halaman mushaf', () {
@@ -41,6 +42,12 @@ void main() {
       expect((p3.last.surah, p3.last.number), (2, 16));
       expect(quran.pageOfAyah(ayahIndex(83, 35)), 589);
       expect(pageOf(ayahIndex(83, 35)), 589); // sama dengan tracker
+    });
+
+    test('teks Utsmani terpasang per ayat', () {
+      expect(quran.ayah(1).uthmani, startsWith('بِسۡمِ'));
+      expect(quran.ayah(ayahIndex(2, 1)).uthmani, 'الٓمٓ');
+      expect(quran.ayah(totalAyahs).uthmani, isNot(contains('\u00a0٦')));
     });
 
     test('tujuan "Pergi ke" -> ayat global', () {
@@ -120,16 +127,48 @@ void main() {
       await open(tester, const QuranReaderPage(surah: 1));
       expect(find.text('1. Al-Fatihah'), findsWidgets);
       await tester.tap(find.byTooltip('Pergi ke'));
-      await tester.pump(const Duration(milliseconds: 400));
+      // lembar naik: beberapa frame animasi
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       await tester.tap(find.text('Halaman'));
       await tester.pump(const Duration(milliseconds: 400));
-      await tester.enterText(find.byType(TextField), '3');
-      await tester.tap(find.text('Buka'));
+      // dari hlm 1: tambah dua halaman
+      await tester.tap(find.byTooltip('Halaman berikutnya'));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Halaman berikutnya'));
+      await tester.pump();
+      expect(find.text('Al-Baqarah 6–16'), findsOneWidget); // pratinjau
+      await tester.ensureVisible(find.text('Buka halaman 3'));
+      await tester.pump();
+      await tester.tap(find.text('Buka halaman 3'));
       for (var i = 0; i < 30; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(find.text('Juz 1 | Hlm. 3'), findsOneWidget);
       expect(find.textContaining('2. Al-Baqarah'), findsWidgets);
+    });
+
+    testWidgets('pergi ke: cari surah lalu pilih ayat', (tester) async {
+      await open(tester, const QuranReaderPage(surah: 1));
+      await tester.tap(find.byTooltip('Pergi ke'));
+      // lembar naik: beberapa frame animasi
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.enterText(find.byType(TextField), 'yasin');
+      await tester.pump();
+      expect(find.text('Yasin'), findsOneWidget);
+      expect(find.text('Al-Baqarah'), findsNothing);
+      await tester.tap(find.text('Yasin'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('9'));
+      await tester.pump();
+      await tester.tap(find.text('9'));
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.textContaining('36. Yasin'), findsWidgets);
     });
 
     testWidgets('pilih mode: per surah / mushaf', (tester) async {

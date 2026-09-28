@@ -335,9 +335,11 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet>
                         )
                       : ListView.builder(
                           controller: scrollController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
+                          padding: EdgeInsets.fromLTRB(
+                            12,
+                            4,
+                            12,
+                            16 + MediaQuery.paddingOf(context).bottom,
                           ),
                           itemCount: _items.length,
                           itemBuilder: (context, i) {

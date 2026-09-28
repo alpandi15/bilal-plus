@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../data/quran_meta.dart';
 import '../../services/app_settings.dart';
@@ -29,230 +28,496 @@ class PageTarget extends QuranTarget {
   final int page;
 }
 
-/// Dialog "Pergi ke": tab Ayat (surah + nomor ayat) atau Halaman (1-604).
+/// Lembar "Pergi ke": tab Surah (cari surah, lalu pilih ayat), Halaman
+/// (1-604, dengan pratinjau isi halaman), dan Juz.
 Future<QuranTarget?> showQuranGoto(
   BuildContext context, {
   required int surah,
   required int page,
   bool pageFirst = false,
-}) => showDialog<QuranTarget>(
+  QuranText? text,
+}) => showModalBottomSheet<QuranTarget>(
   context: context,
-  builder: (_) => _GotoDialog(surah: surah, page: page, pageFirst: pageFirst),
+  isScrollControlled: true,
+  useSafeArea: true,
+  showDragHandle: true,
+  backgroundColor: const Color(0xFFFFFAF3),
+  builder: (_) =>
+      _GotoSheet(surah: surah, page: page, pageFirst: pageFirst, text: text),
 );
 
-class _GotoDialog extends StatefulWidget {
-  const _GotoDialog({
+enum _GotoTab { surah, page, juz }
+
+class _GotoSheet extends StatefulWidget {
+  const _GotoSheet({
     required this.surah,
     required this.page,
     required this.pageFirst,
+    this.text,
   });
   final int surah, page;
   final bool pageFirst;
+  final QuranText? text;
 
   @override
-  State<_GotoDialog> createState() => _GotoDialogState();
+  State<_GotoSheet> createState() => _GotoSheetState();
 }
 
-class _GotoDialogState extends State<_GotoDialog> {
-  late bool _byPage = widget.pageFirst;
-  late int _surah = widget.surah;
-  final _ayah = TextEditingController(text: '1');
-  late final _page = TextEditingController(text: '${widget.page}');
-  String? _error;
+class _GotoSheetState extends State<_GotoSheet> {
+  late _GotoTab _tab = widget.pageFirst ? _GotoTab.page : _GotoTab.surah;
+
+  /// Surah yang sedang dipilih ayatnya (null = daftar surah).
+  int? _pickAyahOf;
+  final _query = TextEditingController();
+  late double _page = widget.page.toDouble();
 
   @override
   void dispose() {
-    _ayah.dispose();
-    _page.dispose();
+    _query.dispose();
     super.dispose();
   }
 
-  void _submit() {
-    if (_byPage) {
-      final p = int.tryParse(_page.text);
-      if (p == null || p < 1 || p > totalPages) {
-        setState(() => _error = 'Halaman 1–$totalPages');
-        return;
-      }
-      Navigator.pop(context, PageTarget(p));
-    } else {
-      final count = ayahCount(_surah);
-      final a = int.tryParse(_ayah.text);
-      if (a == null || a < 1 || a > count) {
-        setState(() => _error = '${surahName(_surah)}: ayat 1–$count');
-        return;
-      }
-      Navigator.pop(context, AyahTarget(_surah, a));
-    }
+  List<int> get _surahs {
+    final q = _query.text.trim().toLowerCase();
+    if (q.isEmpty) return [for (var s = 1; s <= 114; s++) s];
+    final plain = q.replaceAll(RegExp(r"[-'\s.]"), '');
+    return [
+      for (var s = 1; s <= 114; s++)
+        if ('$s' == q ||
+            '$s'.startsWith(q) && RegExp(r'^\d+$').hasMatch(q) ||
+            surahNames[s - 1]
+                .toLowerCase()
+                .replaceAll(RegExp(r"[-'\s]"), '')
+                .contains(plain) ||
+            (widget.text?.surah(s).meaning.toLowerCase().contains(q) ?? false))
+          s,
+    ];
   }
-
-  Widget _tab(String label, bool selected, VoidCallback onTap) => Expanded(
-    child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? _amber : Colors.transparent,
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : _muted,
-          ),
-        ),
-      ),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFFFFFAF3),
-      title: const Text(
-        'Pergi ke',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontWeight: FontWeight.w800, color: _stone),
-      ),
-      content: SizedBox(
-        width: 320,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1E4CF),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Row(
-                children: [
-                  _tab('Ayat', !_byPage, () {
-                    setState(() {
-                      _byPage = false;
-                      _error = null;
-                    });
-                  }),
-                  _tab('Halaman', _byPage, () {
-                    setState(() {
-                      _byPage = true;
-                      _error = null;
-                    });
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            if (_byPage)
-              TextField(
-                controller: _page,
-                autofocus: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onSubmitted: (_) => _submit(),
-                decoration: InputDecoration(
-                  labelText: 'Halaman mushaf',
-                  helperText: '1–$totalPages · Juz 1 = hlm 1–21',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+    final height = MediaQuery.sizeOf(context).height;
+    return SizedBox(
+      height: height * 0.78,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 12, 10),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pergi ke',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _stone,
+                    ),
                   ),
                 ),
-              )
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: DropdownButtonFormField<int>(
-                      initialValue: _surah,
-                      isExpanded: true,
-                      menuMaxHeight: 360,
-                      decoration: InputDecoration(
-                        labelText: 'Surah',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      items: [
-                        for (var s = 1; s <= 114; s++)
-                          DropdownMenuItem(
-                            value: s,
-                            child: Text(
-                              '$s. ${surahNames[s - 1]}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                      onChanged: (v) => setState(() {
-                        _surah = v ?? _surah;
-                        _ayah.text = '1';
-                        _error = null;
-                      }),
+                IconButton(
+                  tooltip: 'Tutup',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: _muted),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<_GotoTab>(
+              segments: const [
+                ButtonSegment(
+                  value: _GotoTab.surah,
+                  icon: Icon(Icons.format_list_numbered_rounded, size: 18),
+                  label: Text('Surah'),
+                ),
+                ButtonSegment(
+                  value: _GotoTab.page,
+                  icon: Icon(Icons.auto_stories_outlined, size: 18),
+                  label: Text('Halaman'),
+                ),
+                ButtonSegment(
+                  value: _GotoTab.juz,
+                  icon: Icon(Icons.grid_view_rounded, size: 18),
+                  label: Text('Juz'),
+                ),
+              ],
+              selected: {_tab},
+              showSelectedIcon: false,
+              onSelectionChanged: (v) => setState(() {
+                _tab = v.first;
+                _pickAyahOf = null;
+              }),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: switch (_tab) {
+              _GotoTab.surah =>
+                _pickAyahOf == null ? _surahList() : _ayahGrid(_pickAyahOf!),
+              _GotoTab.page => _pagePicker(),
+              _GotoTab.juz => _juzGrid(),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------- surah
+
+  Widget _surahList() {
+    final list = _surahs;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            controller: _query,
+            onChanged: (_) => setState(() {}),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Cari surah: nama, arti, atau nomor',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _query.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Hapus',
+                      onPressed: () => setState(_query.clear),
+                      icon: const Icon(Icons.close_rounded),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _ayah,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Ayat',
-                        helperText: '1–${ayahCount(_surah)}',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: _line),
               ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: _line),
               ),
-            ],
-          ],
+            ),
+          ),
         ),
-      ),
-      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-      actions: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _stone,
-                  minimumSize: const Size.fromHeight(46),
-                  side: const BorderSide(color: _line),
+        const SizedBox(height: 8),
+        Expanded(
+          child: list.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Surah tidak ditemukan',
+                    style: TextStyle(color: _muted),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    0,
+                    12,
+                    16 +
+                        MediaQuery.viewInsetsOf(context).bottom +
+                        MediaQuery.paddingOf(context).bottom,
+                  ),
+                  itemCount: list.length,
+                  itemBuilder: (context, i) {
+                    final s = list[i];
+                    final selected = s == widget.surah;
+                    return ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      tileColor: selected ? const Color(0xFFFFF1D6) : null,
+                      leading: CircleAvatar(
+                        radius: 17,
+                        backgroundColor: selected
+                            ? _amber
+                            : const Color(0xFFFFF1D6),
+                        child: Text(
+                          '$s',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: selected ? Colors.white : _amber,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        surahNames[s - 1],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: _stone,
+                        ),
+                      ),
+                      subtitle: Text(
+                        [
+                          ?widget.text?.surah(s).meaning,
+                          '${ayahCount(s)} ayat',
+                        ].join(' · '),
+                        style: const TextStyle(fontSize: 12, color: _muted),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: _muted,
+                      ),
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        setState(() => _pickAyahOf = s);
+                      },
+                    );
+                  },
                 ),
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: _amber,
-                  minimumSize: const Size.fromHeight(46),
-                ),
-                onPressed: _submit,
-                child: const Text('Buka'),
-              ),
-            ),
-          ],
         ),
       ],
+    );
+  }
+
+  Widget _ayahGrid(int s) {
+    final count = ayahCount(s);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 16, 4),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Kembali ke daftar surah',
+                onPressed: () => setState(() => _pickAyahOf = null),
+                icon: const Icon(Icons.arrow_back_rounded, color: _stone),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$s. ${surahNames[s - 1]}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _stone,
+                      ),
+                    ),
+                    Text(
+                      'Pilih ayat · $count ayat',
+                      style: const TextStyle(fontSize: 12, color: _muted),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: _amber),
+                onPressed: () => Navigator.pop(context, AyahTarget(s, 1)),
+                child: const Text('Awal surah'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              4,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
+            ),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 64,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
+            itemCount: count,
+            itemBuilder: (context, i) => Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => Navigator.pop(context, AyahTarget(s, i + 1)),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _line),
+                  ),
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: _stone,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ----------------------------------------------------------------- page
+
+  Widget _pagePicker() {
+    final page = _page.round();
+    final ayahs = widget.text?.ayahsOnPage(page);
+    String? preview;
+    if (ayahs != null) {
+      final a = ayahs.first, z = ayahs.last;
+      preview = a.surah == z.surah
+          ? '${surahNames[a.surah - 1]} ${a.number}–${z.number}'
+          : '${surahNames[a.surah - 1]} ${a.number} – '
+                '${surahNames[z.surah - 1]} ${z.number}';
+    }
+    Widget step(IconData icon, String tip, int delta) => IconButton.filledTonal(
+      tooltip: tip,
+      onPressed: () => setState(
+        () => _page = (page + delta).clamp(1, totalPages).toDouble(),
+      ),
+      icon: Icon(icon),
+    );
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        8,
+        20,
+        20 + MediaQuery.paddingOf(context).bottom,
+      ),
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00503C), Color(0xFF0C3A33)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  step(Icons.remove_rounded, 'Halaman sebelumnya', -1),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          '$page',
+                          style: const TextStyle(
+                            fontSize: 44,
+                            height: 1,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Juz ${juzOf(ayahs?.first.index ?? pageRange(page).$1)}'
+                          ' · dari $totalPages',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xCCFFFFFF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  step(Icons.add_rounded, 'Halaman berikutnya', 1),
+                ],
+              ),
+              if (preview != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  preview,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFF2D38A),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Slider(
+          value: _page,
+          min: 1,
+          max: totalPages.toDouble(),
+          divisions: totalPages - 1,
+          activeColor: _amber,
+          label: '$page',
+          onChanged: (v) => setState(() => _page = v),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: _amber,
+            minimumSize: const Size.fromHeight(50),
+          ),
+          onPressed: () => Navigator.pop(context, PageTarget(page)),
+          icon: const Icon(Icons.menu_book_rounded),
+          label: Text('Buka halaman $page'),
+        ),
+      ],
+    );
+  }
+
+  // ------------------------------------------------------------------ juz
+
+  Widget _juzGrid() {
+    return GridView.builder(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        4,
+        16,
+        16 + MediaQuery.paddingOf(context).bottom,
+      ),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 120,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.25,
+      ),
+      itemCount: totalJuz,
+      itemBuilder: (context, i) {
+        final (s, a) = juzStarts[i];
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.pop(context, AyahTarget(s, a)),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _line),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Juz ${i + 1}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: _amber,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${surahNames[s - 1]} $a',
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: _muted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

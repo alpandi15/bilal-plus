@@ -107,4 +107,30 @@ void main() {
     // semua hukum muncul
     expect(counts.keys.toSet(), TajweedRule.values.toSet());
   });
+
+  test('rasm Utsmani (mode Mushaf): semua hukum terdeteksi', () {
+    final u =
+        (jsonDecode(File('assets/quran/uthmani.json').readAsStringSync())
+                as List)
+            .cast<String>();
+    expect(u, hasLength(6236));
+    final counts = <TajweedRule, int>{};
+    for (final a in u) {
+      final segs = tajweedSegments(a, uthmani: true);
+      expect(segs.map((s) => s.text).join(), a);
+      for (final s in segs) {
+        if (s.rule != null) counts[s.rule!] = (counts[s.rule!] ?? 0) + 1;
+      }
+    }
+    expect(counts.keys.toSet(), TajweedRule.values.toSet());
+    // 2:19 مُحِيطُۢ بِٱلۡكَٰفِرِينَ = iqlab (mim kecil); 2:10 مِن قَبۡلِكَ = ikhfa
+    String rulesOf(int i) => [
+      for (final s in tajweedSegments(u[i], uthmani: true))
+        if (s.rule != null) s.rule!.name,
+    ].join(',');
+    expect(rulesOf(25), contains('iqlab'));
+    expect(rulesOf(10), contains('ikhfa'));
+    // 2:1 الٓمٓ = mad lazim
+    expect(rulesOf(7), 'madLazim');
+  });
 }

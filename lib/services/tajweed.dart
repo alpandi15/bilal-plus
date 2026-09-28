@@ -83,6 +83,14 @@ const _smallHighMadda = 0x06E4, _hamzaAbove = 0x0654, _hamzaBelow = 0x0655;
 const _tanwin = {0x064B, 0x064C, 0x064D};
 const _vowels = {0x064E, 0x064F, 0x0650, 0x0656, 0x0657, 0x0670};
 
+// Rasm Utsmani KFGQPC (mode Mushaf): sukun = ۡ (U+06E1), ْ (U+0652) =
+// huruf tidak dibaca, tanwin bertingkat ٞ ٗ ٖ = idgham/ikhfa, mim kecil
+// ۢ ۭ = iqlab, nun/mim mati sebelum idgham/ikhfa ditulis tanpa tanda.
+const _uSukun = 0x06E1, _uSilent = 0x0652;
+const _uTanwin = {0x064B, 0x064C, 0x064D, 0x065E, 0x0657, 0x0656};
+const _uVowels = {0x064E, 0x064F, 0x0650, 0x0670};
+const _uIqlab = {0x06E2, 0x06ED};
+
 const _izharLetters = 'هعحغخ';
 const _ghunnahLetters = 'ينمو';
 const _ikhfaLetters = 'تثجدذزسشصضطظفقك';
@@ -90,17 +98,32 @@ const _qalqalahLetters = 'قطبجد';
 const _hamzaLetters = 'ءأإؤئآ';
 
 class _Cluster {
-  _Cluster(this.base, this.word);
+  _Cluster(this.base, this.word, this.uthmani);
   final String? base; // null = tanda tanpa huruf (mis. tanda waqaf lepas)
   final int word;
+  final bool uthmani;
   final marks = <int>[];
   final buffer = StringBuffer();
 
   bool get isLetter => base != null && base != ' ';
   bool has(int m) => marks.contains(m);
-  bool get hasTanwin => marks.any(_tanwin.contains);
-  bool get hasVowel =>
-      marks.any((m) => _vowels.contains(m) || _tanwin.contains(m));
+  bool get hasTanwin => marks.any((uthmani ? _uTanwin : _tanwin).contains);
+  bool get hasVowel => marks.any(
+    (m) =>
+        (uthmani ? _uVowels : _vowels).contains(m) ||
+        (uthmani ? _uTanwin : _tanwin).contains(m),
+  );
+  bool get hasSukun => has(uthmani ? _uSukun : _sukun);
+
+  /// Huruf mati: bersukun - atau, di rasm Utsmani, nun/mim tanpa tanda
+  /// apa pun (mati yang dilebur/disamarkan).
+  bool get isSakin =>
+      hasSukun ||
+      (uthmani &&
+          (base == 'ن' || base == 'م') &&
+          !hasVowel &&
+          !has(_shadda) &&
+          !has(_uSilent));
 
   /// Hamzah: huruf hamzah, alif berharakat (cara MSI menulis hamzah
   /// qatha'), atau kursi (ya/tatwil) dengan tanda hamzah.
@@ -113,17 +136,19 @@ class _Cluster {
   /// Alif/alif maqshurah tanpa harakat - tidak dibaca (alif washal di awal
   /// kata, atau alif sesudah fathatan/mad).
   bool get isSilentAlif =>
-      (base == 'ا' || base == 'ى') && !isHamza && !hasVowel;
+      base == 'ٱ' ||
+      ((base == 'ا' || base == 'ى') && !isHamza && !hasVowel) ||
+      (uthmani && has(_uSilent));
 }
 
-List<_Cluster> _clusters(String text) {
+List<_Cluster> _clusters(String text, bool uthmani) {
   final out = <_Cluster>[];
   var word = 0;
   for (final c in text.runes) {
     final ch = String.fromCharCode(c);
     if (ch == ' ') {
       word++;
-      out.add(_Cluster(' ', word)..buffer.write(ch));
+      out.add(_Cluster(' ', word, uthmani)..buffer.write(ch));
       continue;
     }
     if (_isMark(c) && out.isNotEmpty && out.last.base != ' ') {
@@ -132,7 +157,8 @@ List<_Cluster> _clusters(String text) {
         ..buffer.write(ch);
       continue;
     }
-    final cl = _Cluster(_isMark(c) ? null : ch, word)..buffer.write(ch);
+    final cl = _Cluster(_isMark(c) ? null : ch, word, uthmani)
+      ..buffer.write(ch);
     if (_isMark(c)) cl.marks.add(c);
     out.add(cl);
   }
@@ -158,10 +184,11 @@ int? _nextSpoken(List<_Cluster> cs, int i) {
 }
 
 /// Pecah [text] (satu ayat) menjadi potongan berwarna sesuai hukum tajwid.
-/// Aturan dibaca dari harakat & tanda MSI; hukum yang melewati batas ayat
-/// tidak diterapkan (bacaan berhenti di akhir ayat).
-List<TajweedSegment> tajweedSegments(String text) {
-  final cs = _clusters(text);
+/// Aturan dibaca dari harakat & tanda MSI - atau rasm Utsmani KFGQPC bila
+/// [uthmani]; hukum yang melewati batas ayat tidak diterapkan (bacaan
+/// berhenti di akhir ayat).
+List<TajweedSegment> tajweedSegments(String text, {bool uthmani = false}) {
+  final cs = _clusters(text, uthmani);
   final rules = List<TajweedRule?>.filled(cs.length, null);
   void mark(int i, TajweedRule r) => rules[i] ??= r;
 
@@ -172,16 +199,19 @@ List<TajweedSegment> tajweedSegments(String text) {
     if (!c.isLetter) continue;
     // mad far'i: ۤ (mad wajib / lazim) & ٓ (mad jaiz / lazim) di MSI
     if (c.has(_smallHighMadda) || c.has(_maddah)) {
+      // Utsmani: ٓ di atas hamzah (mis. ٱلۡأٓخِرَةِ) = mad badal, bukan far'i
+      if (uthmani && c.isHamza) continue;
       final k = _nextSpoken(cs, i);
       final n = k == null ? null : cs[k];
       final same = n != null && n.word == c.word;
       TajweedRule r;
-      if (n != null && same && (n.has(_shadda) || n.has(_sukun))) {
+      if (n != null && same && (n.has(_shadda) || n.hasSukun)) {
         r = TajweedRule.madLazim;
       } else if (n != null && same && n.isHamza) {
         r = TajweedRule.madWajib;
-      } else if (c.has(_smallHighMadda)) {
-        // ۤ tanpa hamzah sesudahnya: huruf muqatta'ah (mis. الۤمّۤ)
+      } else if (c.has(_smallHighMadda) ||
+          (uthmani && (n == null || !n.isHamza))) {
+        // tanda mad tanpa hamzah sesudahnya: huruf muqatta'ah (mis. الۤمّۤ)
         r = TajweedRule.madLazim;
       } else {
         r = TajweedRule.madJaiz;
@@ -195,8 +225,15 @@ List<TajweedSegment> tajweedSegments(String text) {
     if (!c.isLetter) continue;
     final base = c.base!;
 
+    // iqlab bertanda (Utsmani: mim kecil ۢ ۭ di atas/bawah nun/tanwin)
+    if (uthmani && c.marks.any(_uIqlab.contains)) {
+      mark(i, TajweedRule.iqlab);
+      final k = _nextSpoken(cs, i);
+      if (k != null) mark(k, TajweedRule.iqlab);
+    }
+
     // nun sukun / tanwin
-    if ((base == 'ن' && c.has(_sukun)) || c.hasTanwin) {
+    if ((base == 'ن' && c.isSakin) || c.hasTanwin) {
       final k = _nextSpoken(cs, i);
       if (k != null) {
         final n = cs[k];
@@ -223,7 +260,7 @@ List<TajweedSegment> tajweedSegments(String text) {
     }
 
     // mim sukun
-    if (base == 'م' && c.has(_sukun)) {
+    if (base == 'م' && c.isSakin) {
       final k = _nextSpoken(cs, i);
       if (k != null && cs[k].base == 'ب') {
         mark(i, TajweedRule.ikhfaSyafawi);
@@ -240,7 +277,7 @@ List<TajweedSegment> tajweedSegments(String text) {
     }
 
     // qalqalah sughra
-    if (_qalqalahLetters.contains(base) && c.has(_sukun)) {
+    if (_qalqalahLetters.contains(base) && c.hasSukun) {
       mark(i, TajweedRule.qalqalah);
     }
   }

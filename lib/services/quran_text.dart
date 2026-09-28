@@ -39,12 +39,17 @@ class QuranAyah {
     required this.translation,
     required this.juz,
     required this.page,
-  });
+    String? uthmani,
+  }) : uthmani = uthmani ?? arabic;
 
   /// Nomor ayat global 1..6236.
   final int index;
   final int surah, number, juz, page;
   final String arabic, translation;
+
+  /// Rasm Utsmani riwayat Hafs (KFGQPC) untuk mode Mushaf - dipasangkan
+  /// dengan font [uthmanicFont].
+  final String uthmani;
 }
 
 const _spelling = {
@@ -108,15 +113,21 @@ class QuranText {
 
   static Future<QuranText> _load() async {
     final raw = await rootBundle.loadString('assets/quran/quran.json');
-    return compute(_parse, raw);
+    final uthmani = await rootBundle.loadString('assets/quran/uthmani.json');
+    return compute(_parseBoth, (raw, uthmani));
   }
+
+  static QuranText _parseBoth((String, String) r) => _parse(r.$1, r.$2);
 
   /// Untuk uji: parse langsung dari teks JSON.
   @visibleForTesting
-  static QuranText parse(String raw) => _parse(raw);
+  static QuranText parse(String raw, [String? uthmani]) => _parse(raw, uthmani);
 
-  static QuranText _parse(String raw) {
+  static QuranText _parse(String raw, String? uthmaniRaw) {
     final data = jsonDecode(raw) as Map<String, dynamic>;
+    final uthmani = uthmaniRaw == null
+        ? null
+        : (jsonDecode(uthmaniRaw) as List).cast<String>();
     final surahs = [
       for (final (i, s) in (data['surah'] as List).indexed)
         QuranSurah(
@@ -144,6 +155,7 @@ class QuranText {
             translation: a[1] as String,
             juz: a[2] as int,
             page: a[3] as int,
+            uthmani: uthmani?[i],
           ),
         );
       }

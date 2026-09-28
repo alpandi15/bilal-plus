@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -101,6 +100,7 @@ class _MushafPageState extends State<MushafPage> {
       surah: text.ayahsOnPage(_page).first.surah,
       page: _page,
       pageFirst: true,
+      text: text,
     );
     if (t == null) return;
     final index = targetAyahIndex(text, t);
@@ -216,6 +216,9 @@ class _MushafPageState extends State<MushafPage> {
         if (mounted) nav.pop();
       },
       child: Scaffold(
+        // keyboard (mis. dialog Pergi ke) menimpa halaman - ukuran halaman &
+        // huruf tidak dihitung ulang
+        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xFFF4EBDA),
         body: Column(
           children: [
@@ -359,15 +362,40 @@ class _TextBlock extends _Block {
 const _bannerHeight = 50.0;
 const _gap = 8.0;
 
+/// Ukuran huruf acuan untuk mengukur lebar kata (lebar sebanding dengan
+/// ukuran huruf, jadi cukup diukur sekali).
+const _refFont = 100.0;
+
+/// Jarak minimum antarkata, relatif terhadap ukuran huruf.
+const _minSpace = 0.28;
+
+/// Satu unit baris: sebuah kata (dengan warna tajwid per potongan) atau
+/// medali nomor ayat.
+class _Token {
+  _Token.word(this.ayah, this.runs, this.width) : medallion = false;
+  _Token.medallion(this.ayah, this.width) : medallion = true, runs = const [];
+
+  final QuranAyah ayah;
+  final List<({String text, Color? color})> runs;
+  final bool medallion;
+
+  /// Lebar pada [_refFont].
+  final double width;
+}
+
 class _MushafSheetState extends State<_MushafSheet> {
   late final List<_Block> _blocks = _makeBlocks();
-  final _recognizers = <int, TapGestureRecognizer>{};
 
-  // ukuran huruf hasil pencocokan, per ukuran area
+  /// Kata-kata tiap blok teks, diukur sekali (per mode tajwid).
+  final _tokens = <_TextBlock, List<_Token>>{};
+  bool? _tokensTajweed;
+
+  // hasil pencocokan: ukuran huruf & baris-baris tiap blok teks
   Size? _fitFor;
   double? _fitMax;
   double _font = 24;
   bool _scroll = false;
+  Map<_TextBlock, List<List<_Token>>> _lines = {};
 
   List<_Block> _makeBlocks() {
     final blocks = <_Block>[];
@@ -388,148 +416,228 @@ class _MushafSheetState extends State<_MushafSheet> {
     return blocks;
   }
 
-  @override
-  void dispose() {
-    for (final r in _recognizers.values) {
-      r.dispose();
-    }
-    super.dispose();
-  }
-
-  TapGestureRecognizer _tapFor(QuranAyah a) => _recognizers.putIfAbsent(
-    a.index,
-    () => TapGestureRecognizer()..onTap = () => widget.onTap(a),
-  );
-
-  double _medallion(double font) => font * 1.15;
-
-  TextStyle _style(double font) => TextStyle(
-    fontFamily: arabicFont,
+  static TextStyle _style(double font) => TextStyle(
+    fontFamily: uthmanicFont,
     fontSize: font,
     height: _lineHeight,
     color: mushafInk,
   );
 
-  InlineSpan _paragraph(_TextBlock b, double font, {bool live = true}) {
-    const highlight = Color(0x33F59E0B);
-    return TextSpan(
-      style: _style(font),
-      children: [
-        for (final a in b.ayahs) ...[
-          if (widget.tajweed)
-            for (final s in tajweedSegments(a.arabic))
-              TextSpan(
-                text: s.text,
-                recognizer: live ? _tapFor(a) : null,
-                style: TextStyle(
-                  color: s.rule?.color,
-                  backgroundColor: widget.selected == a.index
-                      ? highlight
-                      : null,
-                ),
-              )
-          else
-            TextSpan(
-              text: a.arabic,
-              recognizer: live ? _tapFor(a) : null,
-              style: TextStyle(
-                backgroundColor: widget.selected == a.index ? highlight : null,
-              ),
-            ),
-          const TextSpan(text: ' '),
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: live
-                ? GestureDetector(
-                    onTap: () => widget.onTap(a),
-                    child: AyahMedallion(
-                      number: a.number,
-                      size: _medallion(font),
-                    ),
-                  )
-                : SizedBox.square(dimension: _medallion(font)),
-          ),
-          const TextSpan(text: ' '),
-        ],
-      ],
-    );
+  static double _medallion(double font) => font * 1.15;
+
+  /// Pecah ayat-ayat [b] menjadi kata (warna tajwid dipertahankan per
+  /// potongan) + medali, lalu ukur lebarnya pada [_refFont].
+  List<_Token> _tokenize(_TextBlock b) {
+    final painter = TextPainter(textDirection: TextDirection.rtl);
+    double measure(List<({String text, Color? color})> runs) {
+      painter
+        ..text = TextSpan(
+          style: _style(_refFont),
+          children: [for (final r in runs) TextSpan(text: r.text)],
+        )
+        ..layout();
+      return painter.width;
+    }
+
+    final out = <_Token>[];
+    for (final a in b.ayahs) {
+      final segments = widget.tajweed
+          ? [
+              for (final s in tajweedSegments(a.uthmani, uthmani: true))
+                (text: s.text, color: s.rule?.color),
+            ]
+          : [(text: a.uthmani, color: null)];
+      var word = <({String text, Color? color})>[];
+      void flush() {
+        if (word.isEmpty) return;
+        out.add(_Token.word(a, word, measure(word)));
+        word = [];
+      }
+
+      for (final seg in segments) {
+        final parts = seg.text.split(' ');
+        for (var i = 0; i < parts.length; i++) {
+          if (i > 0) flush();
+          if (parts[i].isNotEmpty) {
+            word.add((text: parts[i], color: seg.color));
+          }
+        }
+      }
+      flush();
+      out.add(_Token.medallion(a, _medallion(_refFont)));
+    }
+    painter.dispose();
+    return out;
   }
 
-  /// Tinggi seluruh isi halaman pada ukuran huruf [font].
-  double _measure(double font, double width, TextScaler scaler) {
+  /// Susun [tokens] ke baris selebar [width] (satuan [_refFont]): cari
+  /// jumlah baris minimum (greedy), lalu lebar target terkecil yang tetap
+  /// menghasilkan jumlah baris itu - baris jadi seimbang, baris terakhir
+  /// tidak menggantung pendek.
+  static List<List<_Token>> _breakLines(List<_Token> tokens, double width) {
+    List<List<_Token>> greedy(double w) {
+      final lines = <List<_Token>>[];
+      var line = <_Token>[];
+      var used = 0.0;
+      for (final t in tokens) {
+        final add = line.isEmpty ? t.width : t.width + _minSpace * _refFont;
+        if (line.isNotEmpty && used + add > w) {
+          lines.add(line);
+          line = [t];
+          used = t.width;
+        } else {
+          line.add(t);
+          used += add;
+        }
+      }
+      if (line.isNotEmpty) lines.add(line);
+      return lines;
+    }
+
+    final best = greedy(width);
+    if (best.length <= 1) return best;
+    var lo = width * 0.5, hi = width;
+    var result = best;
+    for (var i = 0; i < 14; i++) {
+      final mid = (lo + hi) / 2;
+      final lines = greedy(mid);
+      if (lines.length <= best.length) {
+        result = lines;
+        hi = mid;
+      } else {
+        lo = mid;
+      }
+    }
+    return result;
+  }
+
+  /// Tinggi isi halaman & baris-baris pada ukuran huruf [font].
+  (double, Map<_TextBlock, List<List<_Token>>>) _layout(
+    double font,
+    double width,
+  ) {
+    final lines = <_TextBlock, List<List<_Token>>>{};
     var h = 0.0;
     for (final b in _blocks) {
       switch (b) {
         case _BannerBlock():
           h += _bannerHeight + _gap;
         case _BasmalahBlock():
-          final tp = TextPainter(
-            text: TextSpan(
-              text: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
-              style: _style(font * 0.92),
-            ),
-            textDirection: TextDirection.rtl,
-            textScaler: scaler,
-          )..layout(maxWidth: width);
-          h += tp.height;
-          tp.dispose();
+          h += font * 0.92 * 1.9;
         case _TextBlock():
-          final count = b.ayahs.length;
-          final m = _medallion(font);
-          final tp = TextPainter(
-            text: _paragraph(b, font, live: false),
-            textDirection: TextDirection.rtl,
-            textAlign: TextAlign.justify,
-            textScaler: scaler,
-          );
-          tp.setPlaceholderDimensions(
-            List.filled(
-              count,
-              PlaceholderDimensions(
-                size: Size(m, m),
-                alignment: PlaceholderAlignment.middle,
-              ),
-            ),
-          );
-          tp.layout(maxWidth: width);
-          h += tp.height;
-          tp.dispose();
+          final l = _breakLines(_tokens[b]!, width * _refFont / font);
+          lines[b] = l;
+          h += l.length * font * _lineHeight;
       }
     }
-    return h;
+    return (h, lines);
   }
 
-  void _fit(Size area, TextScaler scaler) {
+  void _set(
+    double font,
+    Map<_TextBlock, List<List<_Token>>> lines, {
+    required bool scroll,
+  }) {
+    _font = font;
+    _lines = lines;
+    _scroll = scroll;
+  }
+
+  void _fit(Size area) {
+    if (_tokensTajweed != widget.tajweed) {
+      _tokensTajweed = widget.tajweed;
+      _tokens.clear();
+      _fitFor = null;
+      for (final b in _blocks) {
+        if (b is _TextBlock) _tokens[b] = _tokenize(b);
+      }
+    }
     if (_fitFor == area && _fitMax == widget.maxFont) return;
     _fitFor = area;
     _fitMax = widget.maxFont;
-    if (_measure(widget.maxFont, area.width, scaler) <= area.height) {
-      _font = widget.maxFont;
-      _scroll = false;
+
+    var (h, lines) = _layout(widget.maxFont, area.width);
+    if (h <= area.height) {
+      _set(widget.maxFont, lines, scroll: false);
       return;
     }
-    if (_measure(_minFont, area.width, scaler) > area.height) {
-      _font = _minFont;
-      _scroll = true;
+    (h, lines) = _layout(_minFont, area.width);
+    if (h > area.height) {
+      _set(_minFont, lines, scroll: true);
       return;
     }
     var lo = _minFont, hi = widget.maxFont;
-    for (var i = 0; i < 7; i++) {
+    var fit = lines;
+    for (var i = 0; i < 8; i++) {
       final mid = (lo + hi) / 2;
-      if (_measure(mid, area.width, scaler) <= area.height) {
+      final (mh, ml) = _layout(mid, area.width);
+      if (mh <= area.height) {
         lo = mid;
+        fit = ml;
       } else {
         hi = mid;
       }
     }
-    _font = lo;
-    _scroll = false;
+    _set(lo, fit, scroll: false);
+  }
+
+  Widget _tokenView(_Token t, double font) {
+    final selected = widget.selected == t.ayah.index;
+    final Widget child = t.medallion
+        ? AyahMedallion(number: t.ayah.number, size: _medallion(font))
+        : Text.rich(
+            TextSpan(
+              style: _style(font),
+              children: [
+                for (final r in t.runs)
+                  TextSpan(
+                    text: r.text,
+                    style: r.color == null ? null : TextStyle(color: r.color),
+                  ),
+              ],
+            ),
+            textDirection: TextDirection.rtl,
+            textScaler: TextScaler.noScaling,
+            maxLines: 1,
+            softWrap: false,
+          );
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => widget.onTap(t.ayah),
+      child: selected
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0x33F59E0B),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: child,
+            )
+          : child,
+    );
+  }
+
+  /// Satu baris: rata kanan-kiri penuh, garis tipis di bawahnya.
+  Widget _lineView(List<_Token> line, double font) {
+    return Container(
+      height: font * _lineHeight,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0x55C9A24A), width: 0.8),
+        ),
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        mainAxisAlignment: line.length == 1
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.spaceBetween,
+        children: [for (final t in line) _tokenView(t, font)],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final first = widget.text.ayahsOnPage(widget.page).first;
-    final scaler = MediaQuery.textScalerOf(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         8,
@@ -563,9 +671,8 @@ class _MushafSheetState extends State<_MushafSheet> {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, c) {
-                    // cadangan 3%: pengukuran TextPainter & tata letak
-                    // sebenarnya bisa berbeda sedikit
-                    _fit(Size(c.maxWidth, c.maxHeight * 0.97), scaler);
+                    // cadangan 2% untuk pembulatan tata letak
+                    _fit(Size(c.maxWidth, c.maxHeight * 0.98));
                     final content = Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -579,19 +686,29 @@ class _MushafSheetState extends State<_MushafSheet> {
                                 height: _bannerHeight,
                               ),
                             ),
-                            _BasmalahBlock() => BasmalahLine(
-                              fontSize: _font * 0.92,
+                            _BasmalahBlock() => SizedBox(
+                              height: _font * 0.92 * 1.9,
+                              child: Center(
+                                child: BasmalahLine(
+                                  fontSize: _font * 0.92,
+                                  uthmani: true,
+                                ),
+                              ),
                             ),
-                            _TextBlock() => Text.rich(
-                              _paragraph(b, _font),
-                              textAlign: TextAlign.justify,
-                              textDirection: TextDirection.rtl,
+                            _TextBlock() => Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final line in _lines[b] ?? const [])
+                                  _lineView(line, _font),
+                              ],
                             ),
                           },
                       ],
                     );
                     if (_scroll) return SingleChildScrollView(child: content);
                     // pengaman terakhir: tidak pernah meluap
+                    // halaman pendek (mis. Al-Fatihah) di tengah seperti
+                    // mushaf cetak
                     return FittedBox(
                       fit: BoxFit.scaleDown,
                       child: SizedBox(width: c.maxWidth, child: content),

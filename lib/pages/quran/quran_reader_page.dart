@@ -108,6 +108,7 @@ class _QuranReaderPageState extends State<QuranReaderPage>
       context,
       surah: _surah,
       page: text.pageOfAyah(_visible),
+      text: text,
     );
     if (t == null) return;
     final (s, a) = surahAyahOf(targetAyahIndex(text, t));
@@ -134,6 +135,7 @@ class _QuranReaderPageState extends State<QuranReaderPage>
     final size = settings?.readerSize ?? 28;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFFFFAF3),
       body: Column(
         children: [

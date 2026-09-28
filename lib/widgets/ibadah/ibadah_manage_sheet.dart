@@ -80,7 +80,13 @@ class IbadahManageSheet extends StatelessWidget {
             Expanded(
               child: ReorderableListView.builder(
                 scrollController: scroll,
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                // ruang di atas navigasi sistem (gesture/tombol)
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  4,
+                  16,
+                  24 + MediaQuery.paddingOf(context).bottom,
+                ),
                 itemCount: items.length,
                 buildDefaultDragHandles: false,
                 onReorder: (from, to) {

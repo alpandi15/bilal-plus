@@ -11,7 +11,13 @@ class ProgressRing extends StatelessWidget {
     this.size = 168,
     this.stroke = 14,
     this.child,
+    this.color,
+    this.track,
   });
+
+  /// Warna busur (null = gradasi kuning-oranye) & lintasannya.
+  final Color? color;
+  final Color? track;
 
   /// 0.0..1.0
   final double value;
@@ -27,7 +33,7 @@ class ProgressRing extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, v, child) => CustomPaint(
         size: Size.square(size),
-        painter: _RingPainter(v, stroke),
+        painter: _RingPainter(v, stroke, color, track),
         child: SizedBox.square(
           dimension: size,
           child: Center(child: child),
@@ -39,9 +45,10 @@ class ProgressRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter(this.value, this.stroke);
+  _RingPainter(this.value, this.stroke, this.color, this.track);
   final double value;
   final double stroke;
+  final Color? color, track;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -56,21 +63,26 @@ class _RingPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..color = const Color(0xFFF6E7CC),
+        ..color = track ?? const Color(0xFFF6E7CC),
     );
     if (value <= 0) return;
 
     const start = -math.pi / 2;
     final sweep = math.pi * 2 * value;
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    if (color != null) {
+      canvas.drawArc(arcRect, start, sweep, false, arc..color = color!);
+      return;
+    }
     canvas.drawArc(
       arcRect,
       start,
       sweep,
       false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
+      arc
         ..shader = const SweepGradient(
           startAngle: 0,
           endAngle: math.pi * 2,
@@ -82,5 +94,8 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.value != value || old.stroke != stroke;
+      old.value != value ||
+      old.stroke != stroke ||
+      old.color != color ||
+      old.track != track;
 }
