@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Sudah dicentang (tepat waktu, terlambat, maupun qadha - satu warna):
-     bulatan champagne penuh dengan centang biru malam. -->
+     bulatan champagne penuh dengan centang hijau tua. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="oval">

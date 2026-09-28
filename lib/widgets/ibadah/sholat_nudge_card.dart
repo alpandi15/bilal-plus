@@ -8,6 +8,7 @@ import '../../services/app_settings.dart';
 import '../../services/hijri_config_scope.dart';
 import '../../services/ibadah_report.dart';
 import '../../services/prayer_calculator.dart' as calc;
+import '../../services/sholat_motivation.dart';
 import '../../services/sholat_time.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
@@ -32,11 +33,14 @@ class SholatNudge {
 }
 
 /// Pengingat sholat yang sedang berjalan tapi belum dicatat (>= 10 menit
-/// sesudah adzan), lalu evaluasi 7 hari terakhir. Null bila tidak ada yang
-/// perlu disampaikan.
+/// sesudah adzan) - atau, bila tidak ada, penyemangat sesudah sholat terakhir
+/// hari ini tercatat terlambat/qadha - lalu evaluasi 7 hari terakhir. Pesan
+/// bervariasi per hari (lihat sholat_motivation.dart). Kosong bila tidak ada
+/// yang perlu disampaikan.
 List<SholatNudge> sholatNudges({
   required List<IbadahItem> sholatItems,
   required Map<int, int> todayValues,
+  Map<int, DateTime> todayPrayedAt = const {},
   required bool excusedToday,
   required IbadahReport week,
   required DateTime now,
@@ -68,11 +72,12 @@ List<SholatNudge> sholatNudges({
       nudges.add(
         SholatNudge(
           title: '${i.name} sudah masuk $since menit lalu',
-          message: now.isBefore(onTimeUntil)
-              ? 'Masih awal waktu sampai ${hm(onTimeUntil)}. Yuk, segera '
-                    'sholat lalu catat.'
-              : 'Awal waktu sudah lewat, tapi waktu ${i.name} masih ada '
-                    'sampai ${hm(w.end)}. Jangan sampai qadha.',
+          message: pickMessage(
+            now.isBefore(onTimeUntil)
+                ? onTimeReminders(i.name, hm(onTimeUntil))
+                : lateReminders(i.name, hm(w.end)),
+            dailySeed(today, i.id),
+          ),
           tone: now.isBefore(onTimeUntil)
               ? SholatStatus.onTime
               : SholatStatus.late,
@@ -80,6 +85,49 @@ List<SholatNudge> sholatNudges({
         ),
       );
       break;
+    }
+
+    // tanpa pengingat: sholat terakhir yang dicatat hari ini terlambat/qadha?
+    if (tracking && nudges.isEmpty) {
+      final done = [
+        for (final i in sholatItems)
+          if ((todayValues[i.id] ?? 0) > 0 && todayPrayedAt[i.id] != null) i,
+      ];
+      final last = done.isEmpty ? null : done.last;
+      final w = last == null
+          ? null
+          : sholatWindow(
+              last.key,
+              parseDateKey(today),
+              latitude: latitude,
+              longitude: longitude,
+            );
+      if (last != null && w != null) {
+        final at = todayPrayedAt[last.id]!;
+        final status = sholatStatus(at, w, onTimeMinutes: onTimeMinutes);
+        if (status != SholatStatus.onTime) {
+          final after = sholatItems.skip(sholatItems.indexOf(last) + 1);
+          final next = after
+              .where((i) => (todayValues[i.id] ?? 0) == 0)
+              .firstOrNull
+              ?.name;
+          final late = minutesAfterAdzan(at, w);
+          nudges.add(
+            SholatNudge(
+              title: status == SholatStatus.qadha
+                  ? '${last.name} hari ini diqadha'
+                  : '${last.name} terlambat $late menit dari adzan',
+              message: pickMessage(
+                status == SholatStatus.qadha
+                    ? qadhaToday(last.name, next)
+                    : lateToday(last.name, next),
+                dailySeed(today, last.id),
+              ),
+              tone: status,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -97,11 +145,12 @@ List<SholatNudge> sholatNudges({
           title:
               '${worst.item.name} lewat awal waktu '
               '${worst.late + worst.qadha}x dalam 7 hari',
-          message: worst.qadha > 0
-              ? '${worst.qadha}x di antaranya qadha. Pasang niat & alarm '
-                    'sebelum adzan ${worst.item.name} - semangat!'
-              : 'Rata-rata ${worst.avgDelay.round()} menit setelah adzan. '
-                    'Sedikit lagi, insyaa Allah bisa di awal waktu.',
+          message: pickMessage(
+            worst.qadha > 0
+                ? weeklyQadha(worst.item.name, worst.qadha)
+                : weeklyLate(worst.item.name, worst.avgDelay.round()),
+            dailySeed(today, worst.item.id),
+          ),
           tone: worst.qadha > 0 ? SholatStatus.qadha : SholatStatus.late,
         ),
       );
@@ -111,9 +160,7 @@ List<SholatNudge> sholatNudges({
           title:
               'Masyaa Allah, ${(onTime * 100 / total).round()}% di awal '
               'waktu',
-          message:
-              '$onTime dari $total sholat seminggu terakhir dikerjakan '
-              'di awal waktu. Pertahankan!',
+          message: pickMessage(weeklyPraise(onTime, total), dailySeed(today)),
           tone: SholatStatus.onTime,
         ),
       );
@@ -201,6 +248,10 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
           ],
           todayValues: {
             for (final e in todayLogs.entries) e.key: e.value.value,
+          },
+          todayPrayedAt: {
+            for (final e in todayLogs.entries)
+              if (e.value.prayedAt case final at?) e.key: at,
           },
           excusedToday: data.excused.contains(today),
           week: week,

@@ -31,7 +31,7 @@
                 android:layout_width="12dp"
                 android:layout_height="12dp"
                 android:src="@drawable/widget_ic_crescent"
-                android:tint="#E9C77E"
+                android:tint="#F2D38A"
                 android:importantForAccessibility="no" />
 
             <TextView
@@ -47,7 +47,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E" />
+                android:textColor="#F2D38A" />
 
             <TextView
                 android:id="@+id/ib_count"
@@ -78,10 +78,11 @@
             android:layout_marginTop="5dp"
             android:text="Lengkapi lima waktu hari ini"
             android:textSize="9sp"
-            android:maxLines="1"
+            android:maxLines="2"
+            android:lineSpacingExtra="1dp"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="#AEB6D0" />
+            android:textColor="#B9D3CB" />
 
         <!-- lima waktu (bulatan selebar kolom, diperkecil lewat padding oleh
              IbadahWidgetProvider agar tetap bulat di widget sempit) -->
@@ -118,7 +119,7 @@
                     android:letterSpacing="-0.02"
                     android:maxLines="1"
                     android:includeFontPadding="false"
-                    android:textColor="#AEB6D0" />
+                    android:textColor="#B9D3CB" />
             </LinearLayout>
 
             <LinearLayout
@@ -147,7 +148,7 @@
                     android:letterSpacing="-0.02"
                     android:maxLines="1"
                     android:includeFontPadding="false"
-                    android:textColor="#AEB6D0" />
+                    android:textColor="#B9D3CB" />
             </LinearLayout>
 
             <LinearLayout
@@ -176,7 +177,7 @@
                     android:letterSpacing="-0.02"
                     android:maxLines="1"
                     android:includeFontPadding="false"
-                    android:textColor="#AEB6D0" />
+                    android:textColor="#B9D3CB" />
             </LinearLayout>
 
             <LinearLayout
@@ -205,7 +206,7 @@
                     android:letterSpacing="-0.02"
                     android:maxLines="1"
                     android:includeFontPadding="false"
-                    android:textColor="#AEB6D0" />
+                    android:textColor="#B9D3CB" />
             </LinearLayout>
 
             <LinearLayout
@@ -234,7 +235,7 @@
                     android:letterSpacing="-0.02"
                     android:maxLines="1"
                     android:includeFontPadding="false"
-                    android:textColor="#AEB6D0" />
+                    android:textColor="#B9D3CB" />
             </LinearLayout>
         </LinearLayout>
 
@@ -271,7 +272,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -315,7 +316,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -359,7 +360,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -403,7 +404,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -447,7 +448,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -491,7 +492,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -535,7 +536,7 @@
                 android:textStyle="bold"
                 android:fontFeatureSettings="tnum"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E"
+                android:textColor="#F2D38A"
                 android:visibility="gone" />
 
             <ImageView
@@ -562,6 +563,6 @@
             android:textStyle="bold"
             android:maxLines="1"
             android:includeFontPadding="false"
-            android:textColor="#E9C77E" />
+            android:textColor="#F2D38A" />
     </LinearLayout>
 </FrameLayout>

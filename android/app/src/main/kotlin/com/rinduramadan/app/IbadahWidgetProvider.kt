@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -107,6 +108,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             var done: Boolean,
             val excused: Boolean,
             val at: Long,
+            /** Akhir waktu sholat (epoch ms; 0 bila bukan sholat wajib). */
+            val end: Long,
             val time: String,
             /** onTime / late / qadha - hanya bila pencatatan waktu sholat aktif. */
             var status: String?,
@@ -128,6 +131,7 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     done = o.optBoolean("done", false),
                     excused = o.optBoolean("excused", false),
                     at = o.optLong("at", 0L),
+                    end = o.optLong("end", 0L),
                     time = o.optString("time", ""),
                     status = o.optString("status", "").ifEmpty { null },
                     prayed = o.optString("prayed", ""),
@@ -272,19 +276,33 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 if (total == 0) 0 else (score * 1000 / total).toInt().coerceIn(0, 1000), false,
             )
             val streak = day.optInt("streak", 0)
-            views.setTextViewText(
-                R.id.ib_streak,
-                when {
-                    excused -> if (narrow) "Berhalangan" else "Berhalangan · streak aman"
-                    total > 0 && done >= total -> if (narrow) "Semua tuntas" else "Masyaa Allah, semua tuntas"
-                    streak > 0 -> if (narrow) "🔥 $streak hari" else "🔥 $streak hari terjaga"
-                    // "15 Rabiul Akhir 1448 H" -> tanpa tahun bila sempit
-                    else -> day.optString("hijri", "").let {
-                        if (narrow) it.replace(Regex("""\s+\d+\s*H$"""), "") else it
+            val seed = cal.get(Calendar.DAY_OF_YEAR) * 7
+            val onTimeMs = root.optInt("onTimeMinutes", 15) * 60_000L
+            val message = when {
+                excused -> if (narrow) "Berhalangan" else "Berhalangan · streak aman"
+                total > 0 && done >= total -> pick(
+                    if (narrow) listOf("Semua tuntas", "Masyaa Allah!")
+                    else listOf(
+                        "Masyaa Allah, semua tuntas hari ini",
+                        "Alhamdulillah, semua tuntas. Istiqamah ya!",
+                        "Semua tuntas - semoga Allah terima amalmu",
+                    ),
+                    seed,
+                )
+                else -> sholatMessage(sholat, now, onTimeMs, narrow, seed)
+                    ?: when {
+                        streak > 0 -> if (narrow) "🔥 $streak hari" else "🔥 $streak hari terjaga"
+                        // "15 Rabiul Akhir 1448 H" -> tanpa tahun bila sempit
+                        else -> day.optString("hijri", "").let {
+                            if (narrow) it.replace(Regex("""\s+\d+\s*H$"""), "") else it
+                        }
                     }
-                },
-            )
-            views.setViewVisibility(R.id.ib_streak, if (heightDp < 200) View.GONE else View.VISIBLE)
+            }
+            views.setTextViewText(R.id.ib_streak, message)
+            val showMessage = heightDp >= 200
+            views.setViewVisibility(R.id.ib_streak, if (showMessage) View.VISIBLE else View.GONE)
+            // pesan panjang turun ke baris kedua - daftar di bawahnya menyesuaikan
+            val twoLines = textWidthDp(context, message) > widthDp - 24
 
             // lima waktu: waktu yang sedang berjalan disorot. Bulatan mengisi
             // lebar kolomnya (maks. 24dp) - dipersempit lewat padding agar
@@ -338,7 +356,7 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             }
 
             // ibadah lainnya: yang belum selesai di atas, sebanyak yang muat
-            val used = 119 + (if (heightDp < 200) 0 else 14)
+            val used = 119 + (if (!showMessage) 0 else if (twoLines) 25 else 14)
             val capacity = ((heightDp - used) / 30).coerceIn(0, MAX_ROWS)
             val ordered = items.sortedBy { if (it.done || it.excused) 1 else 0 }
             ROW_IDS.forEachIndexed { i, ids ->
@@ -390,6 +408,104 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 if (hidden > 0) "+$hidden lainnya ›" else "Buka checklist ›",
             )
             return views
+        }
+
+        private fun pick(variants: List<String>, seed: Int) = variants[Math.floorMod(seed, variants.size)]
+
+        /** Lebar [text] (dp) pada ukuran 9sp - ukuran baris pesan. */
+        private fun textWidthDp(context: Context, text: String): Float {
+            val metrics = context.resources.displayMetrics
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 9f, metrics)
+            }
+            return paint.measureText(text) / metrics.density
+        }
+
+        /**
+         * Pesan penyemangat sholat (bervariasi per hari, bukan setiap
+         * pembaruan): pengingat sholat yang sedang berjalan & belum dicentang,
+         * lalu tanggapan atas sholat terakhir yang dicatat (terlambat/qadha
+         * disemangati, awal waktu dipuji). Pengganti warna merah/oranye yang
+         * tidak dipakai di widget. Null bila tidak ada yang perlu disampaikan.
+         */
+        private fun sholatMessage(
+            sholat: List<Entry>,
+            now: Long,
+            onTimeMs: Long,
+            narrow: Boolean,
+            seed: Int,
+        ): String? {
+            val current = sholat.lastOrNull { it.at in 1..now }
+            if (current != null && !current.done && !current.excused && current.end > now) {
+                val n = current.name
+                val s = seed + current.id
+                return if (now <= current.at + onTimeMs) {
+                    pick(
+                        if (narrow) listOf("Yuk sholat $n", "Saatnya $n", "$n sudah masuk")
+                        else listOf(
+                            "Waktu $n sudah masuk. Yuk sholat di awal waktu.",
+                            "Amalan paling dicintai Allah: sholat di awal waktu. Yuk $n!",
+                            "Tinggalkan sejenak urusanmu, $n sudah memanggil.",
+                            "Hayya 'alash-shalah - saatnya sholat $n.",
+                            "Sebelum sibuk lagi, sholat $n dulu yuk.",
+                        ),
+                        s,
+                    )
+                } else {
+                    pick(
+                        if (narrow) listOf("$n belum dicatat", "Yuk, $n dulu")
+                        else listOf(
+                            "Awal waktu $n sudah lewat, tapi waktunya masih ada. Yuk sekarang.",
+                            "Belum terlambat untuk $n - jangan sampai qadha.",
+                            "Jangan tunda lagi, sholat $n dulu yuk.",
+                        ),
+                        s,
+                    )
+                }
+            }
+
+            val last = sholat.lastOrNull { it.done } ?: return null
+            val n = last.name
+            val next = sholat.firstOrNull { it.at > last.at && !it.done && !it.excused }?.name
+            val s = seed + last.id
+            return when (last.status) {
+                "late" -> pick(
+                    if (narrow) listOf("$n telat, semangat!", "Yuk lebih awal")
+                    else if (next != null) listOf(
+                        "$n tadi terlambat. Yuk $next nanti di awal waktu.",
+                        "Terlambat bukan akhir - $next jadi kesempatan baru.",
+                        "Pasang niat & alarm sebelum adzan $next ya.",
+                    )
+                    else listOf(
+                        "$n tadi terlambat. Besok insyaa Allah lebih awal.",
+                        "Terlambat bukan akhir - esok kesempatan baru.",
+                    ),
+                    s,
+                )
+                "qadha" -> pick(
+                    if (narrow) listOf("$n diqadha, semangat!", "Istighfar & bangkit")
+                    else if (next != null) listOf(
+                        "$n sudah diqadha. Jaga $next di awal waktu ya.",
+                        "Perbanyak istighfar, lalu sambut $next begitu adzan.",
+                        "Pasang alarm sebelum $next, jangan sampai terlewat.",
+                    )
+                    else listOf(
+                        "$n sudah diqadha. Besok insyaa Allah tepat waktu.",
+                        "Perbanyak istighfar & pasang alarm untuk Subuh esok.",
+                    ),
+                    s,
+                )
+                "onTime" -> pick(
+                    if (narrow) listOf("$n tepat waktu", "Masyaa Allah!")
+                    else listOf(
+                        "Masyaa Allah, $n di awal waktu!",
+                        "Barakallahu fik, $n tepat waktu.",
+                        "Istiqamah ya - $n di awal waktu.",
+                    ),
+                    s,
+                )
+                else -> null
+            }
         }
 
         private fun empty(views: RemoteViews, message: String) {

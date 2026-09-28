@@ -2,6 +2,6 @@
 <!-- Pil satuan angka ("HARI LAGI"): garis champagne tipis. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <corners android:radius="99dp" />
-    <solid android:color="#1FE9C77E" />
-    <stroke android:width="1dp" android:color="#66E9C77E" />
+    <solid android:color="#1FF2D38A" />
+    <stroke android:width="1dp" android:color="#66F2D38A" />
 </shape>

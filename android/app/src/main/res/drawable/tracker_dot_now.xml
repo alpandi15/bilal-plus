@@ -2,6 +2,6 @@
 <!-- Waktu sholat yang sedang berjalan & belum dicentang: cincin champagne
      tebal dengan kilau samar. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="#26E9C77E" />
-    <stroke android:width="2.5dp" android:color="#E9C77E" />
+    <solid android:color="#26F2D38A" />
+    <stroke android:width="2.5dp" android:color="#F2D38A" />
 </shape>

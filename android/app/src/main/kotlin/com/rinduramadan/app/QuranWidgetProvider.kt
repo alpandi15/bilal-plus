@@ -218,7 +218,7 @@ class QuranWidgetProvider : HomeWidgetProvider() {
             val canvas = Canvas(bitmap)
 
             val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFFAEB6D0.toInt()
+                color = 0xFFB9D3CB.toInt()
                 textSize = 8f * d
                 textAlign = Paint.Align.CENTER
             }
@@ -235,7 +235,7 @@ class QuranWidgetProvider : HomeWidgetProvider() {
             val slot = w / 7f
             val barW = (slot * 0.5f).coerceAtMost(16f * d)
             val max = (values.maxOrNull() ?: 0.0).coerceAtLeast(1.0)
-            val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1FE9C77E }
+            val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1FF2D38A }
 
             values.forEachIndexed { i, v ->
                 val cx = slot * i + slot / 2
@@ -249,7 +249,7 @@ class QuranWidgetProvider : HomeWidgetProvider() {
                     val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         shader = LinearGradient(
                             0f, top, 0f, barAreaBottom,
-                            if (i == 6) 0xFFF6DFA4.toInt() else 0xCCE9C77E.toInt(),
+                            if (i == 6) 0xFFF6DFA4.toInt() else 0xCCF2D38A.toInt(),
                             if (i == 6) 0xFFD9A94E.toInt() else 0x99D9A94E.toInt(),
                             Shader.TileMode.CLAMP,
                         )
@@ -259,7 +259,7 @@ class QuranWidgetProvider : HomeWidgetProvider() {
                     canvas.drawText(label, cx, top - 2f * d, valuePaint)
                 }
                 labelPaint.isFakeBoldText = i == 6
-                labelPaint.color = if (i == 6) 0xFFE9C77E.toInt() else 0xFFAEB6D0.toInt()
+                labelPaint.color = if (i == 6) 0xFFF2D38A.toInt() else 0xFFB9D3CB.toInt()
                 canvas.drawText(labels[i], cx, h - 2f * d, labelPaint)
             }
             return bitmap

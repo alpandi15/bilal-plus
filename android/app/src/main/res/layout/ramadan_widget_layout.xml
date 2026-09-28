@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Widget hitung mundur Ramadan (2x2, bisa 2x3/3x2): satu tema dengan widget
-     Ibadah Harian & Al-Qur'an (Midnight & Champagne). Hanya jumlah hari -
+     Ibadah Harian & Al-Qur'an (hijau tua & emas, seperti kartu Al-Qur'an). Hanya jumlah hari -
      tanpa jam berjalan - dengan narasi pendek. Semua teksnya diisi
      RamadanWidgetProvider.kt; latarnya drawable statis (ringan, tanpa
      bitmap). -->
@@ -19,7 +19,7 @@
         android:layout_marginTop="-14dp"
         android:layout_marginEnd="-14dp"
         android:src="@drawable/widget_ic_crescent"
-        android:tint="#E9C77E"
+        android:tint="#F2D38A"
         android:alpha="0.14"
         android:importantForAccessibility="no" />
 
@@ -44,7 +44,7 @@
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:src="@drawable/widget_ic_crescent"
-                android:tint="#E9C77E"
+                android:tint="#F2D38A"
                 android:importantForAccessibility="no" />
 
             <TextView
@@ -60,7 +60,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E" />
+                android:textColor="#F2D38A" />
         </LinearLayout>
 
         <!-- pengisi ruang (FrameLayout kosong; <Space> bukan @RemoteView) -->
@@ -104,7 +104,7 @@
                 android:lineSpacingExtra="1dp"
                 android:maxLines="2"
                 android:includeFontPadding="false"
-                android:textColor="#E9C77E" />
+                android:textColor="#F2D38A" />
         </LinearLayout>
 
         <!-- judul -->
@@ -135,7 +135,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="#C9D1EA" />
+            android:textColor="#D3E5DF" />
 
         <!-- narasi -->
         <TextView
@@ -149,6 +149,6 @@
             android:maxLines="2"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="#AEB6D0" />
+            android:textColor="#B9D3CB" />
     </LinearLayout>
 </FrameLayout>
