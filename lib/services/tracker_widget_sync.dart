@@ -18,6 +18,10 @@ import 'user_location_controller.dart';
 const ibadahWidgetName = 'IbadahWidgetProvider';
 const quranWidgetName = 'QuranWidgetProvider';
 
+/// Widget Semangat Sholat (`SemangatWidgetProvider.kt`) - memakai data
+/// `ibadah_json` yang sama dengan widget Ibadah Harian.
+const semangatWidgetName = 'SemangatWidgetProvider';
+
 const _ibadahKey = 'ibadah_json';
 const _quranKey = 'quran_json';
 
@@ -122,6 +126,7 @@ class TrackerWidgetSync {
       await HomeWidget.saveWidgetData<String>(_ibadahKey, jsonEncode(ibadah));
       await HomeWidget.saveWidgetData<String>(_quranKey, jsonEncode(quran));
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
+      await HomeWidget.updateWidget(androidName: semangatWidgetName);
       await HomeWidget.updateWidget(androidName: quranWidgetName);
     } catch (e) {
       // widget belum dipasang / plugin tidak tersedia - bukan kegagalan fatal
@@ -181,6 +186,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       );
       await HomeWidget.saveWidgetData<String>(_ibadahKey, jsonEncode(payload));
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
+      await HomeWidget.updateWidget(androidName: semangatWidgetName);
     }
   } finally {
     await db.close();

@@ -11,7 +11,7 @@ import es.antonborri.home_widget.HomeWidgetPlugin
  * Pratinjau widget layar utama (build debug saja): menyusun RemoteViews
  * yang persis sama dengan yang dikirim ke launcher, lalu menempelkannya di
  * Activity biasa. Ekstra intent: `widget` = prayer (bawaan) / ibadah /
- * quran / ramadan, `w`/`h` ukuran widget (dp), `now` epoch ms untuk meniru jam
+ * quran / ramadan / semangat, `w`/`h` ukuran widget (dp), `now` epoch ms untuk meniru jam
  * tertentu (mis. malam hari). Ketukan di pratinjau menjalankan
  * PendingIntent yang sama dengan widget sungguhan.
  */
@@ -32,6 +32,7 @@ class WidgetPreviewActivity : Activity() {
             "ibadah" -> IbadahWidgetProvider.buildViews(this, prefs, options, now)
             "quran" -> QuranWidgetProvider.buildViews(this, prefs, options, now)
             "ramadan" -> RamadanWidgetProvider.buildViews(this, prefs, options, now)
+            "semangat" -> SemangatWidgetProvider.buildViews(this, prefs, options, now)
             else -> PrayerWidgetProvider.buildPreview(this, prefs, options, now)
         }
 

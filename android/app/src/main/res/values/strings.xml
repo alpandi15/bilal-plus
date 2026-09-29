@@ -9,4 +9,5 @@
     <string name="ramadan_widget_description">Hitung mundur hari menuju Ramadan, dengan tanggal Hijriah dan Masehi.</string>
     <string name="ibadah_widget_description">Checklist ibadah hari ini: centang lima waktu langsung dari layar utama.</string>
     <string name="quran_widget_description">Progress khatam Al-Qur\'an, posisi terakhir, dan target baca hari ini.</string>
+    <string name="semangat_widget_description">Pesan semangat sholat yang santai sesuai waktu sekarang, plus checklist lima waktu.</string>
 </resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 3x2 sel (180x110dp untuk Android 11 ke bawah, targetCell* untuk
+     Android 12+), bisa diregangkan melebar sampai 4 sel. previewImage
+     statis (lihat catatan di ibadah_widget_info.xml). Refresh dijadwalkan
+     SemangatWidgetProvider sendiri; updatePeriodMillis hanya cadangan. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:maxResizeWidth="420dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/semangat_widget_layout"
+    android:previewImage="@drawable/widget_preview_semangat"
+    android:resizeMode="horizontal"
+    android:widgetCategory="home_screen"
+    android:description="@string/semangat_widget_description">
+</appwidget-provider>

@@ -152,8 +152,12 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             prefs.edit().putString(PENDING_KEY, all.toString()).apply()
         }
 
-        /** Catatan tertunda yang belum tercermin di `ibadah_json` ([generatedAt]). */
-        private fun pending(context: Context, generatedAt: Long): Map<String, Int> {
+        /**
+         * Catatan tertunda yang belum tercermin di `ibadah_json` ([generatedAt]).
+         * Dipakai juga widget Semangat Sholat agar centang dari widget ini
+         * langsung terlihat di sana.
+         */
+        internal fun pending(context: Context, generatedAt: Long): Map<String, Int> {
             val prefs = pendingPrefs(context)
             val all = JSONObject(prefs.getString(PENDING_KEY, "{}") ?: "{}")
             val live = JSONObject()
@@ -179,6 +183,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             ids.forEach { id ->
                 manager.updateAppWidget(id, buildViews(context, prefs, manager.getAppWidgetOptions(id), now))
             }
+            // widget Semangat Sholat memakai data yang sama
+            SemangatWidgetProvider.refreshAll(context)
         }
 
         /* ------------------------------ intent ------------------------------ */

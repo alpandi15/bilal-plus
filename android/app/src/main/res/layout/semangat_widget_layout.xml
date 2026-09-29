@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget "Semangat Sholat" (3x2 / 4x2): satu pesan santai sesuai keadaan
+     sholat saat ini + lima waktu (hanya tampilan, tanpa tombol - ketukan
+     membuka aplikasi). Diisi SemangatWidgetProvider.kt; tema hijau tua &
+     emas sama dengan widget lainnya. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sw_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/tracker_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="13dp"
+        android:paddingBottom="11dp">
+
+        <!-- kepala: hari + x/5 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/sw_kicker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SEMANGAT SHOLAT"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.14"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:textColor="#F2D38A" />
+
+            <TextView
+                android:id="@+id/sw_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:background="@drawable/tracker_unit_pill"
+                android:text="0/5"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:fontFeatureSettings="tnum"
+                android:includeFontPadding="false"
+                android:textColor="#F2D38A" />
+        </LinearLayout>
+
+        <!-- pesan utama -->
+        <TextView
+            android:id="@+id/sw_message"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="6dp"
+            android:gravity="center_vertical"
+            android:text="Next up: Ashar jam 15:27. Santai dulu, pas adzan langsung gas ✨"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:lineSpacingExtra="2dp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:textColor="#F4F1EA" />
+
+        <!-- lima waktu -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/sw_col_0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/sw_dot_0"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/sw_name_0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Subuh"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sw_col_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/sw_dot_1"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/sw_name_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Dzuhur"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sw_col_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/sw_dot_2"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/sw_name_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Ashar"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sw_col_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/sw_dot_3"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/sw_name_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Maghrib"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sw_col_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageView
+                    android:id="@+id/sw_dot_4"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/tracker_dot_todo"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/sw_name_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Isya"
+                    android:textSize="8.5sp"
+                    android:maxLines="1"
+                    android:includeFontPadding="false"
+                    android:textColor="#B9D3CB" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
