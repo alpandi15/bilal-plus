@@ -52,6 +52,7 @@ Future<void> _fill(AppDatabase db) async {
   );
   await dao.setValue('2027-02-09', custom, 33);
   await dao.setActive(await _idOf(db, 'sedekah'), false);
+  await dao.setWeekdays(await _idOf(db, 'dhuha'), 1 << 4); // Jumat saja
   await dao.setExcused('2027-02-10', true);
   await dao.saveRecap(
     RamadanRecapsCompanion.insert(

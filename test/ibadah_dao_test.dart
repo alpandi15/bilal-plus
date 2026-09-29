@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -104,6 +106,49 @@ void main() {
     expect(items.any((i) => i.id == subuh), isTrue);
     expect(items.any((i) => i.id == id), isFalse);
     expect((await day('2027-02-08')).values, isEmpty);
+  });
+
+  test('hari tertentu: disimpan, dinormalkan, sholat wajib tak bisa', () async {
+    final sedekah = await idOf('sedekah');
+    await dao.setWeekdays(sedekah, 1 << 4); // Jumat
+    Future<IbadahItem> item(int id) async =>
+        (await dao.watchItems(includeInactive: true).first).firstWhere(
+          (i) => i.id == id,
+        );
+    expect((await item(sedekah)).weekdays, 1 << 4);
+
+    // semua hari = tanpa batasan
+    await dao.setWeekdays(sedekah, allWeekdays);
+    expect((await item(sedekah)).weekdays, isNull);
+
+    final subuh = await idOf('subuh');
+    await dao.setWeekdays(subuh, 1 << 4);
+    expect((await item(subuh)).weekdays, isNull);
+
+    final custom = await dao.addCustomItem(
+      name: 'Baca Al-Kahfi',
+      weekdays: 1 << 4,
+    );
+    expect((await item(custom)).weekdays, 1 << 4);
+  });
+
+  test('migrasi v5 -> v6: kolom hari ditambahkan, item tetap', () async {
+    final dir = Directory.systemTemp.createTempSync('weekdays');
+    final file = File('${dir.path}/db.sqlite');
+    var d = AppDatabase(NativeDatabase(file));
+    await d.ibadahDao.watchItems().first;
+    await d.customStatement('ALTER TABLE ibadah_items DROP COLUMN weekdays');
+    await d.customStatement('PRAGMA user_version = 5');
+    await d.close();
+
+    d = AppDatabase(NativeDatabase(file));
+    final items = await d.ibadahDao.watchItems(includeInactive: true).first;
+    expect(items.length, defaultIbadahItems.length);
+    expect(items.every((i) => i.weekdays == null), isTrue);
+    final sedekah = items.firstWhere((i) => i.key == 'sedekah').id;
+    await d.ibadahDao.setWeekdays(sedekah, 1 << 4);
+    await d.close();
+    dir.deleteSync(recursive: true);
   });
 
   test('watchDay memancarkan perubahan', () async {

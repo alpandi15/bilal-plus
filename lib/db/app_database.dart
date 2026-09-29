@@ -66,6 +66,11 @@ class IbadahItems extends Table {
 
   /// Bawaan aplikasi (boleh disembunyikan, tidak dihapus).
   BoolColumn get builtIn => boolean().withDefault(const Constant(false))();
+
+  /// Hanya pada hari tertentu dalam sepekan (mis. baca Al-Kahfi tiap
+  /// Jumat): bit ke-(weekday - 1), Senin = bit 0 ... Minggu = bit 6. Null =
+  /// tanpa batasan hari. Berlaku BERSAMA [scope] - lihat [appliesOnWeekday].
+  IntColumn get weekdays => integer().nullable()();
 }
 
 @DataClassName('IbadahLog')
@@ -194,7 +199,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -220,6 +225,16 @@ class AppDatabase extends _$AppDatabase {
         // v5: catatan pribadi per rentang ayat
         await m.createTable(quranNotes);
       }
+      if (from < 6) {
+        // v6: ibadah pada hari tertentu saja (dicek dulu: basis data yang
+        // diturunkan versinya secara manual mungkin sudah punya kolomnya)
+        final cols = await customSelect(
+          "SELECT name FROM pragma_table_info('ibadah_items')",
+        ).map((r) => r.read<String>('name')).get();
+        if (!cols.contains('weekdays')) {
+          await m.addColumn(ibadahItems, ibadahItems.weekdays);
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -239,6 +254,48 @@ class AppDatabase extends _$AppDatabase {
 
 /// Kunci kelompok sholat lima waktu.
 const sholatWajibGroup = 'sholat_wajib';
+
+/// Nama hari, indeks 0 = Senin (sama dengan `DateTime.weekday - 1`).
+const weekdayNames = [
+  'Senin',
+  'Selasa',
+  'Rabu',
+  'Kamis',
+  'Jumat',
+  'Sabtu',
+  'Minggu',
+];
+
+/// Singkatan [weekdayNames] ("Sen" ... "Min").
+const weekdayShortNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+/// Semua hari dalam sepekan sebagai bitmask [IbadahItems.weekdays].
+const allWeekdays = 0x7F;
+
+/// Item dengan hari [mask] berlaku pada [weekday] (`DateTime.weekday`).
+bool appliesOnWeekday(int? mask, int weekday) =>
+    mask == null || mask & allWeekdays == 0 || mask & (1 << (weekday - 1)) != 0;
+
+/// Mask yang disimpan: null bila semua (atau tidak satu pun) hari dipilih.
+int? normalizeWeekdays(int? mask) {
+  final m = (mask ?? 0) & allWeekdays;
+  return m == 0 || m == allWeekdays ? null : m;
+}
+
+/// "Jumat", "Senin & Kamis", "Sen, Rab, Jum" - null bila tanpa batasan.
+String? weekdaysLabel(int? mask) {
+  final m = normalizeWeekdays(mask);
+  if (m == null) return null;
+  final days = [
+    for (var i = 0; i < 7; i++)
+      if (m & (1 << i) != 0) i,
+  ];
+  if (days.length == 1) return weekdayNames[days.single];
+  if (days.length == 2) {
+    return '${weekdayNames[days[0]]} & ${weekdayNames[days[1]]}';
+  }
+  return days.map((d) => weekdayShortNames[d]).join(', ');
+}
 
 /// Kunci kelompok sholat sunnah rawatib; kuncinya `qabliyah_<sholat>` /
 /// `badiyah_<sholat>` (lihat [rawatibOf]).
@@ -669,6 +726,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     required String name,
     IbadahKind kind = IbadahKind.check,
     int target = 1,
+    int? weekdays,
   }) async {
     final maxSort = ibadahItems.sort.max();
     final last = await (selectOnly(
@@ -682,9 +740,20 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
         scope: IbadahScope.daily,
         target: Value(target),
         sort: Value((last ?? 0) + 1),
+        weekdays: Value(normalizeWeekdays(weekdays)),
       ),
     );
   }
+
+  /// Batasi item ke hari tertentu ([weekdays] bitmask; null = setiap hari).
+  /// Sholat wajib tidak bisa dibatasi.
+  Future<void> setWeekdays(int id, int? weekdays) =>
+      (update(ibadahItems)..where(
+            (i) => i.id.equals(id) & i.groupKey.isNotValue(sholatWajibGroup),
+          ))
+          .write(
+            IbadahItemsCompanion(weekdays: Value(normalizeWeekdays(weekdays))),
+          );
 
   Future<void> setActive(int id, bool active) =>
       (update(ibadahItems)..where((i) => i.id.equals(id))).write(

@@ -118,6 +118,17 @@ class $IbadahItemsTable extends IbadahItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _weekdaysMeta = const VerificationMeta(
+    'weekdays',
+  );
+  @override
+  late final GeneratedColumn<int> weekdays = GeneratedColumn<int>(
+    'weekdays',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -130,6 +141,7 @@ class $IbadahItemsTable extends IbadahItems
     active,
     sort,
     builtIn,
+    weekdays,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -192,6 +204,12 @@ class $IbadahItemsTable extends IbadahItems
         builtIn.isAcceptableOrUnknown(data['built_in']!, _builtInMeta),
       );
     }
+    if (data.containsKey('weekdays')) {
+      context.handle(
+        _weekdaysMeta,
+        weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta),
+      );
+    }
     return context;
   }
 
@@ -245,6 +263,10 @@ class $IbadahItemsTable extends IbadahItems
         DriftSqlType.bool,
         data['${effectivePrefix}built_in'],
       )!,
+      weekdays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekdays'],
+      ),
     );
   }
 
@@ -278,6 +300,11 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
 
   /// Bawaan aplikasi (boleh disembunyikan, tidak dihapus).
   final bool builtIn;
+
+  /// Hanya pada hari tertentu dalam sepekan (mis. baca Al-Kahfi tiap
+  /// Jumat): bit ke-(weekday - 1), Senin = bit 0 ... Ahad = bit 6. Null =
+  /// tanpa batasan hari. Berlaku BERSAMA [scope] - lihat [appliesOnWeekday].
+  final int? weekdays;
   const IbadahItem({
     required this.id,
     required this.key,
@@ -289,6 +316,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
     required this.active,
     required this.sort,
     required this.builtIn,
+    this.weekdays,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -313,6 +341,9 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
     map['active'] = Variable<bool>(active);
     map['sort'] = Variable<int>(sort);
     map['built_in'] = Variable<bool>(builtIn);
+    if (!nullToAbsent || weekdays != null) {
+      map['weekdays'] = Variable<int>(weekdays);
+    }
     return map;
   }
 
@@ -330,6 +361,9 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
       active: Value(active),
       sort: Value(sort),
       builtIn: Value(builtIn),
+      weekdays: weekdays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekdays),
     );
   }
 
@@ -353,6 +387,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
       active: serializer.fromJson<bool>(json['active']),
       sort: serializer.fromJson<int>(json['sort']),
       builtIn: serializer.fromJson<bool>(json['builtIn']),
+      weekdays: serializer.fromJson<int?>(json['weekdays']),
     );
   }
   @override
@@ -373,6 +408,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
       'active': serializer.toJson<bool>(active),
       'sort': serializer.toJson<int>(sort),
       'builtIn': serializer.toJson<bool>(builtIn),
+      'weekdays': serializer.toJson<int?>(weekdays),
     };
   }
 
@@ -387,6 +423,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
     bool? active,
     int? sort,
     bool? builtIn,
+    Value<int?> weekdays = const Value.absent(),
   }) => IbadahItem(
     id: id ?? this.id,
     key: key ?? this.key,
@@ -398,6 +435,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
     active: active ?? this.active,
     sort: sort ?? this.sort,
     builtIn: builtIn ?? this.builtIn,
+    weekdays: weekdays.present ? weekdays.value : this.weekdays,
   );
   IbadahItem copyWithCompanion(IbadahItemsCompanion data) {
     return IbadahItem(
@@ -411,6 +449,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
       active: data.active.present ? data.active.value : this.active,
       sort: data.sort.present ? data.sort.value : this.sort,
       builtIn: data.builtIn.present ? data.builtIn.value : this.builtIn,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
     );
   }
 
@@ -426,7 +465,8 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
           ..write('groupKey: $groupKey, ')
           ..write('active: $active, ')
           ..write('sort: $sort, ')
-          ..write('builtIn: $builtIn')
+          ..write('builtIn: $builtIn, ')
+          ..write('weekdays: $weekdays')
           ..write(')'))
         .toString();
   }
@@ -443,6 +483,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
     active,
     sort,
     builtIn,
+    weekdays,
   );
   @override
   bool operator ==(Object other) =>
@@ -457,7 +498,8 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
           other.groupKey == this.groupKey &&
           other.active == this.active &&
           other.sort == this.sort &&
-          other.builtIn == this.builtIn);
+          other.builtIn == this.builtIn &&
+          other.weekdays == this.weekdays);
 }
 
 class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
@@ -471,6 +513,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
   final Value<bool> active;
   final Value<int> sort;
   final Value<bool> builtIn;
+  final Value<int?> weekdays;
   const IbadahItemsCompanion({
     this.id = const Value.absent(),
     this.key = const Value.absent(),
@@ -482,6 +525,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
     this.active = const Value.absent(),
     this.sort = const Value.absent(),
     this.builtIn = const Value.absent(),
+    this.weekdays = const Value.absent(),
   });
   IbadahItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -494,6 +538,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
     this.active = const Value.absent(),
     this.sort = const Value.absent(),
     this.builtIn = const Value.absent(),
+    this.weekdays = const Value.absent(),
   }) : key = Value(key),
        name = Value(name),
        kind = Value(kind),
@@ -509,6 +554,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
     Expression<bool>? active,
     Expression<int>? sort,
     Expression<bool>? builtIn,
+    Expression<int>? weekdays,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -521,6 +567,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
       if (active != null) 'active': active,
       if (sort != null) 'sort': sort,
       if (builtIn != null) 'built_in': builtIn,
+      if (weekdays != null) 'weekdays': weekdays,
     });
   }
 
@@ -535,6 +582,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
     Value<bool>? active,
     Value<int>? sort,
     Value<bool>? builtIn,
+    Value<int?>? weekdays,
   }) {
     return IbadahItemsCompanion(
       id: id ?? this.id,
@@ -547,6 +595,7 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
       active: active ?? this.active,
       sort: sort ?? this.sort,
       builtIn: builtIn ?? this.builtIn,
+      weekdays: weekdays ?? this.weekdays,
     );
   }
 
@@ -587,6 +636,9 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
     if (builtIn.present) {
       map['built_in'] = Variable<bool>(builtIn.value);
     }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<int>(weekdays.value);
+    }
     return map;
   }
 
@@ -602,7 +654,8 @@ class IbadahItemsCompanion extends UpdateCompanion<IbadahItem> {
           ..write('groupKey: $groupKey, ')
           ..write('active: $active, ')
           ..write('sort: $sort, ')
-          ..write('builtIn: $builtIn')
+          ..write('builtIn: $builtIn, ')
+          ..write('weekdays: $weekdays')
           ..write(')'))
         .toString();
   }
@@ -3056,6 +3109,7 @@ typedef $$IbadahItemsTableCreateCompanionBuilder =
       Value<bool> active,
       Value<int> sort,
       Value<bool> builtIn,
+      Value<int?> weekdays,
     });
 typedef $$IbadahItemsTableUpdateCompanionBuilder =
     IbadahItemsCompanion Function({
@@ -3069,6 +3123,7 @@ typedef $$IbadahItemsTableUpdateCompanionBuilder =
       Value<bool> active,
       Value<int> sort,
       Value<bool> builtIn,
+      Value<int?> weekdays,
     });
 
 final class $$IbadahItemsTableReferences
@@ -3152,6 +3207,11 @@ class $$IbadahItemsTableFilterComposer
 
   ColumnFilters<bool> get builtIn => $composableBuilder(
     column: $table.builtIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3239,6 +3299,11 @@ class $$IbadahItemsTableOrderingComposer
     column: $table.builtIn,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$IbadahItemsTableAnnotationComposer
@@ -3279,6 +3344,9 @@ class $$IbadahItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get builtIn =>
       $composableBuilder(column: $table.builtIn, builder: (column) => column);
+
+  GeneratedColumn<int> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
 
   Expression<T> ibadahLogsRefs<T extends Object>(
     Expression<T> Function($$IbadahLogsTableAnnotationComposer a) f,
@@ -3344,6 +3412,7 @@ class $$IbadahItemsTableTableManager
                 Value<bool> active = const Value.absent(),
                 Value<int> sort = const Value.absent(),
                 Value<bool> builtIn = const Value.absent(),
+                Value<int?> weekdays = const Value.absent(),
               }) => IbadahItemsCompanion(
                 id: id,
                 key: key,
@@ -3355,6 +3424,7 @@ class $$IbadahItemsTableTableManager
                 active: active,
                 sort: sort,
                 builtIn: builtIn,
+                weekdays: weekdays,
               ),
           createCompanionCallback:
               ({
@@ -3368,6 +3438,7 @@ class $$IbadahItemsTableTableManager
                 Value<bool> active = const Value.absent(),
                 Value<int> sort = const Value.absent(),
                 Value<bool> builtIn = const Value.absent(),
+                Value<int?> weekdays = const Value.absent(),
               }) => IbadahItemsCompanion.insert(
                 id: id,
                 key: key,
@@ -3379,6 +3450,7 @@ class $$IbadahItemsTableTableManager
                 active: active,
                 sort: sort,
                 builtIn: builtIn,
+                weekdays: weekdays,
               ),
           withReferenceMapper: (p0) => p0
               .map(

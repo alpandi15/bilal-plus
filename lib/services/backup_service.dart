@@ -105,6 +105,7 @@ class BackupService {
             'active': i.active,
             'sort': i.sort,
             'builtIn': i.builtIn,
+            if (i.weekdays != null) 'weekdays': i.weekdays,
           },
       ],
       'ibadahLogs': [
@@ -252,6 +253,7 @@ class BackupService {
           active: Value(i['active'] as bool),
           sort: Value(i['sort'] as int),
           builtIn: Value(i['builtIn'] as bool),
+          weekdays: Value(normalizeWeekdays(i['weekdays'] as int?)),
         );
         // gabung: pengaturan item di perangkat ini yang dipakai
         await db

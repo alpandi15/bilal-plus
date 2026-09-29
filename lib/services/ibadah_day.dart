@@ -73,9 +73,11 @@ IbadahDay ibadahDay(String date, HijriAnchors anchors) {
   );
 }
 
-/// Item [item] berlaku pada hari [day] menurut cakupannya. Puasa qadha
-/// hanya bila masih ada hutang ([qadhaRemaining]).
+/// Item [item] berlaku pada hari [day] menurut cakupannya dan, bila diatur,
+/// hari dalam sepekannya ([IbadahItem.weekdays]). Puasa qadha hanya bila
+/// masih ada hutang ([qadhaRemaining]).
 bool itemApplies(IbadahItem item, IbadahDay day, {int qadhaRemaining = 0}) =>
+    appliesOnWeekday(item.weekdays, parseDateKey(day.date).weekday) &&
     switch (item.scope) {
       IbadahScope.daily => true,
       IbadahScope.ramadan => day.isRamadan,

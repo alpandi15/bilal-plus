@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:rindu_ramadan/db/app_database.dart';
@@ -54,6 +55,41 @@ void main() {
       final syawal2 = ibadahDay('2027-03-10', _anchors);
       expect(syawal2.sunnahFastReasons, contains('Enam hari Syawal'));
       expect(syawal2.sunnahFastSuggested, isTrue);
+    });
+  });
+
+  group('hari tertentu', () {
+    // Jumat 12 Feb 2027 (Ramadan hari ke-5), Sabtu 13 Feb 2027
+    final jumat = ibadahDay('2027-02-12', _anchors);
+    final sabtu = ibadahDay('2027-02-13', _anchors);
+    IbadahItem limited(IbadahScope scope, int? mask) =>
+        _item(99, 'kahfi', scope).copyWith(weekdays: Value(mask));
+
+    test('item harian hanya muncul di hari terpilih', () {
+      final kahfi = limited(IbadahScope.daily, 1 << 4);
+      expect(itemApplies(kahfi, jumat), isTrue);
+      expect(itemApplies(kahfi, sabtu), isFalse);
+      expect(itemApplies(limited(IbadahScope.daily, null), sabtu), isTrue);
+    });
+
+    test('bersama cakupan: Ramadan DAN Jumat', () {
+      final item = limited(IbadahScope.ramadan, 1 << 4);
+      expect(itemApplies(item, jumat), isTrue);
+      expect(itemApplies(item, ibadahDay('2027-04-16', _anchors)), isFalse);
+    });
+
+    test('catatan lama tetap tampil walau bukan harinya', () {
+      final kahfi = limited(IbadahScope.daily, 1 << 4);
+      expect(visibleItems([kahfi], sabtu, const {}), isEmpty);
+      expect(visibleItems([kahfi], sabtu, const {99: 1}), [kahfi]);
+    });
+
+    test('label hari', () {
+      expect(weekdaysLabel(null), isNull);
+      expect(weekdaysLabel(1 << 4), 'Jumat');
+      expect(weekdaysLabel(1 | 1 << 3), 'Senin & Kamis');
+      expect(weekdaysLabel(1 | 1 << 2 | 1 << 4), 'Sen, Rab, Jum');
+      expect(weekdaysLabel(allWeekdays), isNull);
     });
   });
 
