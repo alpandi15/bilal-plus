@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/prayer_models.dart';
+import 'sky/seasonal_ornaments.dart';
 import 'sky_atmosphere.dart';
 
 /// Satu frame beku lapisan latar kartu jadwal sholat - gradasi fase hari +
@@ -69,4 +70,40 @@ class PrayerWidgetSkyFrame extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Satu lapisan ornamen musiman SAJA (latar transparan) untuk widget layar
+/// utama - lampion/ketupat ([OrnamentLayer.hangers]) atau kembang api
+/// ([OrnamentLayer.fireworks]) di kanvas kecil. `PrayerWidgetProvider.kt`
+/// menempatkannya di celah teks yang sebenarnya (lebar judul & pil lokasi
+/// berbeda-beda), jadi atlas langit biasa tidak perlu dirender ulang saat
+/// Ramadan/Idulfitri tiba.
+class PrayerWidgetOrnamentFrame extends StatelessWidget {
+  const PrayerWidgetOrnamentFrame({
+    super.key,
+    required this.season,
+    required this.night,
+    required this.layer,
+    required this.clockMs,
+  });
+
+  final SkySeason season;
+  final bool night;
+  final OrnamentLayer layer;
+  final double clockMs;
+
+  Size get size =>
+      layer == OrnamentLayer.fireworks ? fireworksStripSize : hangersStripSize;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.fromSize(
+    size: size,
+    child: SeasonalOrnaments(
+      season: season,
+      phase: night ? DayPhase.night : DayPhase.noon,
+      clockMs: clockMs,
+      pingPong: true,
+      layer: layer,
+    ),
+  );
 }

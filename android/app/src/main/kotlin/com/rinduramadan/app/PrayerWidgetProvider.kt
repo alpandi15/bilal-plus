@@ -7,7 +7,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.os.SystemClock
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -109,6 +113,7 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             val night = phase.night
             val quiet = state?.quiet ?: false
             val variant = if (phase == DayPhase.NIGHT && quiet) "nightquiet" else phase.atlasName
+            val season = state?.season?.takeIf { it != "normal" }
 
             // -------- anggaran memori bitmap RemoteViews (~6 byte/piksel layar) --------
             val dm = context.resources.displayMetrics
@@ -132,6 +137,11 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             val arcH = (arcHeightDp * scale).toInt().coerceAtLeast(1)
             val showSun = state?.isDaytime == true
 
+            // -------- ornamen Ramadan / Idulfitri --------
+            val ornaments = if (season == null) emptyList() else ornamentRects(
+                context, season, night, state.data.location, widthDp, heightDp, scale,
+            )
+
             val views = RemoteViews(context.packageName, R.layout.prayer_widget_layout)
             views.setOnClickPendingIntent(
                 R.id.widget_root,
@@ -145,7 +155,10 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             // flipper supaya celah saat fade tidak memperlihatkan wallpaper.
             val order = (0 until frames) + (frames - 2 downTo 1)
             val skyFrames = (0 until frames).map { f ->
-                SkyRenderer.sky(prefs, variant, f, phase, skyW, skyH, CARD_RADIUS_DP * scale, 1f * scale)
+                SkyRenderer.sky(
+                    prefs, variant, f, phase, skyW, skyH, CARD_RADIUS_DP * scale, 1f * scale,
+                    overlays = ornaments.map { (key, rect) -> "${key}_$f" to rect },
+                )
             }
             val arcFrames = (0 until frames).map { f ->
                 if (showSun) SkyRenderer.sunArc(arcW, arcH, state!!.sunProgress, ATLAS_CLOCK_BASE_MS + f * FRAME_STEP_MS, scale)
@@ -270,6 +283,63 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             "asr" -> R.id.cell_asr_time
             "maghrib" -> R.id.cell_maghrib_time
             else -> R.id.cell_isha_time
+        }
+
+        /**
+         * Tempat lapisan ornamen (kanvas kecil hasil render Flutter, kunci
+         * `orn_<musim>_<day|night>_<lapisan>`) dalam piksel bitmap langit:
+         * - lampion/ketupat di celah antara judul & pil lokasi - lebar keduanya
+         *   diukur (nama lokasi panjang = pil lebar), dikecilkan bila celahnya
+         *   sempit, dilewati bila terlalu sempit;
+         * - kembang api (malam Idulfitri) di celah antara tanggal hijriah &
+         *   deretan waktu sholat, hanya bila celahnya cukup tinggi.
+         * Angka dp mengikuti prayer_widget_layout.xml.
+         */
+        private fun ornamentRects(
+            context: Context,
+            season: String,
+            night: Boolean,
+            location: String,
+            widthDp: Int,
+            heightDp: Int,
+            scale: Float,
+        ): List<Pair<String, RectF>> {
+            val light = if (night) "night" else "day"
+            val out = mutableListOf<Pair<String, RectF>>()
+
+            val titleEnd = 14f + textWidthDp(context, context.getString(R.string.widget_title), 9f, 0.18f) + 8f
+            val pill = 9f + 11f + 4f + min(120f, textWidthDp(context, location, 10f, 0f)) + 9f
+            val pillStart = widthDp - 14f - pill - 6f
+            val band = pillStart - titleEnd
+            if (band >= 44f) {
+                val w = min(band, 120f)
+                val h = w * 72f / 120f
+                val left = titleEnd + (band - w) / 2f
+                out += "orn_${season}_${light}_hangers" to RectF(left * scale, 0f, (left + w) * scale, h * scale)
+            }
+
+            if (night && season == "eid") {
+                val top = 96f
+                val gap = heightDp - 44f - top
+                if (gap >= 30f) {
+                    val h = min(gap, 56f)
+                    val w = min(h * 200f / 56f, widthDp * 0.6f)
+                    val y = top + (gap - h) / 2f
+                    out += "orn_${season}_night_fireworks" to RectF(16f * scale, y * scale, (16f + w) * scale, (y + h) * scale)
+                }
+            }
+            return out
+        }
+
+        /** Lebar teks tebal [sp] dengan jarak huruf [spacing] em, dalam dp. */
+        private fun textWidthDp(context: Context, text: String, sp: Float, spacing: Float): Float {
+            val metrics = context.resources.displayMetrics
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
+                typeface = Typeface.DEFAULT_BOLD
+                letterSpacing = spacing
+            }
+            return paint.measureText(text) / metrics.density
         }
     }
 

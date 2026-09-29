@@ -37,6 +37,9 @@ class DaySchedule(
     /** Tanggal hijriah hari ini, dan yang berlaku sesudah Maghrib (dihitung Flutter). */
     val hijri: String,
     val hijriAfterMaghrib: String,
+    /** Suasana latar: "normal" / "ramadan" / "eid" - siang & sesudah Maghrib. */
+    val season: String = "normal",
+    val seasonAfterMaghrib: String = "normal",
 )
 
 /** Data yang dititipkan Flutter (`home_widget_service_io.dart`, kunci `schedule_json`). */
@@ -63,6 +66,8 @@ class WidgetData(
                             labels = PRAYER_KEYS.associateWith { labels.getString(it) },
                             hijri = d.optString("hijri", ""),
                             hijriAfterMaghrib = d.optString("hijriAfterMaghrib", ""),
+                            season = d.optString("season", "normal"),
+                            seasonAfterMaghrib = d.optString("seasonAfterMaghrib", "normal"),
                         ),
                     )
                 }
@@ -136,6 +141,9 @@ class WidgetState(val data: WidgetData, val now: Long) {
 
     /** Hari hijriah berganti saat Maghrib - sama dengan kartu di aplikasi. */
     val hijriLabel: String = if (now < today.times["maghrib"]!!) today.hijri else today.hijriAfterMaghrib
+
+    /** Suasana Ramadan/Idulfitri - ikut berganti saat Maghrib seperti tanggal hijriah. */
+    val season: String = if (now < today.times["maghrib"]!!) today.season else today.seasonAfterMaghrib
 
     val dateLabel: String = "${HARI[cal.get(Calendar.DAY_OF_WEEK)]}, ${cal.get(Calendar.DAY_OF_MONTH)} ${BULAN[cal.get(Calendar.MONTH)]}"
 

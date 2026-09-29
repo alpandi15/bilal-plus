@@ -5,6 +5,7 @@ import 'package:home_widget/home_widget.dart';
 
 import '../models/prayer_models.dart';
 import '../widgets/prayer_widget_sky_frame.dart';
+import '../widgets/sky/seasonal_ornaments.dart';
 import 'hijri_calendar.dart';
 import 'prayer_calculator.dart';
 import 'ramadan_calendar.dart';
@@ -51,6 +52,11 @@ const _tzId = {
 
 bool _renderingAtlas = false;
 
+/// Versi ornamen musiman (lampion/ketupat/kembang api) - naikkan bila
+/// rupanya berubah. Frame-nya hanya dirender bila Ramadan/Idulfitri jatuh
+/// dalam [_scheduleDays] hari ke depan, jadi di luar musim tidak ada beban.
+const _ornamentVersion = '1';
+
 /// Menuliskan jadwal sholat [_scheduleDays] hari ke depan + lokasi ke
 /// penyimpanan yang dibaca widget layar utama Android (`home_widget`), lalu
 /// memicu widget itu memuat ulang. Sekali saja (per versi atlas) juga
@@ -76,6 +82,7 @@ Future<void> syncPrayerHomeWidget({
     final today = todayInZone(tz);
 
     final days = <Map<String, Object>>[];
+    final seasons = <SkySeason>{};
     for (var i = 0; i < _scheduleDays; i++) {
       final date = today.add(Duration(days: i));
       final s = calculatePrayerTimes(
@@ -94,7 +101,17 @@ Future<void> syncPrayerHomeWidget({
         'hijriAfterMaghrib': anchors
             .fromGregorian(date.add(const Duration(days: 1)))
             .format(),
+        // suasana latar (Ramadan/Idulfitri) siang & sesudah Maghrib
+        'season': skySeasonOf(anchors.fromGregorian(date)).name,
+        'seasonAfterMaghrib': skySeasonOf(
+          anchors.fromGregorian(date.add(const Duration(days: 1))),
+        ).name,
       });
+      seasons
+        ..add(skySeasonOf(anchors.fromGregorian(date)))
+        ..add(
+          skySeasonOf(anchors.fromGregorian(date.add(const Duration(days: 1)))),
+        );
     }
 
     final payload = jsonEncode({
@@ -140,6 +157,7 @@ Future<void> syncPrayerHomeWidget({
     );
 
     await _ensureSkyAtlas();
+    await _ensureOrnaments(seasons..remove(SkySeason.normal));
 
     await HomeWidget.updateWidget(androidName: _androidWidgetName);
     await HomeWidget.updateWidget(androidName: _androidRamadanWidgetName);
@@ -179,6 +197,52 @@ Future<void> _ensureSkyAtlas() async {
     await HomeWidget.saveWidgetData<String>('sky_atlas_version', _atlasVersion);
   } finally {
     _renderingAtlas = false;
+  }
+}
+
+/// Merender frame ornamen (latar transparan, kanvas kecil) untuk [seasons]
+/// yang belum ada: siang & malam, [atlasFrames] frame per lapisan, kunci
+/// `orn_<musim>_<day|night>_<hangers|fireworks>_<frame>` - ditempatkan
+/// `PrayerWidgetProvider.kt` di atas frame langit biasa.
+Future<void> _ensureOrnaments(Set<SkySeason> seasons) async {
+  if (seasons.isEmpty) return;
+  final have = await HomeWidget.getWidgetData<String>('orn_version');
+  final done = have != null && have.startsWith('$_ornamentVersion:')
+      ? have.substring(_ornamentVersion.length + 1).split(',').toSet()
+      : <String>{};
+  final missing = seasons.where((s) => !done.contains(s.name)).toList();
+  if (missing.isEmpty) return;
+  for (final season in missing) {
+    for (final night in [false, true]) {
+      final light = night ? 'night' : 'day';
+      final layers = [
+        OrnamentLayer.hangers,
+        // kembang api hanya malam Idulfitri (termasuk malam takbiran)
+        if (night && season == SkySeason.eid) OrnamentLayer.fireworks,
+      ];
+      for (final layer in layers) {
+        for (var f = 0; f < atlasFrames; f++) {
+          final frame = PrayerWidgetOrnamentFrame(
+            season: season,
+            night: night,
+            layer: layer,
+            clockMs: 20000 + f * _atlasFrameStepMs,
+          );
+          await HomeWidget.renderFlutterWidget(
+            frame,
+            key: 'orn_${season.name}_${light}_${layer.name}_$f',
+            logicalSize: frame.size,
+            pixelRatio: 3,
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+        }
+      }
+    }
+    done.add(season.name);
+    await HomeWidget.saveWidgetData<String>(
+      'orn_version',
+      '$_ornamentVersion:${done.join(',')}',
+    );
   }
 }
 

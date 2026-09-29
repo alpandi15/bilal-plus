@@ -41,6 +41,7 @@ object SkyRenderer {
         height: Int,
         radiusPx: Float,
         borderPx: Float,
+        overlays: List<Pair<String, RectF>> = emptyList(),
     ): Bitmap {
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
@@ -71,6 +72,16 @@ object SkyRenderer {
             )
         }
 
+        // ornamen musiman (lampion/ketupat/kembang api, PNG transparan) di
+        // atas langit & scrim - sama dengan urutan lapisan di kartu aplikasi
+        // Kanvasnya kecil & sudah ditempatkan pemanggil di celah teks.
+        for ((key, rect) in overlays) {
+            val path = prefs.getString(key, null) ?: continue
+            val bmp = decodeScaled(path, rect.width().toInt().coerceAtLeast(1), rect.height().toInt().coerceAtLeast(1))
+                ?: continue
+            canvas.drawBitmap(bmp, null, rect, Paint(Paint.FILTER_BITMAP_FLAG))
+            bmp.recycle()
+        }
         // garis tepi 1dp - di atas langit, seperti foregroundDecoration di Flutter
         val inset = borderPx / 2
         canvas.drawRoundRect(

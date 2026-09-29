@@ -10,6 +10,7 @@ import '../services/home_widget_service.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
 import 'location_picker.dart';
+import 'sky/seasonal_ornaments.dart';
 import 'sky_atmosphere.dart';
 import 'sun_position_arc.dart';
 
@@ -107,6 +108,8 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
       maghribToday: schedule.times[PrayerKey.maghrib]!,
     );
     final hijriLabel = '(${hijri.format()})';
+    // Ramadan / Idulfitri: lampion, ketupat, kembang api di atas langit
+    final season = skySeasonOf(hijri);
 
     // sinkron ke widget layar utama Android - hanya saat lokasi, tanggal
     // (jadi jadwalnya), atau jangkar hijriah berubah, dijadwalkan sesudah
@@ -126,6 +129,9 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     }
 
     final hero = widget.hero;
+    // hero: isi turun karena status bar - bulan di celah di bawah hitung
+    // mundur supaya tidak menutupi teks
+    final moonAt = hero ? const Alignment(0.7, 0.02) : null;
     final radius = hero
         ? const BorderRadius.vertical(bottom: Radius.circular(30))
         : BorderRadius.circular(24);
@@ -174,9 +180,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                   tiles: 2,
                   skylineHeightFactor: hero ? 0.3 : 0.34,
                   skylineCover: true,
-                  // hero: isi turun karena status bar - bulan di celah di
-                  // bawah hitung mundur supaya tidak menutupi teks
-                  moonAt: hero ? const Alignment(0.7, 0.02) : null,
+                  moonAt: moonAt,
                 ),
               ),
 
@@ -192,6 +196,17 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                   ),
                 ),
               ),
+
+              // ornamen musiman di atas scrim (tetap terlihat saat malam),
+              // di celah yang kosong dari teks
+              if (season != SkySeason.normal)
+                Positioned.fill(
+                  child: SeasonalOrnaments(
+                    season: season,
+                    phase: phase,
+                    moonAt: moonAt,
+                  ),
+                ),
 
               Padding(
                 padding: hero
