@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../../db/app_database.dart';
 import '../../db/app_database_scope.dart';
+import '../../models/prayer_models.dart';
 import '../../services/app_settings.dart';
+import '../../services/hijri_calendar.dart';
 import '../../services/hijri_config_scope.dart';
+import '../../services/ibadah_day.dart';
 import '../../services/ibadah_report.dart';
 import '../../services/prayer_calculator.dart' as calc;
 import '../../services/sholat_motivation.dart';
@@ -20,6 +23,7 @@ class SholatNudge {
     required this.message,
     required this.tone,
     this.item,
+    this.icon,
   });
 
   final String title;
@@ -28,8 +32,58 @@ class SholatNudge {
   /// Warna kartu (hijau = pujian, amber = pengingat, merah = evaluasi).
   final SholatStatus tone;
 
-  /// Sholat yang bisa langsung dicatat dari kartu (pengingat).
+  /// Sholat / puasa yang bisa langsung dicatat dari kartu (pengingat).
   final IbadahItem? item;
+
+  /// Ikon kartu (null = sesuai jenisnya).
+  final IconData? icon;
+}
+
+/// Pengingat puasa Tarwiyah (8 Dzulhijjah) & Arafah (9 Dzulhijjah): pada
+/// harinya sampai Maghrib bila puasa sunnah belum dicatat (tombol Catat),
+/// atau sore/malam sebelumnya (mulai 15.00) untuk niat & sahur. Null bila
+/// bukan waktunya.
+SholatNudge? fastNudge({
+  required String today,
+  required HijriAnchors anchors,
+  required DateTime now,
+  required DateTime maghribToday,
+  required IbadahItem? fastItem,
+  required bool fastDone,
+  required bool excusedToday,
+}) {
+  final date = parseDateKey(today);
+  final todayFast = dzulhijjahFastOf(anchors.fromGregorian(date));
+  if (todayFast != null &&
+      fastItem != null &&
+      !fastDone &&
+      !excusedToday &&
+      now.isBefore(maghribToday)) {
+    final arafah = todayFast == DzulhijjahFast.arafah;
+    return SholatNudge(
+      title: 'Hari ini ${todayFast.label} 🌙',
+      message: pickMessage(
+        fastToday(arafah: arafah),
+        dailySeed(today, fastItem.id),
+      ),
+      tone: SholatStatus.onTime,
+      item: fastItem,
+      icon: Icons.nightlight_round,
+    );
+  }
+  final tomorrow = dzulhijjahFastOf(
+    anchors.fromGregorian(date.add(const Duration(days: 1))),
+  );
+  if (tomorrow != null && now.hour >= 15) {
+    final arafah = tomorrow == DzulhijjahFast.arafah;
+    return SholatNudge(
+      title: 'Besok ${tomorrow.label} 🌙',
+      message: pickMessage(fastEve(arafah: arafah), dailySeed(today, 9)),
+      tone: SholatStatus.onTime,
+      icon: Icons.nightlight_round,
+    );
+  }
+  return null;
 }
 
 /// Pengingat sholat yang sedang berjalan tapi belum dicatat (>= 10 menit
@@ -262,6 +316,31 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
           onTimeMinutes: settings?.onTimeMinutes ?? defaultOnTimeMinutes,
           tracking: settings?.sholatTime ?? false,
         );
+        // puasa Tarwiyah/Arafah: sesudah pengingat sholat yang berjalan
+        final fastItem = data.items
+            .where((i) => i.key == 'puasa_sunnah' && i.active)
+            .firstOrNull;
+        final fast = fastNudge(
+          today: today,
+          anchors: anchors,
+          now: DateTime.now(),
+          maghribToday: calc
+              .calculatePrayerTimes(
+                latitude: location.lat,
+                longitude: location.long,
+              )
+              .times[PrayerKey.maghrib]!,
+          fastItem: fastItem,
+          fastDone:
+              fastItem != null && (todayLogs[fastItem.id]?.value ?? 0) > 0,
+          excusedToday: data.excused.contains(today),
+        );
+        if (fast != null) {
+          nudges.insert(
+            nudges.isNotEmpty && nudges.first.item != null ? 1 : 0,
+            fast,
+          );
+        }
         if (nudges.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -306,11 +385,12 @@ class _NudgeCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            item != null
-                ? Icons.alarm_rounded
-                : nudge.tone == SholatStatus.onTime
-                ? Icons.emoji_events_rounded
-                : Icons.trending_up_rounded,
+            nudge.icon ??
+                (item != null
+                    ? Icons.alarm_rounded
+                    : nudge.tone == SholatStatus.onTime
+                    ? Icons.emoji_events_rounded
+                    : Icons.trending_up_rounded),
             color: accent,
           ),
           const SizedBox(width: 12),

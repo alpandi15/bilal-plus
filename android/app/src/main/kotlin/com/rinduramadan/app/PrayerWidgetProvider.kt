@@ -139,7 +139,7 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
 
             // -------- ornamen Ramadan / Idulfitri --------
             val ornaments = if (season == null) emptyList() else ornamentRects(
-                context, season, night, state.data.location, widthDp, heightDp, scale,
+                context, season, night, state.fireworks, state.data.location, widthDp, heightDp, scale,
             )
 
             val views = RemoteViews(context.packageName, R.layout.prayer_widget_layout)
@@ -291,7 +291,7 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
          * - lampion/ketupat di celah antara judul & pil lokasi - lebar keduanya
          *   diukur (nama lokasi panjang = pil lebar), dikecilkan bila celahnya
          *   sempit, dilewati bila terlalu sempit;
-         * - kembang api (malam Idulfitri) di celah antara tanggal hijriah &
+         * - kembang api (malam Idulfitri & takbiran Iduladha) di celah antara tanggal hijriah &
          *   deretan waktu sholat, hanya bila celahnya cukup tinggi.
          * Angka dp mengikuti prayer_widget_layout.xml.
          */
@@ -299,6 +299,7 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             context: Context,
             season: String,
             night: Boolean,
+            fireworks: Boolean,
             location: String,
             widthDp: Int,
             heightDp: Int,
@@ -318,7 +319,7 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
                 out += "orn_${season}_${light}_hangers" to RectF(left * scale, 0f, (left + w) * scale, h * scale)
             }
 
-            if (night && season == "eid") {
+            if (night && fireworks) {
                 val top = 96f
                 val gap = heightDp - 44f - top
                 if (gap >= 30f) {

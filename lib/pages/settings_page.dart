@@ -102,6 +102,9 @@ class SettingsPage extends StatelessWidget {
                 const _Title('NOTIFIKASI ADZAN'),
                 const _AdzanGroup(),
                 const SizedBox(height: 20),
+                const _Title('PENGINGAT PUASA'),
+                const _FastReminderGroup(),
+                const SizedBox(height: 20),
                 const _Title('SHOLAT WAJIB'),
                 _Group(
                   children: [
@@ -456,6 +459,37 @@ class _AdzanGroup extends StatelessWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// Notifikasi malam sebelum Hari Tarwiyah & Arafah.
+class _FastReminderGroup extends StatelessWidget {
+  const _FastReminderGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AppSettingsScope.of(context);
+    return _Group(
+      children: [
+        SwitchListTile.adaptive(
+          activeTrackColor: _amber,
+          value: settings.fastReminder,
+          onChanged: (on) async {
+            if (on) await AdzanNotifications.instance.requestPermissions();
+            await settings.setFastReminder(on);
+          },
+          title: const Text(
+            'Puasa Tarwiyah & Arafah',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Notifikasi pukul 20.00 malam sebelumnya: ajakan niat puasa & '
+            'siapkan sahur. Tanggalnya mengikuti kalender hijriah aplikasi.',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+        ),
       ],
     );
   }

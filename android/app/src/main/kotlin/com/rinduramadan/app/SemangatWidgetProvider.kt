@@ -30,8 +30,9 @@ import kotlin.math.ceil
  *
  * Pesannya tidak menghakimi: sholat yang terlewat/terlambat/qadha dijawab
  * dengan ajakan & semangat, bukan teguran. Urutan prioritas:
- * berhalangan > lima waktu tuntas > sholat berjalan belum dicentang >
- * sebentar lagi masuk (<= [SOON_MIN] menit) > ada yang terlewat hari ini >
+ * berhalangan > sholat berjalan belum dicentang > sebentar lagi masuk
+ * (<= [SOON_MIN] menit) > puasa Tarwiyah/Arafah (& malam sebelumnya) >
+ * lima waktu tuntas > ada yang terlewat hari ini >
  * tanggapan sholat terakhir (awal waktu/terlambat/qadha) > sholat berikutnya.
  * Variasi kalimat dipilih per hari (tidak berganti tiap refresh).
  *
@@ -213,7 +214,20 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             val textSp = if (heightDp < 130) 13f else 14f
             views.setTextViewTextSize(R.id.sw_message, TypedValue.COMPLEX_UNIT_SP, textSp)
             val room = (widthDp - 32).toFloat()
-            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs)
+            // Hari Tarwiyah/Arafah (puasa sunnah) & malam sebelumnya
+            val fastItem = day.optInt("fastItem", 0)
+            var fastDone = day.optJSONArray("items")?.let { arr ->
+                (0 until arr.length()).map { arr.getJSONObject(it) }
+                    .firstOrNull { it.optInt("id") == fastItem }?.optBoolean("done", false)
+            } ?: false
+            pending["$date|$fastItem"]?.let { fastDone = it > 0 }
+            val fast = Fast(
+                today = day.optString("fast", "").ifEmpty { null },
+                done = fastDone,
+                tomorrow = loaded.tomorrow?.optString("fast", "")?.ifEmpty { null },
+                maghrib = (sholat.firstOrNull { it.name == "Maghrib" } ?: sholat.getOrNull(3))?.at ?: 0L,
+            )
+            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs, fast)
             val salt = seed + (sholat.firstOrNull { !it.done }?.id ?: 0)
             fun rotate(list: List<String>): List<String> {
                 val start = Math.floorMod(salt, list.size)
@@ -260,12 +274,16 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
         /** Variasi pesan keadaan saat ini: [long] biasa & [short] untuk widget kecil. */
         private class Messages(val long: List<String>, val short: List<String>)
 
+        /** Puasa Tarwiyah/Arafah hari ini ([today]) / besok ([tomorrow]): "tarwiyah" / "arafah". */
+        private class Fast(val today: String?, val done: Boolean, val tomorrow: String?, val maghrib: Long)
+
         private fun messages(
             sholat: List<Prayer>,
             tomorrowSubuh: Prayer?,
             excused: Boolean,
             now: Long,
             onTimeMs: Long,
+            fast: Fast,
         ): Messages {
             if (excused) {
                 return Messages(
@@ -277,19 +295,6 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                     listOf("Lagi rehat dulu ya 🌸", "Santai dulu, dzikir jalan 🌸"),
                 )
             }
-            val counted = sholat.filter { !it.excused }
-            if (counted.isNotEmpty() && counted.all { it.done }) {
-                val c = "${counted.size}/${counted.size}"
-                return Messages(
-                    listOf(
-                        "$c hari ini, masyaa Allah 🔥 Kamu keren!",
-                        "Lima waktu beres semua ✨ Istirahat yang tenang ya.",
-                        "Full combo $c 🏆 Semoga Allah terima semuanya.",
-                    ),
-                    listOf("$c, masyaa Allah 🔥", "Full combo hari ini 🏆"),
-                )
-            }
-
             // sholat berjalan & belum dicentang
             val current = currentPrayer(sholat, now)
             if (current != null && !current.done && !current.excused) {
@@ -330,6 +335,22 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                         "Heads up: $n $m menit lagi. Biar bisa on time 🕰️",
                     ),
                     listOf("$n $m menit lagi, siap-siap 💧", "Bentar lagi $n ✨"),
+                )
+            }
+
+            // puasa Tarwiyah/Arafah - sesudah urusan sholat yang mendesak
+            fastMessages(fast, now)?.let { return it }
+
+            val counted = sholat.filter { !it.excused }
+            if (counted.isNotEmpty() && counted.all { it.done }) {
+                val c = "${counted.size}/${counted.size}"
+                return Messages(
+                    listOf(
+                        "$c hari ini, masyaa Allah 🔥 Kamu keren!",
+                        "Lima waktu beres semua ✨ Istirahat yang tenang ya.",
+                        "Full combo $c 🏆 Semoga Allah terima semuanya.",
+                    ),
+                    listOf("$c, masyaa Allah 🔥", "Full combo hari ini 🏆"),
                 )
             }
 
@@ -406,6 +427,53 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 )
             }
             return Messages(listOf("Semoga harimu adem & penuh berkah ✨"), listOf("Have a blessed day ✨"))
+        }
+
+        private fun fastMessages(fast: Fast, now: Long): Messages? {
+            val beforeMaghrib = fast.maghrib == 0L || now < fast.maghrib
+            if (fast.today != null && beforeMaghrib) {
+                val arafah = fast.today == "arafah"
+                return when {
+                    fast.done -> Messages(
+                        listOf(
+                            if (arafah) "Semangat puasa Arafah-nya! Bentar lagi buka 🌙 Jangan lupa banyak doa ya 🤲"
+                            else "Semangat puasa Tarwiyah-nya! Besok lanjut Arafah ya 🌙",
+                        ),
+                        listOf("Semangat puasanya 🌙", "Bentar lagi buka ✨"),
+                    )
+                    arafah -> Messages(
+                        listOf(
+                            "Hari Arafah nih! Puasa hari ini hapus dosa setahun lalu & setahun depan. Worth it banget 🌙",
+                            "Hari Arafah, momen terbaik buat doa. Puasa & minta apa aja yuk 🤲",
+                            "Hari Arafah vibes 🌙 Puasa yuk, pahalanya auto double combo ✨",
+                        ),
+                        listOf("Hari Arafah, puasa yuk 🌙", "Puasa Arafah yuk ✨"),
+                    )
+                    else -> Messages(
+                        listOf(
+                            "Hari Tarwiyah nih, pemanasan sebelum Arafah. Puasa yuk 🌙",
+                            "8 Dzulhijjah, hari terbaik buat beramal. Gas puasa Tarwiyah ✨",
+                        ),
+                        listOf("Hari Tarwiyah, puasa yuk 🌙", "Puasa Tarwiyah yuk ✨"),
+                    )
+                }
+            }
+            if (fast.tomorrow != null && !beforeMaghrib) {
+                return if (fast.tomorrow == "arafah") Messages(
+                    listOf(
+                        "Besok Hari Arafah! Niat puasa & pasang alarm sahur ya ⏰",
+                        "Besok Arafah 🌙 Jangan lupa sahur, ini puasa yang paling worth it.",
+                    ),
+                    listOf("Besok Arafah, sahur ya ⏰", "Besok puasa Arafah 🌙"),
+                ) else Messages(
+                    listOf(
+                        "Besok Tarwiyah, lusa Arafah 🌙 Niat puasa & siapin sahur ya.",
+                        "Besok puasa Tarwiyah yuk, pasang alarm sahur dari sekarang ⏰",
+                    ),
+                    listOf("Besok Tarwiyah, sahur ya ⏰", "Besok puasa Tarwiyah 🌙"),
+                )
+            }
+            return null
         }
 
         /** Jam "HH:mm" untuk [at], mengikuti label jadwal bila ada. */

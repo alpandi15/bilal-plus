@@ -9,7 +9,10 @@ import '../db/app_database.dart';
 import '../utils/date_key.dart';
 import 'adzan_messages.dart';
 import 'app_settings.dart';
+import 'hijri_calendar.dart';
+import 'ibadah_day.dart';
 import 'prayer_calculator.dart' as calc;
+import 'sholat_motivation.dart';
 import 'sholat_time.dart';
 import 'tracker_widget_payload.dart' show tzIds;
 import 'tracker_widget_sync.dart';
@@ -31,6 +34,16 @@ const _reminderChannel = AndroidNotificationChannel(
   description: 'Beberapa menit sebelum adzan: siapkan wudhu',
   importance: Importance.defaultImportance,
 );
+
+const _fastChannel = AndroidNotificationChannel(
+  'fast_reminder',
+  'Pengingat puasa sunnah',
+  description: 'Malam sebelum Hari Tarwiyah & Arafah: niat & siapkan sahur',
+  importance: Importance.defaultImportance,
+);
+
+/// Jam pengingat puasa (malam sebelumnya).
+const fastReminderHour = 20;
 
 const _doneAction = 'sholat_done';
 
@@ -71,6 +84,7 @@ class AdzanNotifications {
         >();
     await android?.createNotificationChannel(_adzanChannel);
     await android?.createNotificationChannel(_reminderChannel);
+    await android?.createNotificationChannel(_fastChannel);
     _ready = true;
 
     // dibuka dari notifikasi saat aplikasi tertutup
@@ -117,16 +131,18 @@ class AdzanNotifications {
   }
 
   /// Jadwalkan ulang semua notifikasi [adzanDays] hari ke depan sesuai
-  /// pengaturan & lokasi (atau batalkan semua bila dimatikan).
+  /// pengaturan & lokasi: adzan (bila aktif) dan pengingat puasa Tarwiyah /
+  /// Arafah (bila aktif; tanggalnya dari [anchors] kalender hijriah).
   Future<void> reschedule({
     required AppSettingsController settings,
     required double latitude,
     required double longitude,
     required String placeName,
+    HijriAnchors? anchors,
   }) async {
     if (!supported || !_ready) return;
     await _plugin.cancelAll();
-    if (!settings.adzan) return;
+    if (!settings.adzan && !settings.fastReminder) return;
 
     final zone = calc.timezoneFromLongitude(longitude);
     final location = tz.getLocation(tzIds[zone]!);
@@ -140,6 +156,17 @@ class AdzanNotifications {
         : AndroidScheduleMode.inexactAllowWhileIdle;
     final now = DateTime.now();
     final today = calc.todayInZone(zone);
+
+    if (settings.fastReminder) {
+      await _scheduleFastReminders(
+        anchors ?? HijriAnchors.none,
+        today,
+        location,
+        now,
+        mode,
+      );
+    }
+    if (!settings.adzan) return;
 
     for (var day = 0; day < adzanDays; day++) {
       final date = today.add(Duration(days: day));
@@ -224,6 +251,52 @@ class AdzanNotifications {
           );
         }
       }
+    }
+  }
+
+  /// Pukul [fastReminderHour] malam sebelum Hari Tarwiyah & Arafah dalam
+  /// [adzanDays] hari ke depan.
+  Future<void> _scheduleFastReminders(
+    HijriAnchors anchors,
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      final tomorrow = date.add(const Duration(days: 1));
+      final fast = dzulhijjahFastOf(anchors.fromGregorian(tomorrow));
+      if (fast == null) continue;
+      final at = tz.TZDateTime(
+        location,
+        date.year,
+        date.month,
+        date.day,
+        fastReminderHour,
+      );
+      if (!at.isAfter(now)) continue;
+      final arafah = fast == DzulhijjahFast.arafah;
+      final body = pickMessage(
+        fastEve(arafah: arafah),
+        dailySeed(dateKey(date), 9),
+      );
+      await _plugin.zonedSchedule(
+        id: 900 + day,
+        title: 'Besok ${fast.label} 🌙',
+        body: body,
+        scheduledDate: at,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _fastChannel.id,
+            _fastChannel.name,
+            channelDescription: _fastChannel.description,
+            color: const Color(0xFFB45309),
+            styleInformation: BigTextStyleInformation(body),
+          ),
+        ),
+        androidScheduleMode: mode,
+      );
     }
   }
 

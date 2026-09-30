@@ -37,9 +37,12 @@ class DaySchedule(
     /** Tanggal hijriah hari ini, dan yang berlaku sesudah Maghrib (dihitung Flutter). */
     val hijri: String,
     val hijriAfterMaghrib: String,
-    /** Suasana latar: "normal" / "ramadan" / "eid" - siang & sesudah Maghrib. */
+    /** Suasana latar: "normal" / "ramadan" / "eid" / "adha" - siang & sesudah Maghrib. */
     val season: String = "normal",
     val seasonAfterMaghrib: String = "normal",
+    /** Kembang api malam: dini hari (sebelum Subuh) & sesudah Maghrib. */
+    val fireworks: Boolean = false,
+    val fireworksAfterMaghrib: Boolean = false,
 )
 
 /** Data yang dititipkan Flutter (`home_widget_service_io.dart`, kunci `schedule_json`). */
@@ -68,6 +71,8 @@ class WidgetData(
                             hijriAfterMaghrib = d.optString("hijriAfterMaghrib", ""),
                             season = d.optString("season", "normal"),
                             seasonAfterMaghrib = d.optString("seasonAfterMaghrib", "normal"),
+                            fireworks = d.optBoolean("fireworks", false),
+                            fireworksAfterMaghrib = d.optBoolean("fireworksAfterMaghrib", false),
                         ),
                     )
                 }
@@ -144,6 +149,9 @@ class WidgetState(val data: WidgetData, val now: Long) {
 
     /** Suasana Ramadan/Idulfitri - ikut berganti saat Maghrib seperti tanggal hijriah. */
     val season: String = if (now < today.times["maghrib"]!!) today.season else today.seasonAfterMaghrib
+
+    /** Malam takbiran/Idulfitri: kembang api (hanya dipakai saat fase malam). */
+    val fireworks: Boolean = if (now < today.times["maghrib"]!!) today.fireworks else today.fireworksAfterMaghrib
 
     val dateLabel: String = "${HARI[cal.get(Calendar.DAY_OF_WEEK)]}, ${cal.get(Calendar.DAY_OF_MONTH)} ${BULAN[cal.get(Calendar.MONTH)]}"
 

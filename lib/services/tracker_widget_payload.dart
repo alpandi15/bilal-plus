@@ -175,6 +175,10 @@ Future<Map<String, Object?>> ibadahWidgetDay(
         ? 'RAMADAN · HARI ${day.ramadanDay}'
         : '${_hari[d.weekday - 1]} · ${d.day} ${_bulan[d.month - 1]}',
     'hijri': day.hijri.format(),
+    // Hari Tarwiyah/Arafah + item puasa sunnah (widget Semangat Sholat)
+    if (dzulhijjahFastOf(day.hijri) case final fast?) 'fast': fast.name,
+    if (items.where((i) => i.key == 'puasa_sunnah').firstOrNull case final i?)
+      'fastItem': i.id,
     'excused': data.excused,
     'streak': ibadahStreak(data.summaries, date),
     'done': progress.done,

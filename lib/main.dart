@@ -104,6 +104,8 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     );
     _settings.addListener(_scheduleAdzan);
     _location.addListener(_scheduleAdzan);
+    // pengingat puasa Tarwiyah/Arafah mengikuti kalender hijriah
+    _hijri.addListener(_scheduleAdzan);
     _scheduleAdzan();
   }
 
@@ -117,6 +119,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
         latitude: loc.lat,
         longitude: loc.long,
         placeName: loc.name,
+        anchors: _hijri.config.anchors,
       );
     });
   }
@@ -153,6 +156,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     _adzanDebounce?.cancel();
     _settings.removeListener(_scheduleAdzan);
     _location.removeListener(_scheduleAdzan);
+    _hijri.removeListener(_scheduleAdzan);
     _widgetSync.dispose();
     _location.dispose();
     _hijri.dispose();

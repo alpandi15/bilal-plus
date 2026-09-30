@@ -15,6 +15,7 @@ class AppSettings {
   static const adzanKey = 'adzan_enabled';
   static const adzanPrayersKey = 'adzan_prayers';
   static const adzanReminderKey = 'adzan_reminder_minutes';
+  static const fastReminderKey = 'fast_reminder';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -48,6 +49,7 @@ class AppSettingsController extends ChangeNotifier {
   bool _adzan = false;
   Set<String> _adzanPrayers = adzanPrayerKeys.toSet();
   int _reminderMinutes = 0;
+  bool _fastReminder = true;
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -121,6 +123,10 @@ class AppSettingsController extends ChangeNotifier {
   /// masjid), 0 = mati.
   int get reminderMinutes => _reminderMinutes;
 
+  /// Notifikasi pukul 20.00 malam sebelum Hari Tarwiyah & Arafah (niat &
+  /// sahur). Terpisah dari notifikasi adzan; bawaannya aktif.
+  bool get fastReminder => _fastReminder;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -151,6 +157,7 @@ class AppSettingsController extends ChangeNotifier {
           prefs.getStringList(AppSettings.adzanPrayersKey)?.toSet() ??
           adzanPrayerKeys.toSet();
       _reminderMinutes = prefs.getInt(AppSettings.adzanReminderKey) ?? 0;
+      _fastReminder = prefs.getBool(AppSettings.fastReminderKey) ?? true;
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -260,6 +267,12 @@ class AppSettingsController extends ChangeNotifier {
     _reminderMinutes = v;
     notifyListeners();
     await _save((p) => p.setInt(AppSettings.adzanReminderKey, v));
+  }
+
+  Future<void> setFastReminder(bool v) async {
+    _fastReminder = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.fastReminderKey, v));
   }
 
   Future<void> setHaptic(bool v) async {

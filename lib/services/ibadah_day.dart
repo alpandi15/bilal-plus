@@ -43,6 +43,25 @@ class IbadahDay {
       sunnahFastReasons.isNotEmpty && !fastForbidden && !isRamadan;
 }
 
+/// Puasa awal Dzulhijjah yang diingatkan khusus (kartu, notifikasi, widget).
+enum DzulhijjahFast {
+  tarwiyah('Hari Tarwiyah'),
+  arafah('Hari Arafah');
+
+  const DzulhijjahFast(this.label);
+  final String label;
+}
+
+/// Tarwiyah (8 Dzulhijjah) / Arafah (9 Dzulhijjah) pada tanggal hijriah
+/// SIANG hari [h], null bila bukan keduanya.
+DzulhijjahFast? dzulhijjahFastOf(HijriDate h) => h.month != 12
+    ? null
+    : switch (h.day) {
+        8 => DzulhijjahFast.tarwiyah,
+        9 => DzulhijjahFast.arafah,
+        _ => null,
+      };
+
 IbadahDay ibadahDay(String date, HijriAnchors anchors) {
   final d = parseDateKey(date);
   final jdn = gregorianToJdn(d.year, d.month, d.day);
@@ -54,6 +73,7 @@ IbadahDay ibadahDay(String date, HijriAnchors anchors) {
       (hijri.month == 12 && hijri.day >= 10 && hijri.day <= 13);
 
   final reasons = <String>[
+    if (hijri.month == 12 && hijri.day == 8) 'Hari Tarwiyah',
     if (hijri.month == 12 && hijri.day == 9) 'Hari Arafah',
     if (hijri.month == 1 && hijri.day == 9) "Tasu'a",
     if (hijri.month == 1 && hijri.day == 10) 'Asyura',

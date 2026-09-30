@@ -314,7 +314,12 @@ class _DayView extends StatelessWidget {
             children: [
               RamadanNoticeCards(today: today),
               if (data.date == today)
-                SholatNudgeCards(onLog: (item) => _tapSholat(context, item)),
+                SholatNudgeCards(
+                  // sholat: lembar catat jam/tempat; puasa: langsung tercentang
+                  onLog: (item) => item.groupKey == sholatWajibGroup
+                      ? _tapSholat(context, item)
+                      : dao.setValue(data.date, item.id, 1),
+                ),
               _WeekStrip(
                 date: data.date,
                 today: today,

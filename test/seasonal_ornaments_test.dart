@@ -15,6 +15,19 @@ void main() {
     expect(skySeasonOf(const HijriDate(1448, 10, 1)), SkySeason.eid);
     expect(skySeasonOf(const HijriDate(1448, 10, 3)), SkySeason.eid);
     expect(skySeasonOf(const HijriDate(1448, 10, 4)), SkySeason.normal);
+    // Iduladha: malam takbiran (10) sampai akhir tasyrik (13)
+    expect(skySeasonOf(const HijriDate(1448, 12, 9)), SkySeason.normal);
+    expect(skySeasonOf(const HijriDate(1448, 12, 10)), SkySeason.adha);
+    expect(skySeasonOf(const HijriDate(1448, 12, 13)), SkySeason.adha);
+    expect(skySeasonOf(const HijriDate(1448, 12, 14)), SkySeason.normal);
+  });
+
+  test('kembang api: malam Idulfitri & malam takbiran Iduladha saja', () {
+    expect(skyFireworksOf(const HijriDate(1448, 10, 1)), isTrue);
+    expect(skyFireworksOf(const HijriDate(1448, 10, 3)), isTrue);
+    expect(skyFireworksOf(const HijriDate(1448, 12, 10)), isTrue);
+    expect(skyFireworksOf(const HijriDate(1448, 12, 11)), isFalse);
+    expect(skyFireworksOf(const HijriDate(1448, 9, 27)), isFalse);
   });
 
   testWidgets('ornamen tergambar di setiap musim, fase & lapisan', (
@@ -30,6 +43,7 @@ void main() {
               season: season,
               phase: phase,
               clockMs: 21400,
+              fireworks: true,
             ),
           ),
         );

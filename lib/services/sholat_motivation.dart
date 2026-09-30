@@ -100,3 +100,32 @@ List<String> weeklyPraise(int onTime, int total) => [
   '$onTime dari $total sholat di awal waktu. Semoga Allah jaga '
       'semangat ini.',
 ];
+
+/// Hari Tarwiyah/Arafah, puasa sunnah belum dicatat.
+List<String> fastToday({required bool arafah}) => arafah
+    ? [
+        'Puasa Arafah menghapus dosa setahun lalu & setahun yang akan '
+            'datang (HR. Muslim). Yuk puasa, lalu catat.',
+        'Hari terbaik untuk berdoa adalah Hari Arafah. Puasa & perbanyak '
+            'doa yuk.',
+        'Sehari yang pahalanya luar biasa - jangan terlewat puasa Arafah '
+            'ya.',
+      ]
+    : [
+        'Sepuluh hari awal Dzulhijjah adalah hari terbaik untuk beramal '
+            '(HR. Bukhari). Yuk puasa Tarwiyah, besok lanjut Arafah.',
+        'Hari Tarwiyah - awali dengan puasa, sambut Hari Arafah besok.',
+      ];
+
+/// Sore/malam sebelum Hari Tarwiyah/Arafah.
+List<String> fastEve({required bool arafah}) => arafah
+    ? [
+        'Yuk niatkan puasa Arafah & siapkan sahur. Puasanya menghapus dosa '
+            'setahun lalu & setahun yang akan datang.',
+        'Pasang alarm sahur, besok puasa Arafah - hari terbaik untuk berdoa.',
+      ]
+    : [
+        'Yuk niatkan puasa Tarwiyah & siapkan sahur - lusa lanjut puasa '
+            'Arafah.',
+        'Besok sudah 8 Dzulhijjah. Siapkan sahur untuk puasa Tarwiyah ya.',
+      ];

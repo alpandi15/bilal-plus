@@ -101,11 +101,16 @@ Future<void> syncPrayerHomeWidget({
         'hijriAfterMaghrib': anchors
             .fromGregorian(date.add(const Duration(days: 1)))
             .format(),
-        // suasana latar (Ramadan/Idulfitri) siang & sesudah Maghrib
+        // suasana latar (Ramadan/Idulfitri/Iduladha) siang & sesudah
+        // Maghrib, dan kembang api malamnya (dini hari & sesudah Maghrib)
         'season': skySeasonOf(anchors.fromGregorian(date)).name,
         'seasonAfterMaghrib': skySeasonOf(
           anchors.fromGregorian(date.add(const Duration(days: 1))),
         ).name,
+        'fireworks': skyFireworksOf(anchors.fromGregorian(date)),
+        'fireworksAfterMaghrib': skyFireworksOf(
+          anchors.fromGregorian(date.add(const Duration(days: 1))),
+        ),
       });
       seasons
         ..add(skySeasonOf(anchors.fromGregorian(date)))
@@ -217,8 +222,10 @@ Future<void> _ensureOrnaments(Set<SkySeason> seasons) async {
       final light = night ? 'night' : 'day';
       final layers = [
         OrnamentLayer.hangers,
-        // kembang api hanya malam Idulfitri (termasuk malam takbiran)
-        if (night && season == SkySeason.eid) OrnamentLayer.fireworks,
+        // kembang api: malam Idulfitri & malam takbiran Iduladha - kapan
+        // ditampilkan diatur flag `fireworks` per hari di schedule_json
+        if (night && (season == SkySeason.eid || season == SkySeason.adha))
+          OrnamentLayer.fireworks,
       ];
       for (final layer in layers) {
         for (var f = 0; f < atlasFrames; f++) {

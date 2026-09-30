@@ -205,6 +205,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                     season: season,
                     phase: phase,
                     moonAt: moonAt,
+                    fireworks: skyFireworksOf(hijri),
                   ),
                 ),
 

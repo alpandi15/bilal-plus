@@ -104,6 +104,7 @@ class PrayerWidgetOrnamentFrame extends StatelessWidget {
       clockMs: clockMs,
       pingPong: true,
       layer: layer,
+      fireworks: true,
     ),
   );
 }

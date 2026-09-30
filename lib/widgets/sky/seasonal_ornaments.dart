@@ -8,22 +8,34 @@ import '../../services/hijri_calendar.dart';
 import '../../utils/sky_clock.dart';
 
 /// Suasana musiman latar kartu & widget jadwal sholat.
-enum SkySeason { normal, ramadan, eid }
+enum SkySeason { normal, ramadan, eid, adha }
 
 /// Pengganti musim untuk pengembangan: `--dart-define=SKY_SEASON=ramadan`
 /// (hanya build debug) - supaya ornamen bisa dilihat di luar Ramadan.
 const _debugSeason = String.fromEnvironment('SKY_SEASON');
 
 /// Musim pada tanggal hijriah [h] yang SEDANG berlaku (sudah berganti saat
-/// Maghrib): Ramadan sebulan penuh - termasuk malam tarawih pertama - dan
-/// Idulfitri sejak malam takbiran sampai 3 Syawal.
+/// Maghrib): Ramadan sebulan penuh - termasuk malam tarawih pertama -,
+/// Idulfitri sejak malam takbiran sampai 3 Syawal, dan Iduladha sejak malam
+/// takbiran sampai akhir hari tasyrik (13 Dzulhijjah).
 SkySeason skySeasonOf(HijriDate h) {
   if (kDebugMode && _debugSeason.isNotEmpty) {
     return SkySeason.values.asNameMap()[_debugSeason] ?? SkySeason.normal;
   }
   if (h.month == 9) return SkySeason.ramadan;
   if (h.month == 10 && h.day <= 3) return SkySeason.eid;
+  if (h.month == 12 && h.day >= 10 && h.day <= 13) return SkySeason.adha;
   return SkySeason.normal;
+}
+
+/// Kembang api MALAM pada tanggal hijriah [h] yang sedang berlaku: malam
+/// takbiran & malam Idulfitri (1-3 Syawal), tapi untuk Iduladha hanya malam
+/// takbiran (10 Dzulhijjah) - malam tasyrik lebih tenang.
+bool skyFireworksOf(HijriDate h) {
+  if (kDebugMode && _debugSeason.isNotEmpty) {
+    return _debugSeason == 'eid' || _debugSeason == 'adha';
+  }
+  return (h.month == 10 && h.day <= 3) || (h.month == 12 && h.day == 10);
 }
 
 /// Ornamen musiman di atas langit, satu CustomPaint:
@@ -46,7 +58,11 @@ class SeasonalOrnaments extends StatelessWidget {
     this.clockMs,
     this.pingPong = false,
     this.layer = OrnamentLayer.all,
+    this.fireworks = false,
   });
+
+  /// Kembang api (hanya malam) - lihat [skyFireworksOf].
+  final bool fireworks;
 
   final SkySeason season;
   final DayPhase phase;
@@ -84,6 +100,7 @@ class SeasonalOrnaments extends StatelessWidget {
             moonSize: moonSize,
             pingPong: pingPong,
             layer: layer,
+            fireworks: fireworks,
           ),
         ),
       ),
@@ -110,6 +127,8 @@ class _Hanger {
   final double phase;
 }
 
+/// Gantungan kecil kedua: bulan sabit (Ramadan), bintang (Idulfitri),
+/// kambing (Iduladha - lambang qurban).
 enum _Kind { big, star, crescent }
 
 const _hangers = [
@@ -146,9 +165,11 @@ class _OrnamentPainter extends CustomPainter {
     required this.moonSize,
     required this.pingPong,
     required this.layer,
+    required this.fireworks,
   });
 
   final SkySeason season;
+  final bool fireworks;
   final bool pingPong;
   final OrnamentLayer layer;
   final DayPhase phase;
@@ -174,7 +195,7 @@ class _OrnamentPainter extends CustomPainter {
       case OrnamentLayer.all:
         // satuan: 1u = 1 px pada kartu acuan 360x220
         final u = math.min(size.width / 360, size.height / 220);
-        if (season == SkySeason.eid && _night) {
+        if (fireworks && _night) {
           _fireworks(canvas, u, [
             for (final (at, r, color, delay) in _bursts)
               (
@@ -229,6 +250,8 @@ class _OrnamentPainter extends CustomPainter {
           _star(canvas, Offset(0, 4 * u), 4 * u, _gold);
         case (SkySeason.eid, _Kind.crescent):
           _star(canvas, Offset(0, 3.5 * u), 3.2 * u, _gold);
+        case (SkySeason.adha, _Kind.crescent):
+          _goat(canvas, u);
         case (_, _Kind.crescent):
           _crescent(canvas, Offset(0, 4.5 * u), 4.2 * u, _gold);
       }
@@ -305,10 +328,13 @@ class _OrnamentPainter extends CustomPainter {
               )!,
             ],
           )
-        : const LinearGradient(
+        : LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0x99FFF3D1), Color(0x88F4C27A)],
+            // Iduladha: kaca kehijauan, Ramadan: kaca amber
+            colors: season == SkySeason.adha
+                ? const [Color(0x99E6F6D8), Color(0x8896CF8A)]
+                : const [Color(0x99FFF3D1), Color(0x88F4C27A)],
           );
     canvas.drawPath(
       body,
@@ -466,6 +492,50 @@ class _OrnamentPainter extends CustomPainter {
     canvas.drawPath(shape, Paint()..color = color);
   }
 
+  /// Siluet kambing emas kecil (Iduladha), tergantung di punggungnya.
+  void _goat(Canvas canvas, double u) {
+    final fill = Paint()..color = _gold;
+    // badan
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        -4.6 * u,
+        2.2 * u,
+        3.6 * u,
+        7 * u,
+        Radius.circular(2.4 * u),
+      ),
+      fill,
+    );
+    // leher & kepala menghadap kanan
+    final head = Path()
+      ..moveTo(2.2 * u, 3.4 * u)
+      ..lineTo(4.4 * u, 0.6 * u)
+      ..quadraticBezierTo(6.6 * u, 0.2 * u, 7 * u, 2.2 * u)
+      ..lineTo(5.6 * u, 3.4 * u)
+      ..lineTo(3.6 * u, 4.6 * u)
+      ..close();
+    canvas.drawPath(head, fill);
+    final line = Paint()
+      ..color = _gold
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.9 * u
+      ..strokeCap = StrokeCap.round;
+    // tanduk melengkung ke belakang, telinga, janggut
+    canvas.drawPath(
+      Path()
+        ..moveTo(4.6 * u, 0.8 * u)
+        ..quadraticBezierTo(3.6 * u, -1.4 * u, 2 * u, -0.6 * u),
+      line,
+    );
+    canvas.drawLine(Offset(4.2 * u, 1.6 * u), Offset(2.9 * u, 2.4 * u), line);
+    canvas.drawLine(Offset(6.4 * u, 2.4 * u), Offset(6.2 * u, 3.8 * u), line);
+    // kaki & ekor
+    for (final x in [-3.6, -2.2, 1.4, 2.8]) {
+      canvas.drawLine(Offset(x * u, 6.4 * u), Offset(x * u, 9.4 * u), line);
+    }
+    canvas.drawLine(Offset(-4.4 * u, 3 * u), Offset(-5.6 * u, 1.8 * u), line);
+  }
+
   /// Bintang di celah bulan sabit (Ramadan malam). Posisinya mengikuti
   /// [moonAt] & ukuran bulan di lapisan langit.
   void _moonStar(Canvas canvas, Size size) {
@@ -573,5 +643,6 @@ class _OrnamentPainter extends CustomPainter {
       old.phase != phase ||
       old.moonAt != moonAt ||
       old.pingPong != pingPong ||
+      old.fireworks != fireworks ||
       old.layer != layer;
 }
