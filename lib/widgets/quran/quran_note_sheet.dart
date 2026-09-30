@@ -277,6 +277,27 @@ Future<void> showTajweedLegend(BuildContext context) => showModalBottomSheet(
                 ],
               ),
             ),
+          const SizedBox(height: 10),
+          const Text(
+            'Tanda waqaf',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: _stone,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Tanda kecil di atas akhir kata - kapan boleh berhenti atau '
+            'melanjutkan bacaan.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: Color(0xFF78716C),
+            ),
+          ),
+          const SizedBox(height: 10),
+          for (final w in WaqfSign.values) WaqfSignRow(sign: w),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.all(12),
@@ -301,3 +322,58 @@ Future<void> showTajweedLegend(BuildContext context) => showModalBottomSheet(
     ),
   ),
 );
+
+/// Satu tanda waqaf: bentuk tandanya (berwarna), nama & hukumnya.
+class WaqfSignRow extends StatelessWidget {
+  const WaqfSignRow({super.key, required this.sign});
+  final WaqfSign sign;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: sign.color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: sign.color.withValues(alpha: 0.35)),
+          ),
+          child: Text(
+            sign.glyph,
+            textDirection: TextDirection.rtl,
+            textScaler: TextScaler.noScaling,
+            style: TextStyle(
+              fontSize: sign.glyph.length > 2 ? 13 : 16,
+              height: 1,
+              fontWeight: FontWeight.w700,
+              color: sign.color,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${sign.label}  ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: sign.color,
+                  ),
+                ),
+                TextSpan(text: sign.description),
+              ],
+            ),
+            style: const TextStyle(fontSize: 13, height: 1.4, color: _stone),
+          ),
+        ),
+      ],
+    ),
+  );
+}

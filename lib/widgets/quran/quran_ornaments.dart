@@ -271,43 +271,153 @@ class BasmalahLine extends StatelessWidget {
         );
 }
 
-/// Bingkai halaman mushaf: garis ganda emas-merah dengan titik ornamen.
+/// Geometri bingkai halaman mushaf (dp) - dipakai painter & tata letak isi.
+/// Seperti mushaf cetak: pita ornamen di atas, bawah & SISI LUAR halaman
+/// (halaman ganjil: kanan, genap: kiri), sisi punggung hanya garis lurus.
+abstract final class MushafFrame {
+  /// Jarak pita dari tepi kertas.
+  static const inset = 3.0;
+
+  /// Tebal pita sisi luar & bawah.
+  static const band = 14.0;
+
+  /// Tebal pita atas - memuat label juz, halaman & surah.
+  static const topBand = 26.0;
+
+  /// Garis punggung dari tepi kertas.
+  static const spine = 6.0;
+
+  /// Pusat pita sisi luar dari tepi kertas (tempat kotak tanda 'ain).
+  static const bandCenter = inset + band / 2;
+
+  /// Jarak isi halaman dari tepi kertas.
+  static EdgeInsets contentPadding({required bool outerRight}) {
+    const outer = inset + band + 8, inner = spine + 9;
+    return EdgeInsets.fromLTRB(
+      outerRight ? inner : outer,
+      inset + topBand + 6,
+      outerRight ? outer : inner,
+      inset + band + 6,
+    );
+  }
+}
+
+/// Bingkai halaman mushaf: pita bermotif bunga merah-emas di atas, bawah &
+/// sisi luar ([outerRight]), roset di sudut, dan garis lurus di punggung.
 class MushafFramePainter extends CustomPainter {
-  const MushafFramePainter();
+  const MushafFramePainter({required this.outerRight});
+
+  /// Halaman ganjil: pita ornamen di kanan; genap: di kiri.
+  final bool outerRight;
+
+  static const _bandFill = Color(0xFFFBEFD2);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final outer = (Offset.zero & size).deflate(3);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(outer, const Radius.circular(10)),
+    const i = MushafFrame.inset;
+    final w = size.width, h = size.height;
+    final top = Rect.fromLTRB(i, i, w - i, i + MushafFrame.topBand);
+    final bottom = Rect.fromLTRB(i, h - i - MushafFrame.band, w - i, h - i);
+    final side = outerRight
+        ? Rect.fromLTRB(w - i - MushafFrame.band, top.bottom, w - i, bottom.top)
+        : Rect.fromLTRB(i, top.bottom, i + MushafFrame.band, bottom.top);
+
+    // punggung: garis lurus merah & emas di antara pita atas dan bawah
+    final sx = outerRight ? MushafFrame.spine : w - MushafFrame.spine;
+    final dir = outerRight ? 1 : -1;
+    canvas.drawLine(
+      Offset(sx - dir * 2.5, top.bottom),
+      Offset(sx - dir * 2.5, bottom.top),
       Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..color = mushafRed.withValues(alpha: 0.85),
+        ..color = mushafRed.withValues(alpha: 0.85)
+        ..strokeWidth = 1.6,
     );
-    final inner = outer.deflate(6);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(inner, const Radius.circular(6)),
+    canvas.drawLine(
+      Offset(sx + dir * 1.5, top.bottom),
+      Offset(sx + dir * 1.5, bottom.top),
+      Paint()
+        ..color = mushafGold
+        ..strokeWidth = 1,
+    );
+
+    _band(canvas, top, horizontal: true);
+    _band(canvas, bottom, horizontal: true);
+    _band(canvas, side, horizontal: false);
+
+    // roset di sudut pertemuan pita sisi luar
+    final ox = outerRight
+        ? w - i - MushafFrame.band / 2
+        : i + MushafFrame.band / 2;
+    _rosette(canvas, Offset(ox, top.bottom), MushafFrame.band * 0.5);
+    _rosette(canvas, Offset(ox, bottom.top), MushafFrame.band * 0.5);
+  }
+
+  /// Pita: dasar krem, tepi emas, garis luar merah, motif bunga berulang.
+  void _band(Canvas canvas, Rect r, {required bool horizontal}) {
+    canvas.drawRect(r, Paint()..color = _bandFill);
+    canvas.drawRect(
+      r.deflate(0.5),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
+        ..strokeWidth = 1
         ..color = mushafGold,
     );
-    // titik-titik emas di sela kedua garis
-    final dot = Paint()..color = mushafGold;
-    const step = 14.0;
-    for (var x = outer.left + step; x < outer.right - 4; x += step) {
-      canvas.drawCircle(Offset(x, outer.top + 3), 1.3, dot);
-      canvas.drawCircle(Offset(x, outer.bottom - 3), 1.3, dot);
-    }
-    for (var y = outer.top + step; y < outer.bottom - 4; y += step) {
-      canvas.drawCircle(Offset(outer.left + 3, y), 1.3, dot);
-      canvas.drawCircle(Offset(outer.right - 3, y), 1.3, dot);
+    canvas.drawRect(
+      r.deflate(2),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..color = mushafRed.withValues(alpha: 0.45),
+    );
+    final thick = horizontal ? r.height : r.width;
+    final len = horizontal ? r.width : r.height;
+    final r0 = (thick < 20 ? thick : 14.0) * 0.16;
+    final step = r0 * 6.2;
+    final count = (len / step).floor();
+    final start = (len - (count - 1) * step) / 2;
+    final petal = Paint()..color = mushafRed.withValues(alpha: 0.85);
+    final gold = Paint()..color = mushafGold;
+    for (var k = 0; k < count; k++) {
+      final t = start + k * step;
+      final c = horizontal
+          ? Offset(r.left + t, r.center.dy)
+          : Offset(r.center.dx, r.top + t);
+      // bunga empat kelopak + titik emas di antaranya
+      for (var q = 0; q < 4; q++) {
+        final a = q * math.pi / 2 + math.pi / 4;
+        canvas.drawCircle(
+          c + Offset(math.cos(a), math.sin(a)) * r0 * 1.05,
+          r0 * 0.62,
+          petal,
+        );
+      }
+      canvas.drawCircle(c, r0 * 0.55, gold);
+      if (k < count - 1) {
+        final m = horizontal
+            ? c + Offset(step / 2, 0)
+            : c + Offset(0, step / 2);
+        canvas.drawCircle(m, r0 * 0.32, gold);
+      }
     }
   }
 
+  void _rosette(Canvas canvas, Offset c, double r) {
+    final petal = Paint()..color = mushafRed;
+    for (var k = 0; k < 8; k++) {
+      final a = k * math.pi / 4;
+      canvas.drawCircle(
+        c + Offset(math.cos(a), math.sin(a)) * r * 0.62,
+        r * 0.3,
+        petal,
+      );
+    }
+    canvas.drawCircle(c, r * 0.46, Paint()..color = mushafGold);
+    canvas.drawCircle(c, r * 0.22, Paint()..color = _bandFill);
+  }
+
   @override
-  bool shouldRepaint(MushafFramePainter oldDelegate) => false;
+  bool shouldRepaint(MushafFramePainter oldDelegate) =>
+      oldDelegate.outerRight != outerRight;
 }
 
 /// "Akhir ruku' ke-3 Al-Baqarah · 7 ayat · ruku' ke-5 juz 1".

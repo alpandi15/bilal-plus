@@ -608,7 +608,7 @@ class _AyahTile extends StatelessWidget {
           if (tajweed)
             ArabicText.rich([
               for (final s in tajweedSegments(ayah.arabic))
-                (text: s.text, color: s.rule?.color),
+                (text: s.text, color: segmentColor(s)),
             ], style: arabicStyle.copyWith(fontSize: size))
           else
             ArabicText(

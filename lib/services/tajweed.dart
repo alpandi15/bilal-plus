@@ -64,8 +64,96 @@ enum TajweedRule {
   final Color color;
 }
 
-/// Potongan teks ayat dengan hukum tajwidnya (null = biasa).
-typedef TajweedSegment = ({String text, TajweedRule? rule});
+/// Tanda waqaf (berhenti/lanjut) di Mushaf Standar Indonesia & rasm
+/// Utsmani, dengan hukumnya. Warnanya mengikuti "lampu lalu lintas": merah =
+/// berhenti, kuning = bebas, hijau/biru = lanjut.
+enum WaqfSign {
+  lazim(
+    '\u06D8',
+    'م',
+    'Mim (waqaf lazim)',
+    'Wajib berhenti - bila disambung bisa mengubah makna',
+    Color(0xFF7F1D1D),
+  ),
+  qala(
+    '\u06D7',
+    'قلى',
+    'Qala (قلى)',
+    'Boleh berhenti, dan berhenti lebih utama',
+    Color(0xFFDC2626),
+  ),
+  jaiz(
+    '\u06DA',
+    'ج',
+    'Jim (waqaf jaiz)',
+    'Boleh berhenti atau melanjutkan - sama baiknya',
+    Color(0xFFD97706),
+  ),
+  shala(
+    '\u06D6',
+    'صلى',
+    'Shala (صلى)',
+    'Boleh berhenti, tapi melanjutkan lebih utama',
+    Color(0xFF16A34A),
+  ),
+  la(
+    '\u06D9',
+    'لا',
+    'Lam alif (لا)',
+    'Jangan berhenti di sini (kecuali di akhir ayat); bila terpaksa '
+        'berhenti, ulangi dari kata sebelumnya',
+    Color(0xFF2563EB),
+  ),
+  muanaqah(
+    '\u06DB',
+    '∴',
+    "Mu'anaqah (∴ ∴)",
+    'Berpasangan: berhenti di salah satu tanda saja, jangan di keduanya',
+    Color(0xFF7C3AED),
+  ),
+  saktah(
+    '\u06DC',
+    'س',
+    'Saktah (س)',
+    'Berhenti sejenak tanpa mengambil napas, lalu lanjut',
+    Color(0xFF0891B2),
+  );
+
+  const WaqfSign(
+    this.char,
+    this.glyph,
+    this.label,
+    this.description,
+    this.color,
+  );
+
+  /// Karakter tanda di teks (tanda kecil di atas huruf).
+  final String char;
+
+  /// Bentuk tandanya sebagai huruf biasa - untuk ditampilkan tersendiri di
+  /// legenda (tanda kecil tak bisa berdiri tanpa huruf dasar).
+  final String glyph;
+  final String label, description;
+  final Color color;
+
+  static final _byChar = {for (final w in values) w.char.codeUnitAt(0): w};
+
+  /// Tanda waqaf untuk kode karakter [c], null bila bukan.
+  static WaqfSign? of(int c) => _byChar[c];
+
+  /// Tanda-tanda waqaf dalam [text] (urut, tanpa duplikat).
+  static List<WaqfSign> inText(String text) => {
+    for (final c in text.codeUnits)
+      if (_byChar[c] case final w?) w,
+  }.toList();
+}
+
+/// Potongan teks ayat dengan hukum tajwidnya (null = biasa), atau satu
+/// tanda waqaf ([waqf]) yang diwarnai tersendiri.
+typedef TajweedSegment = ({String text, TajweedRule? rule, WaqfSign? waqf});
+
+/// Warna potongan: tanda waqaf, lalu hukum tajwid (null = warna teks biasa).
+Color? segmentColor(TajweedSegment s) => s.waqf?.color ?? s.rule?.color;
 
 // harakat & tanda yang menempel pada huruf sebelumnya
 bool _isMark(int c) =>
@@ -294,19 +382,32 @@ List<TajweedSegment> tajweedSegments(String text, {bool uthmani = false}) {
     break;
   }
 
-  // gabungkan potongan berurutan dengan hukum yang sama
+  // gabungkan potongan berurutan dengan hukum yang sama; tanda waqaf
+  // dipisah jadi potongan sendiri (hanya warnanya yang beda, jadi bentuk
+  // huruf tetap tersambung)
   final out = <TajweedSegment>[];
   final buf = StringBuffer();
   TajweedRule? current;
+  void flush() {
+    if (buf.isEmpty) return;
+    out.add((text: buf.toString(), rule: current, waqf: null));
+    buf.clear();
+  }
+
   for (var i = 0; i < cs.length; i++) {
     final r = rules[i];
-    if (r != current && buf.isNotEmpty) {
-      out.add((text: buf.toString(), rule: current));
-      buf.clear();
-    }
+    if (r != current) flush();
     current = r;
-    buf.write(cs[i].buffer);
+    for (final ch in cs[i].buffer.toString().runes) {
+      final w = WaqfSign.of(ch);
+      if (w == null) {
+        buf.writeCharCode(ch);
+      } else {
+        flush();
+        out.add((text: w.char, rule: null, waqf: w));
+      }
+    }
   }
-  if (buf.isNotEmpty) out.add((text: buf.toString(), rule: current));
+  flush();
   return out;
 }

@@ -35,6 +35,26 @@ void main() {
     expect(tajweedSegments(a).map((s) => s.text).join(), a);
   });
 
+  test('tanda waqaf dipisah & diwarnai sesuai hukumnya', () {
+    // 2:4 (MSI): ... مِنْ قَبْلِكَ ۚ ... يُوْقِنُوْنَۗ
+    final a = msi(2, 4);
+    final segs = tajweedSegments(a);
+    expect(segs.map((s) => s.text).join(), a);
+    final waqf = [
+      for (final s in segs)
+        if (s.waqf != null) s.waqf!,
+    ];
+    expect(waqf, [WaqfSign.jaiz, WaqfSign.qala]);
+    for (final s in segs.where((s) => s.waqf != null)) {
+      expect(s.text, s.waqf!.char);
+      expect(segmentColor(s), s.waqf!.color);
+    }
+    expect(WaqfSign.inText(a), [WaqfSign.jaiz, WaqfSign.qala]);
+    // semua jenis tanda di data MSI dikenali
+    final all = {for (final x in _ayah) ...WaqfSign.inText(x[0] as String)};
+    expect(all, WaqfSign.values.toSet());
+  });
+
   test("nun sukun & tanwin: ikhfa', idgham, iqlab, izhar", () {
     // 2:4 مِنْ قَبْلِكَ = ikhfa (nun + qaf)
     expect(
@@ -73,7 +93,8 @@ void main() {
     // qalqalah sughra (jim sukun) & kubra di akhir ayat (112:1 اَحَدٌ)
     expect(rulesOf('يَجْعَلُوْنَ'), contains(TajweedRule.qalqalah));
     expect(colored('قُلْ هُوَ اللّٰهُ اَحَدٌۚ').last, (
-      'دٌۚ',
+      // tanda waqaf ۚ jadi potongan sendiri
+      'دٌ',
       TajweedRule.qalqalah,
     ));
     // berakhir fathatan + alif (اَبَدًا) dibaca panjang - bukan qalqalah

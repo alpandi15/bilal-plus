@@ -444,7 +444,7 @@ class _MushafSheetState extends State<_MushafSheet> {
       final segments = widget.tajweed
           ? [
               for (final s in tajweedSegments(a.uthmani, uthmani: true))
-                (text: s.text, color: s.rule?.color),
+                (text: s.text, color: segmentColor(s)),
             ]
           : [(text: a.uthmani, color: null)];
       var word = <({String text, Color? color})>[];
@@ -619,6 +619,9 @@ class _MushafSheetState extends State<_MushafSheet> {
   /// Medali nomor ayat; ayat terakhir ruku' diberi tanda 'ain (ع) kecil di
   /// atasnya - di celah antar-baris, jadi lebar baris (rata kanan-kiri)
   /// tidak berubah. Rincian ruku'-nya ada di lembar ayat saat diketuk.
+  /// Halaman ganjil: pita ornamen & kotak 'ain di kanan; genap: di kiri.
+  bool get _outerRight => widget.page.isOdd;
+
   Widget _medallionView(QuranAyah ayah, double font) {
     final size = _medallion(font);
     final medallion = AyahMedallion(number: ayah.number, size: size);
@@ -628,17 +631,20 @@ class _MushafSheetState extends State<_MushafSheet> {
       alignment: Alignment.center,
       children: [
         medallion,
-        // di atas kelopak teratas medali, tidak menimpa angkanya
+        // di akhir kalimat: kecil & terangkat di atas ujung kata sebelum
+        // medali (sebelah kanannya, karena teks mengalir dari kanan)
         Positioned(
-          bottom: size * 0.98,
+          right: -font * 0.3,
+          bottom: size * 0.9,
           child: Text(
             'ع',
             textDirection: TextDirection.rtl,
             textScaler: TextScaler.noScaling,
             style: TextStyle(
               fontFamily: arabicFont,
-              fontSize: font * 0.42,
+              fontSize: font * 0.46,
               height: 1,
+              fontWeight: FontWeight.w700,
               color: mushafRed,
             ),
           ),
@@ -656,13 +662,58 @@ class _MushafSheetState extends State<_MushafSheet> {
           bottom: BorderSide(color: Color(0x55C9A24A), width: 0.8),
         ),
       ),
-      child: Row(
-        textDirection: TextDirection.rtl,
-        mainAxisAlignment: line.length == 1
-            ? MainAxisAlignment.center
-            : MainAxisAlignment.spaceBetween,
-        children: [for (final t in line) _tokenView(t, font)],
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Row(
+              textDirection: TextDirection.rtl,
+              mainAxisAlignment: line.length == 1
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.spaceBetween,
+              children: [for (final t in line) _tokenView(t, font)],
+            ),
+          ),
+          // baris berisi akhir ruku': kotak ع di pita bingkai sisi luar
+          if (line.any((t) => t.medallion && t.ayah.ruku != null))
+            _rukuMarginMark(font),
+        ],
       ),
+    );
+  }
+
+  /// Kotak 'ain di tengah pita sisi luar, sejajar baris ini.
+  Widget _rukuMarginMark(double font) {
+    const w = 13.0;
+    final pad = MushafFrame.contentPadding(outerRight: _outerRight);
+    final gap =
+        (_outerRight ? pad.right : pad.left) - MushafFrame.bandCenter + w / 2;
+    final box = Container(
+      width: w,
+      height: (font * _lineHeight * 0.62).clamp(16.0, 26.0),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: mushafGold, width: 0.8),
+      ),
+      child: const Text(
+        'ع',
+        textScaler: TextScaler.noScaling,
+        style: TextStyle(
+          fontSize: 11,
+          height: 1,
+          fontWeight: FontWeight.w700,
+          color: mushafRed,
+        ),
+      ),
+    );
+    return Positioned(
+      top: 0,
+      bottom: 0,
+      right: _outerRight ? -gap : null,
+      left: _outerRight ? null : -gap,
+      child: Center(child: box),
     );
   }
 
@@ -676,95 +727,112 @@ class _MushafSheetState extends State<_MushafSheet> {
         8,
         8 + MediaQuery.paddingOf(context).bottom,
       ),
-      child: CustomPaint(
-        foregroundPainter: const MushafFramePainter(),
-        child: Container(
-          decoration: BoxDecoration(
-            color: mushafPaper,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x22785624),
-                blurRadius: 14,
-                offset: Offset(0, 6),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            // bingkai digambar DI BAWAH isi (di atas warna kertas), supaya
+            // kotak 'ain di pita sisi luar tidak tertutup
+            child: Container(
+              decoration: BoxDecoration(
+                color: mushafPaper,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x22785624),
+                    blurRadius: 14,
+                    offset: Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Column(
-            children: [
-              _PageHead(
-                juz: first.juz,
-                page: widget.page,
-                surah: '${first.surah}. ${surahName(first.surah)}',
-              ),
-              const SizedBox(height: 6),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, c) {
-                    // cadangan 2% untuk pembulatan tata letak
-                    _fit(Size(c.maxWidth, c.maxHeight * 0.98));
-                    final content = Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final b in _blocks)
-                          switch (b) {
-                            _BannerBlock(:final surah) => Padding(
-                              padding: const EdgeInsets.only(bottom: _gap),
-                              child: SurahBanner(
-                                surah: surah,
-                                height: _bannerHeight,
-                              ),
-                            ),
-                            _BasmalahBlock() => SizedBox(
-                              height: _font * 0.92 * 1.9,
-                              child: Center(
-                                child: BasmalahLine(
-                                  fontSize: _font * 0.92,
-                                  uthmani: true,
-                                ),
-                              ),
-                            ),
-                            _TextBlock() => Column(
+              child: CustomPaint(
+                painter: MushafFramePainter(outerRight: _outerRight),
+                child: Padding(
+                  padding: MushafFrame.contentPadding(outerRight: _outerRight),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, c) {
+                            // cadangan 2% untuk pembulatan tata letak
+                            _fit(Size(c.maxWidth, c.maxHeight * 0.98));
+                            final content = Column(
+                              mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                for (final line in _lines[b] ?? const [])
-                                  _lineView(line, _font),
+                                for (final b in _blocks)
+                                  switch (b) {
+                                    _BannerBlock(:final surah) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: _gap,
+                                      ),
+                                      child: SurahBanner(
+                                        surah: surah,
+                                        height: _bannerHeight,
+                                      ),
+                                    ),
+                                    _BasmalahBlock() => SizedBox(
+                                      height: _font * 0.92 * 1.9,
+                                      child: Center(
+                                        child: BasmalahLine(
+                                          fontSize: _font * 0.92,
+                                          uthmani: true,
+                                        ),
+                                      ),
+                                    ),
+                                    _TextBlock() => Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        for (final line
+                                            in _lines[b] ?? const [])
+                                          _lineView(line, _font),
+                                      ],
+                                    ),
+                                  },
                               ],
-                            ),
+                            );
+                            if (_scroll) {
+                              return SingleChildScrollView(child: content);
+                            }
+                            // pengaman terakhir: tidak pernah meluap
+                            // halaman pendek (mis. Al-Fatihah) di tengah seperti
+                            // mushaf cetak
+                            return FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: SizedBox(
+                                width: c.maxWidth,
+                                child: content,
+                              ),
+                            );
                           },
-                      ],
-                    );
-                    if (_scroll) return SingleChildScrollView(child: content);
-                    // pengaman terakhir: tidak pernah meluap
-                    // halaman pendek (mis. Al-Fatihah) di tengah seperti
-                    // mushaf cetak
-                    return FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: SizedBox(width: c.maxWidth, child: content),
-                    );
-                  },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                arabicNumber(widget.page),
-                style: const TextStyle(
-                  fontFamily: arabicFont,
-                  fontSize: 15,
-                  height: 1.2,
-                  color: mushafRed,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          // label juz, halaman & surah di atas pita bingkai atas
+          Positioned(
+            left: MushafFrame.inset + 8,
+            right: MushafFrame.inset + 8,
+            top: MushafFrame.inset,
+            height: MushafFrame.topBand,
+            child: _PageHead(
+              juz: first.juz,
+              page: widget.page,
+              surah: '${first.surah}. ${surahName(first.surah)}',
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+/// Label di pita atas bingkai: juz (kiri), nomor halaman (tengah), surah
+/// (kanan) - seperti mushaf cetak.
 class _PageHead extends StatelessWidget {
   const _PageHead({required this.juz, required this.page, required this.surah});
   final int juz, page;
@@ -772,28 +840,34 @@ class _PageHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget pill(String text) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+    Widget pill(String text, {bool center = false}) => Container(
+      padding: EdgeInsets.symmetric(horizontal: center ? 8 : 12, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(center ? 6 : 99),
         border: Border.all(color: mushafGold),
       ),
       child: Text(
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: center ? 12.5 : 11.5,
+          height: 1.25,
           fontWeight: FontWeight.w700,
-          color: _stone,
+          color: center ? mushafRed : _stone,
         ),
       ),
     );
     return Row(
       children: [
-        pill('Juz $juz'),
-        const SizedBox(width: 12),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: pill('Juz $juz'),
+          ),
+        ),
+        pill('$page', center: true),
         Expanded(
           child: Align(alignment: Alignment.centerRight, child: pill(surah)),
         ),
@@ -845,6 +919,22 @@ class _AyahSheet extends StatelessWidget {
             if (ayah.ruku case final r?) ...[
               const SizedBox(height: 10),
               _RukuInfo(mark: r, label: rukuLabel(r, surah.name, ayah.juz)),
+            ],
+            // tanda waqaf di ayat ini beserta hukumnya
+            if (WaqfSign.inText(ayah.uthmani) case final signs
+                when signs.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'TANDA WAQAF DI AYAT INI',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: _muted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final w in signs) WaqfSignRow(sign: w),
             ],
             const SizedBox(height: 10),
             Text(
