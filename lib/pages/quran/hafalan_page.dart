@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/quran/quran_ayah_text.dart';
 import '../../db/app_database_scope.dart';
 import '../../services/app_settings.dart';
 import '../../services/quran_index.dart';
@@ -509,24 +510,31 @@ class _AyahCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final words = ayah.arabic.split(' ');
+    final font = AppSettingsScope.maybeOf(context)?.quranFont ?? QuranFont.lpmq;
+    final text = quranTextFor(ayah, font);
+    final words = text.split(' ');
     final style = TextStyle(
       fontSize: size,
       height: 2,
       color: const Color(0xFF1C1917),
     );
-    Widget arabic = ArabicText(ayah.arabic, style: style);
+    Widget arabic = QuranAyahText(text, font: font, style: style);
     if (hidden) {
       // kata pertama tetap terlihat, sisanya diburamkan
       arabic = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ArabicText(words.first, style: style.copyWith(color: _amber)),
+          QuranAyahText(
+            words.first,
+            font: font,
+            style: style.copyWith(color: _amber),
+          ),
           if (words.length > 1)
             ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-              child: ArabicText(
+              child: QuranAyahText(
                 words.skip(1).join(' '),
+                font: font,
                 style: style.copyWith(color: const Color(0x991C1917)),
               ),
             ),

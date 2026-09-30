@@ -69,7 +69,12 @@ class HomeShellState extends State<HomeShell> {
       );
   }
 
+  /// Naik setiap kali tab Laporan dibuka dari tab lain - animasi grafiknya
+  /// diputar ulang (tab tetap hidup di IndexedStack).
+  int _reportReplay = 0;
+
   void _select(HomeTab tab) => setState(() {
+    if (tab == HomeTab.laporan && _tab != tab) _reportReplay++;
     _tab = tab;
     _visited.add(tab);
   });
@@ -80,11 +85,11 @@ class HomeShellState extends State<HomeShell> {
     _select(tab);
   }
 
-  static Widget _page(HomeTab tab) => switch (tab) {
+  Widget _page(HomeTab tab) => switch (tab) {
     HomeTab.beranda => const BerandaPage(),
     HomeTab.ibadah => const IbadahPage(showBack: false),
     HomeTab.quran => const QuranTrackerPage(showBack: false),
-    HomeTab.laporan => const ReportPage(showBack: false),
+    HomeTab.laporan => ReportPage(showBack: false, replay: _reportReplay),
     HomeTab.ramadan => const RamadanRecapPage(showBack: false),
   };
 

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:rindu_ramadan/data/asmaul_husna_data.dart';
+import 'package:rindu_ramadan/data/silsilah_data.dart';
 import 'package:rindu_ramadan/db/app_database.dart';
 import 'package:rindu_ramadan/pages/asmaul_husna_page.dart';
+import 'package:rindu_ramadan/pages/silsilah_page.dart';
 import 'package:rindu_ramadan/services/dzikir.dart';
 import 'package:rindu_ramadan/widgets/ibadah/sholat_nudge_card.dart';
 
@@ -130,6 +132,30 @@ void main() {
       await tester.tap(find.text('Ash-Shabur'));
       await tester.pumpAndSettle();
       expect(find.text('99 / 99'), findsOneWidget);
+    });
+  });
+
+  group('Silsilah Nabi', () {
+    test("21 leluhur sampai 'Adnan, bertemu nasab ibu di Kilab", () {
+      expect(silsilahNabi.length, 22);
+      expect(silsilahNabi.first.latin, 'Muhammad ﷺ');
+      expect(silsilahNabi.last.latin, "'Adnan");
+      expect(silsilahNabi[6].latin, 'Kilab');
+      expect(nasabIbu.last.latin, 'Kilab');
+      // setiap leluhur punya nama Arab
+      for (final p in silsilahNabi.skip(1)) {
+        expect(p.arabic, isNotEmpty);
+      }
+    });
+
+    testWidgets('tampil & bisa dibalik urutannya', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: SilsilahPage()));
+      await tester.pump();
+      expect(find.text('Muhammad ﷺ'), findsOneWidget);
+      await tester.tap(find.text("'Adnan").first);
+      await tester.pump();
+      // dari 'Adnan: kartu pertama di daftar adalah 'Adnan
+      expect(find.text('Batas yang disepakati'), findsOneWidget);
     });
   });
 }

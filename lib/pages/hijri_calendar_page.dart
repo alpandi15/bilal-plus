@@ -26,6 +26,15 @@ const _bulanMasehi = [
 
 // Minggu di kolom pertama, seperti kalender dinding Indonesia pada umumnya
 const _namaHari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const _namaHariPanjang = [
+  'Minggu',
+  'Senin',
+  'Selasa',
+  'Rabu',
+  'Kamis',
+  'Jumat',
+  'Sabtu',
+];
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -234,9 +243,24 @@ class _HijriCalendarPageState extends State<HijriCalendarPage> {
                           todayJdn: todayJdn,
                           onPrev: () => _shiftHijri(-1),
                           onNext: () => _shiftHijri(1),
-                          onPrevYear: () => _shiftHijri(-12),
-                          onNextYear: () => _shiftHijri(12),
-                          onJump: (m) => _jumpHijri(_hy!, m),
+                          onPick: () async {
+                            final picked = await _pickHijriMonth(
+                              context,
+                              year: _hy!,
+                              month: _hm!,
+                              current: (hijriToday.year, hijriToday.month),
+                            );
+                            if (picked != null) {
+                              _jumpHijri(picked.$1, picked.$2);
+                            }
+                          },
+                          onToday:
+                              _hy == hijriToday.year && _hm == hijriToday.month
+                              ? null
+                              : () => _jumpHijri(
+                                  hijriToday.year,
+                                  hijriToday.month,
+                                ),
                         ),
                         const SizedBox(height: 16),
                         _HijriEventList(
@@ -251,6 +275,17 @@ class _HijriCalendarPageState extends State<HijriCalendarPage> {
                           todayJdn: todayJdn,
                           onPrev: () => _shift(-1),
                           onNext: () => _shift(1),
+                          onToday:
+                              _cursor.year == now.year &&
+                                  _cursor.month == now.month
+                              ? null
+                              : () => setState(
+                                  () => _cursor = DateTime.utc(
+                                    now.year,
+                                    now.month,
+                                    1,
+                                  ),
+                                ),
                         ),
                         const SizedBox(height: 16),
                         _EventList(cursor: _cursor, anchors: anchors),
@@ -331,10 +366,32 @@ class _TodayCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '${gregorian.day} ${_bulanMasehi[gregorian.month - 1]} ${gregorian.year}'
-            '${afterMaghrib ? ' · sudah lewat Maghrib, malam ${hijri.day} ${hijri.monthName}' : ''}',
-            style: const TextStyle(fontSize: 12, color: _muted),
+            '${_namaHariPanjang[gregorian.weekday % 7]}, ${gregorian.day} '
+            '${_bulanMasehi[gregorian.month - 1]} ${gregorian.year}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _muted,
+            ),
           ),
+          if (afterMaghrib) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: const Color(0x1A92400E),
+              ),
+              child: Text(
+                'Sudah Maghrib · masuk malam ${hijri.day} ${hijri.monthName}',
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF92400E),
+                ),
+              ),
+            ),
+          ],
           if (events.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -343,15 +400,22 @@ class _TodayCard extends StatelessWidget {
               children: [for (final e in events) _EventChip(e.name)],
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0x2692400E)),
+          const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.nightlight_round, size: 13, color: _muted),
-              const SizedBox(width: 5),
+              const Padding(
+                padding: EdgeInsets.only(top: 1),
+                child: Icon(Icons.nightlight_round, size: 13, color: _muted),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Tanggal berganti saat Maghrib · $maghribLabel di $locationName'
-                  '${hijri.estimated ? '\n≈ bulan ini belum ada ketetapan resmi, tanggalnya hasil perhitungan' : ''}',
+                  'Tanggal hijriah berganti saat Maghrib ($maghribLabel, '
+                  '$locationName).'
+                  '${hijri.estimated ? ' Bulan ini belum ada ketetapan resmi, tanggalnya hasil perhitungan.' : ''}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: _muted,
@@ -400,12 +464,14 @@ class _MonthGrid extends StatelessWidget {
     required this.todayJdn,
     required this.onPrev,
     required this.onNext,
+    required this.onToday,
   });
 
   final DateTime cursor;
   final HijriAnchors anchors;
   final int todayJdn;
   final VoidCallback onPrev, onNext;
+  final VoidCallback? onToday;
 
   @override
   Widget build(BuildContext context) {
@@ -479,6 +545,7 @@ class _MonthGrid extends StatelessWidget {
               _NavButton(icon: Icons.chevron_right_rounded, onTap: onNext),
             ],
           ),
+          _MonthBadges(estimated: false, onToday: onToday),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -500,6 +567,9 @@ class _MonthGrid extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           GridView.count(
+            // tanpa padding eksplisit GridView menambahkan inset status bar
+            // (MediaQuery) di atasnya - tampak seperti baris kosong
+            padding: EdgeInsets.zero,
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -725,16 +795,17 @@ class _HijriMonthGrid extends StatelessWidget {
     required this.todayJdn,
     required this.onPrev,
     required this.onNext,
-    required this.onPrevYear,
-    required this.onNextYear,
-    required this.onJump,
+    required this.onPick,
+    required this.onToday,
   });
 
   final int year, month;
   final HijriAnchors anchors;
   final int todayJdn;
-  final VoidCallback onPrev, onNext, onPrevYear, onNextYear;
-  final ValueChanged<int> onJump;
+  final VoidCallback onPrev, onNext, onPick;
+
+  /// Kembali ke bulan ini; null bila sudah di bulan ini.
+  final VoidCallback? onToday;
 
   @override
   Widget build(BuildContext context) {
@@ -792,134 +863,54 @@ class _HijriMonthGrid extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ----- tahun -----
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _NavButton(
-                icon: Icons.keyboard_double_arrow_left_rounded,
-                onTap: onPrevYear,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Text(
-                  '$year H',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                    color: _amber,
-                  ),
-                ),
-              ),
-              _NavButton(
-                icon: Icons.keyboard_double_arrow_right_rounded,
-                onTap: onNextYear,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // ----- deretan 12 bulan: Muharram .. Dzulhijjah -----
-          SizedBox(
-            height: 32,
-            child: ListView.separated(
-              // langsung tergulir ke dekat bulan aktif - lebar chip ~100
-              // logical px; ListView menjepit sendiri bila melewati ujung
-              controller: ScrollController(
-                initialScrollOffset: ((month - 1) * 100.0 - 110).clamp(
-                  0.0,
-                  9999.0,
-                ),
-              ),
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: 12,
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (context, i) {
-                final m = i + 1;
-                final aktif = m == month;
-                return ChoiceChip(
-                  label: Text(hijriMonthNames[i]),
-                  selected: aktif,
-                  onSelected: (_) => onJump(m),
-                  showCheckmark: false,
-                  visualDensity: VisualDensity.compact,
-                  labelStyle: TextStyle(
-                    fontSize: 11,
-                    fontWeight: aktif ? FontWeight.bold : FontWeight.w500,
-                    color: aktif ? Colors.white : _stone,
-                  ),
-                  selectedColor: const Color(0xFFEA580C),
-                  backgroundColor: const Color(0xFFFFF7E8),
-                  side: BorderSide(
-                    color: aktif ? Colors.transparent : const Color(0xCCFDE9C8),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          // ----- judul bulan + navigasi -----
           Row(
             children: [
               _NavButton(icon: Icons.chevron_left_rounded, onTap: onPrev),
               Expanded(
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onPick,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Column(
                       children: [
-                        Flexible(
-                          child: Text(
-                            '${hijriMonthNames[month - 1]} $year H',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: _stone,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                '${hijriMonthNames[month - 1]} $year H',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: _stone,
+                                ),
+                              ),
                             ),
+                            const Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: _amber,
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '$days hari · $rentang',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _amber,
                           ),
                         ),
-                        if (estimated) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              color: const Color(0xFFF5F5F4),
-                              border: Border.all(
-                                color: const Color(0xFFD6D3D1),
-                              ),
-                            ),
-                            child: const Text(
-                              '≈ perkiraan',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF78716C),
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
-                    Text(
-                      '$days hari · $rentang',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: _amber,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               _NavButton(icon: Icons.chevron_right_rounded, onTap: onNext),
             ],
           ),
+          _MonthBadges(estimated: estimated, onToday: onToday),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -941,6 +932,9 @@ class _HijriMonthGrid extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           GridView.count(
+            // tanpa padding eksplisit GridView menambahkan inset status bar
+            // (MediaQuery) di atasnya - tampak seperti baris kosong
+            padding: EdgeInsets.zero,
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -956,6 +950,197 @@ class _HijriMonthGrid extends StatelessWidget {
     );
   }
 }
+
+/// Baris kecil di bawah judul bulan: penanda "perkiraan" & tombol kembali
+/// ke bulan ini. Kosong bila keduanya tidak perlu.
+class _MonthBadges extends StatelessWidget {
+  const _MonthBadges({required this.estimated, required this.onToday});
+  final bool estimated;
+  final VoidCallback? onToday;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!estimated && onToday == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (estimated)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: const Color(0xFFF5F5F4),
+              ),
+              child: const Text(
+                '≈ perkiraan, belum ada ketetapan',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: _muted,
+                ),
+              ),
+            ),
+          if (onToday != null)
+            Material(
+              color: const Color(0xFFFFEDD5),
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: onToday,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.today_rounded, size: 13, color: _amber),
+                      SizedBox(width: 4),
+                      Text(
+                        'Bulan ini',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: _amber,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Lembar pemilih bulan hijriah: tahun (panah kiri/kanan) + 12 bulan.
+Future<(int, int)?> _pickHijriMonth(
+  BuildContext context, {
+  required int year,
+  required int month,
+  required (int, int) current,
+}) => showModalBottomSheet<(int, int)>(
+  context: context,
+  backgroundColor: const Color(0xFFFFFAF3),
+  showDragHandle: true,
+  isScrollControlled: true,
+  builder: (context) {
+    var y = year;
+    return StatefulBuilder(
+      builder: (context, setSheet) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _NavButton(
+                    icon: Icons.chevron_left_rounded,
+                    onTap: () => setSheet(() => y--),
+                  ),
+                  SizedBox(
+                    width: 110,
+                    child: Text(
+                      '$y H',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: _stone,
+                      ),
+                    ),
+                  ),
+                  _NavButton(
+                    icon: Icons.chevron_right_rounded,
+                    onTap: () => setSheet(() => y++),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              GridView.count(
+                padding: EdgeInsets.zero,
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 2.4,
+                children: [
+                  for (var m = 1; m <= 12; m++)
+                    Builder(
+                      builder: (context) {
+                        final selected = y == year && m == month;
+                        final isNow = (y, m) == current;
+                        return Material(
+                          color: selected
+                              ? const Color(0xFFEA580C)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Navigator.pop(context, (y, m)),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: selected
+                                      ? Colors.transparent
+                                      : isNow
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xCCFDE9C8),
+                                  width: isNow && !selected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '$m',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: selected
+                                          ? Colors.white70
+                                          : const Color(0xFFA8A29E),
+                                    ),
+                                  ),
+                                  Text(
+                                    hijriMonthNames[m - 1],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: selected ? Colors.white : _stone,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  },
+);
 
 /// Sel mode hijriah: tanggal hijriah besar, tanggal Masehi kecil.
 class _HijriDayCell extends StatelessWidget {
@@ -1237,11 +1422,15 @@ class _ConfigInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asal = switch (config.origin) {
-      'remote' => 'server',
-      'cache' => 'unduhan tersimpan',
-      'bundle' => 'bawaan aplikasi',
+      'remote' => 'dari server',
+      'cache' => 'data tersimpan',
+      'bundle' => 'data bawaan',
       _ => 'belum dimuat',
     };
+    final u = DateTime.tryParse(config.updatedAt);
+    final updated = u == null
+        ? (config.updatedAt.isEmpty ? null : config.updatedAt)
+        : '${u.day} ${_bulanMasehiSingkat[u.month - 1]} ${u.year}';
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1252,50 +1441,72 @@ class _ConfigInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Mengikuti ${config.currentMethod?.label ?? 'Pemerintah'}',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: _stone,
-              height: 1.4,
-            ),
+          Row(
+            children: [
+              const Icon(Icons.verified_rounded, size: 16, color: _amber),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Mengikuti ${config.currentMethod?.label ?? 'Pemerintah'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _stone,
+                  ),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 4),
           Text(
-            'Ketetapan tanggal: ${config.anchors.length} bulan · sumber $asal'
-            '${config.updatedAt.isNotEmpty ? ' · diperbarui ${config.updatedAt}' : ''}',
+            '${config.anchors.length} bulan sudah ditetapkan · $asal'
+            '${updated != null ? ' · diperbarui $updated' : ''}',
             style: const TextStyle(fontSize: 11, color: _muted, height: 1.4),
           ),
-          if (config.source.isNotEmpty)
-            Text(
-              config.source,
-              style: const TextStyle(fontSize: 11, color: _muted, height: 1.4),
-            ),
-          if (config.warnings.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            for (final w in config.warnings)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 14,
-                    color: Color(0xFFD97706),
+          if (config.source.isNotEmpty || config.warnings.isNotEmpty)
+            Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(bottom: 4),
+                visualDensity: VisualDensity.compact,
+                dense: true,
+                expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                title: const Text(
+                  'Detail teknis',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _amber,
                   ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      w,
+                ),
+                children: [
+                  if (config.source.isNotEmpty)
+                    Text(
+                      'Sumber: ${config.source}',
                       style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF92400E),
+                        fontSize: 10.5,
+                        color: _muted,
                         height: 1.4,
                       ),
                     ),
-                  ),
+                  for (final w in config.warnings)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '• $w',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: _muted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-          ],
+            ),
         ],
       ),
     );

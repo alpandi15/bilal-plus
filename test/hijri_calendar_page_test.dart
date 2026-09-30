@@ -61,39 +61,29 @@ void main() {
     expect(judulHijri, findsOneWidget);
     final judulAwal = (tester.widget(judulHijri) as Text).data!;
 
-    // chip bulan aktif ikut terpilih; deretannya tergulir ke bulan itu, jadi
-    // Muharram (ujung kiri) mungkin belum terbangun - geser dulu
-    final bulanAktif = judulAwal.substring(
-      0,
-      judulAwal.lastIndexOf(' ', judulAwal.length - 3),
-    );
-    expect(
-      tester
-          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, bulanAktif))
-          .selected,
-      isTrue,
-    );
-    await tester.dragUntilVisible(
-      find.widgetWithText(ChoiceChip, 'Muharram'),
-      find.byType(ListView),
-      const Offset(150, 0),
-    );
-    expect(find.widgetWithText(ChoiceChip, 'Muharram'), findsOneWidget);
+    // tidak ada celah kosong antara nama hari & grid (padding MediaQuery)
+    final grid = tester.widget<GridView>(find.byType(GridView).first);
+    expect(grid.padding, EdgeInsets.zero);
 
-    // bulan berikutnya mengubah judul
+    // bulan berikutnya mengubah judul & memunculkan tombol "Bulan ini"
     await tester.tap(find.byIcon(Icons.chevron_right_rounded));
     await tester.pump();
     expect((tester.widget(judulHijri) as Text).data, isNot(judulAwal));
-
-    // lompat lewat chip bulan: Ramadan (chip ke-9, di luar layar - deretan
-    // bulannya ListView malas, jadi harus digeser dulu sampai terbangun)
-    await tester.dragUntilVisible(
-      find.widgetWithText(ChoiceChip, 'Ramadan'),
-      find.byType(ListView),
-      const Offset(-150, 0),
-    );
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Ramadan'));
+    await tester.tap(find.text('Bulan ini'));
     await tester.pump();
+    expect((tester.widget(judulHijri) as Text).data, judulAwal);
+
+    // judul membuka pemilih bulan: lompat ke Ramadan
+    await tester.tap(judulHijri);
+    await _settle(tester);
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Ramadan'),
+      ),
+    );
+    await _settle(tester);
     expect((tester.widget(judulHijri) as Text).data, startsWith('Ramadan '));
     expect(find.text('Awal Ramadan'), findsOneWidget);
 

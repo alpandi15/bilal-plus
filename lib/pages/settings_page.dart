@@ -7,10 +7,13 @@ import '../services/sholat_time.dart';
 import '../services/system_channel.dart';
 import '../services/update_checker.dart';
 import '../services/user_location_scope.dart';
+import '../widgets/arabic_font.dart';
 import '../widgets/hijri_settings_sheet.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
 import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/privacy_note.dart';
+import '../widgets/quran/quran_ayah_text.dart';
+import '../widgets/quran/quran_ornaments.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/update_sheet.dart';
 import 'widgets_page.dart';
@@ -235,6 +238,28 @@ class SettingsPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
+                const _Title("AL-QUR'AN"),
+                _Group(
+                  children: [
+                    for (final (i, f) in QuranFont.values.indexed) ...[
+                      if (i > 0) const Divider(height: 1, color: _line),
+                      _QuranFontOption(
+                        font: f,
+                        selected: settings.quranFont == f,
+                        onTap: () => settings.setQuranFont(f),
+                      ),
+                    ],
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+                  child: Text(
+                    'Berlaku di pembaca per surah, mode mushaf & hafalan. '
+                    'Tiap font memakai teks rasm-nya sendiri.',
+                    style: TextStyle(fontSize: 11, color: _muted),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 const _Title('DZIKIR & TASBIH'),
                 _Group(
                   children: [
@@ -348,6 +373,83 @@ class _Group extends StatelessWidget {
     child: Material(
       color: Colors.transparent,
       child: Column(children: children),
+    ),
+  );
+}
+
+/// Satu pilihan font Al-Qur'an dengan contoh basmalah dalam font itu.
+class _QuranFontOption extends StatelessWidget {
+  const _QuranFontOption({
+    required this.font,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final QuranFont font;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      color: selected ? const Color(0xFFFFFBEB) : Colors.transparent,
+      padding: const EdgeInsets.fromLTRB(8, 10, 16, 12),
+      child: Row(
+        children: [
+          Icon(
+            selected
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_off_rounded,
+            color: selected ? _amber : const Color(0xFFA8A29E),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        font.label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: _stone,
+                        ),
+                      ),
+                    ),
+                    if (font == QuranFont.lpmq) ...[
+                      const SizedBox(width: 6),
+                      const Text(
+                        'bawaan',
+                        style: TextStyle(fontSize: 11, color: _muted),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  font.description,
+                  style: const TextStyle(fontSize: 12, color: _muted),
+                ),
+                const SizedBox(height: 4),
+                QuranAyahText(
+                  font == QuranFont.uthmani
+                      ? BasmalahLine.uthmaniText
+                      : BasmalahLine.msi,
+                  font: font,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    height: 1.8,
+                    color: Color(0xFF1C1917),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }

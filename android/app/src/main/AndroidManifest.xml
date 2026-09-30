@@ -35,6 +35,14 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Tautan widget (rinduramadan://ibadah) ditangani home_widget
+                 (lib/main.dart). Deep linking bawaan Flutter mendorongnya
+                 sebagai rute Navigator yang tidak dikenal saat aplikasi
+                 sudah terbuka - layar jadi kosong. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

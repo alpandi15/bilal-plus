@@ -24,6 +24,16 @@ class AsmaulHusnaPage extends StatefulWidget {
 }
 
 class _AsmaulHusnaPageState extends State<AsmaulHusnaPage> {
+  /// Hero hijau sudah tergulir lewat: ikon status bar jadi gelap supaya
+  /// tetap terlihat di latar krem.
+  bool _scrolled = false;
+
+  bool _onScroll(ScrollNotification n) {
+    final scrolled = n.metrics.axis == Axis.vertical && n.metrics.pixels > 260;
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    return false;
+  }
+
   final _query = TextEditingController();
   bool _hafalan = false;
 
@@ -70,121 +80,124 @@ class _AsmaulHusnaPageState extends State<AsmaulHusnaPage> {
     final width = MediaQuery.sizeOf(context).width;
     final columns = width > 700 ? 4 : (width > 520 ? 3 : 2);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: _scrolled ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: const Color(0xFFFFFAF3),
-        body: CustomScrollView(
-          slivers: [
-            const SliverToBoxAdapter(child: _Hero()),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _query,
-                        onChanged: (_) => setState(() {}),
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          hintText: 'Cari nama atau arti',
-                          prefixIcon: const Icon(Icons.search_rounded),
-                          suffixIcon: _query.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Hapus',
-                                  onPressed: () {
-                                    _query.clear();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFF1E4CF),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFF1E4CF),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Tooltip(
-                      message: 'Mode hafalan: sembunyikan arti',
-                      child: FilterChip(
-                        avatar: Icon(
-                          _hafalan
-                              ? Icons.visibility_off_rounded
-                              : Icons.psychology_rounded,
-                          size: 18,
-                          color: _hafalan ? Colors.white : _green,
-                        ),
-                        label: const Text('Hafalan'),
-                        selected: _hafalan,
-                        showCheckmark: false,
-                        selectedColor: _green,
-                        labelStyle: TextStyle(
-                          color: _hafalan ? Colors.white : _stone,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        onSelected: (v) => setState(() => _hafalan = v),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (list.isEmpty)
-              const SliverToBoxAdapter(
+        body: NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          child: CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(child: _Hero()),
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: Text(
-                    'Tidak ditemukan.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: _muted),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _query,
+                          onChanged: (_) => setState(() {}),
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: 'Cari nama atau arti',
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon: _query.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Hapus',
+                                    onPressed: () {
+                                      _query.clear();
+                                      setState(() {});
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFF1E4CF),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFF1E4CF),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Tooltip(
+                        message: 'Mode hafalan: sembunyikan arti',
+                        child: FilterChip(
+                          avatar: Icon(
+                            _hafalan
+                                ? Icons.visibility_off_rounded
+                                : Icons.psychology_rounded,
+                            size: 18,
+                            color: _hafalan ? Colors.white : _green,
+                          ),
+                          label: const Text('Hafalan'),
+                          selected: _hafalan,
+                          showCheckmark: false,
+                          selectedColor: _green,
+                          labelStyle: TextStyle(
+                            color: _hafalan ? Colors.white : _stone,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          onSelected: (v) => setState(() => _hafalan = v),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-              sliver: SliverGrid.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.86,
+              if (list.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Text(
+                      'Tidak ditemukan.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: _muted),
+                    ),
+                  ),
                 ),
-                itemCount: list.length,
-                itemBuilder: (context, i) => _NameCard(
-                  name: list[i],
-                  hideArti: _hafalan,
-                  onTap: () => _open(list[i]),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+                sliver: SliverGrid.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.86,
+                  ),
+                  itemCount: list.length,
+                  itemBuilder: (context, i) => _NameCard(
+                    name: list[i],
+                    hideArti: _hafalan,
+                    onTap: () => _open(list[i]),
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  8,
-                  16,
-                  32 + MediaQuery.paddingOf(context).bottom,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    32 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  child: const _HadithCard(),
                 ),
-                child: const _HadithCard(),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../../widgets/quran/quran_ayah_text.dart';
 import '../../db/app_database.dart';
 import '../../db/app_database_scope.dart';
 import '../../services/app_settings.dart';
 import '../../services/prayer_calculator.dart' as calc;
 import '../../services/quran_index.dart';
 import '../../services/quran_text.dart';
-import '../../services/tajweed.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
 import '../../widgets/arabic_font.dart';
@@ -508,9 +508,14 @@ class _SurahHead extends StatelessWidget {
             ],
           ),
           if (surah.hasBasmalah)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: BasmalahLine(fontSize: 26),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: BasmalahLine(
+                fontSize: 26,
+                uthmani:
+                    AppSettingsScope.maybeOf(context)?.quranFont ==
+                    QuranFont.uthmani,
+              ),
             ),
         ],
       ),
@@ -542,6 +547,7 @@ class _AyahTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const arabicStyle = TextStyle(height: 2.1, color: Color(0xFF1C1917));
+    final font = AppSettingsScope.maybeOf(context)?.quranFont ?? QuranFont.lpmq;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
@@ -605,16 +611,12 @@ class _AyahTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          if (tajweed)
-            ArabicText.rich([
-              for (final s in tajweedSegments(ayah.arabic))
-                (text: s.text, color: segmentColor(s)),
-            ], style: arabicStyle.copyWith(fontSize: size))
-          else
-            ArabicText(
-              ayah.arabic,
-              style: arabicStyle.copyWith(fontSize: size),
-            ),
+          QuranAyahText(
+            quranTextFor(ayah, font),
+            font: font,
+            tajweed: tajweed,
+            style: arabicStyle.copyWith(fontSize: size),
+          ),
           if (showArti) ...[
             const SizedBox(height: 10),
             Text(

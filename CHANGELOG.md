@@ -4,6 +4,29 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.13.0 (build 20) · 30 September 2026
+
+**Silsilah Nabi ﷺ**
+- Menu baru **Silsilah Nabi**: nasab Rasulullah ﷺ yang shahih sampai 'Adnan
+  (21 generasi, sesuai Shahih al-Bukhari) dalam garis silsilah, bisa dibaca
+  dari Nabi ke atas atau dari 'Adnan ke bawah. Dilengkapi nama asli, penanda
+  Bani Hasyim, Quraisy & Kinanah, nasab ibunda, dan penjelasan keshahihan.
+
+**Pilihan font Al-Qur'an**
+- Pengaturan → Al-Qur'an: pilih **LPMQ Isep Misbah** (bawaan, Mushaf
+  Standar Indonesia) atau **Utsmani Hafs** (Mushaf Madinah). Berlaku di
+  pembaca per surah, mode mushaf & hafalan.
+
+**Laporan lebih hidup**
+- Angka, grafik batang, kalender ibadah & progres kini beranimasi saat
+  laporan dibuka.
+
+**Perbaikan**
+- Tampilan kalender hijriah lebih rapi: tidak ada lagi baris kosong,
+  navigasi bulan jadi satu baris dengan pemilih bulan, dan tombol "Bulan ini".
+- Mengetuk widget saat aplikasi sudah terbuka tidak lagi menampilkan layar
+  kosong.
+
 ## 1.12.0 (build 19) · 30 September 2026
 
 **Asmaul Husna**

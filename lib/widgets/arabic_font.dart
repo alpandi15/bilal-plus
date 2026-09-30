@@ -11,6 +11,22 @@ const arabicFont = 'LPMQ';
 /// Al-Qur'an Raja Fahd), pasangan teks Utsmani di assets/quran/uthmani.json.
 const uthmanicFont = 'UthmanicHafs';
 
+/// Pilihan font teks Al-Qur'an (Pengaturan). Tiap font berpasangan dengan
+/// teksnya sendiri: LPMQ dengan rasm Mushaf Standar Indonesia
+/// ([QuranAyah.arabic]), Utsmani dengan teks Utsmani ([QuranAyah.uthmani]).
+enum QuranFont {
+  lpmq('lpmq', 'LPMQ Isep Misbah', 'Mushaf Standar Indonesia (Kemenag)'),
+  uthmani('uthmani', 'Utsmani Hafs', "Mushaf Madinah (Kompleks Raja Fahd)");
+
+  const QuranFont(this.key, this.label, this.description);
+  final String key, label, description;
+
+  String get family => this == lpmq ? arabicFont : uthmanicFont;
+
+  static QuranFont parse(String? key) =>
+      values.firstWhere((f) => f.key == key, orElse: () => lpmq);
+}
+
 final _punctuation = RegExp('[،؛؟]');
 
 /// Teks Arab kanan-ke-kiri dengan font LPMQ.

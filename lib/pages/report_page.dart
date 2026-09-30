@@ -36,10 +36,13 @@ enum _Range {
 /// aktif, hari paling rajin, kualitas sholat wajib (awal waktu/terlambat/
 /// qadha, masjid/rumah), dan konsistensi per ibadah.
 class ReportPage extends StatefulWidget {
-  const ReportPage({super.key, this.showBack = true});
+  const ReportPage({super.key, this.showBack = true, this.replay = 0});
 
   /// false saat menjadi tab di navigasi bawah.
   final bool showBack;
+
+  /// Berubah = animasi grafik diputar ulang (tab dibuka lagi).
+  final int replay;
 
   @override
   State<ReportPage> createState() => _ReportPageState();
@@ -111,6 +114,9 @@ class _ReportPageState extends State<ReportPage> {
                   soloWeight: settings?.effectiveSoloWeight ?? 1,
                 );
                 return _ReportBody(
+                  // animasi masuk diputar ulang saat rentang diganti atau
+                  // tab dibuka lagi
+                  key: ValueKey((_range, widget.replay)),
                   report: report,
                   range: _range,
                   onRange: (r) => setState(() => _range = r),
@@ -130,6 +136,7 @@ class _ReportPageState extends State<ReportPage> {
 
 class _ReportBody extends StatelessWidget {
   const _ReportBody({
+    super.key,
     required this.report,
     required this.range,
     required this.onRange,
@@ -170,17 +177,23 @@ class _ReportBody extends StatelessWidget {
               Row(
                 children: [
                   _Tile(
-                    value: '${(report.average * 100).round()}%',
+                    value: (report.average * 100).round(),
+                    suffix: '%',
                     label: 'rata-rata tuntas',
                   ),
                   const SizedBox(width: 8),
                   _Tile(
-                    value: '${report.currentStreak}',
+                    value: report.currentStreak,
                     unit: ' hari',
                     label: 'streak · terlama ${report.longestStreak}',
+                    delay: 120,
                   ),
                   const SizedBox(width: 8),
-                  _Tile(value: '${report.fullDays}', label: 'hari tuntas'),
+                  _Tile(
+                    value: report.fullDays,
+                    label: 'hari tuntas',
+                    delay: 240,
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
@@ -189,7 +202,18 @@ class _ReportBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ContributionCalendar(days: report.days),
+                    _Reveal(
+                      delay: 150,
+                      duration: 1100,
+                      builder: (context, t) => ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        shaderCallback: (r) => LinearGradient(
+                          colors: const [Colors.white, Colors.transparent],
+                          stops: [t, (t + 0.15).clamp(0.0, 1.0)],
+                        ).createShader(r.inflate(r.width * 0.15)),
+                        child: ContributionCalendar(days: report.days),
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     const HeatLegend(),
                     if (noData)
@@ -206,15 +230,21 @@ class _ReportBody extends StatelessWidget {
               ),
               if (!noData) ...[
                 const SizedBox(height: 14),
-                _WeekdayCard(weekday: report.weekday),
+                _Entrance(
+                  delay: 200,
+                  child: _WeekdayCard(weekday: report.weekday),
+                ),
               ],
               if (showSholat && !noData) ...[
                 const SizedBox(height: 14),
-                _SholatQualityCard(stats: report.sholat),
+                _Entrance(
+                  delay: 320,
+                  child: _SholatQualityCard(stats: report.sholat),
+                ),
               ],
               if (report.items.isNotEmpty && !noData) ...[
                 const SizedBox(height: 14),
-                _ItemsCard(items: report.items),
+                _Entrance(delay: 440, child: _ItemsCard(items: report.items)),
               ],
             ],
           ),
@@ -264,49 +294,69 @@ class _Card extends StatelessWidget {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.value, required this.label, this.unit = ''});
-  final String value, label, unit;
+  const _Tile({
+    required this.value,
+    required this.label,
+    this.suffix = '',
+    this.unit = '',
+    this.delay = 0,
+  });
+  final int value;
+  final String label, suffix, unit;
+  final int delay;
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _line),
-      ),
-      child: Column(
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: _stone,
+    child: _Reveal(
+      delay: delay,
+      duration: 900,
+      builder: (context, t) => _tile((value * t).round(), t),
+    ),
+  );
+
+  Widget _tile(int shown, double t) => Opacity(
+    opacity: t.clamp(0.0, 1.0),
+    child: Transform.translate(
+      offset: Offset(0, 12 * (1 - t)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _line),
+        ),
+        child: Column(
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$shown$suffix',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: _stone,
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: unit,
-                    style: const TextStyle(fontSize: 11, color: _muted),
-                  ),
-                ],
+                    TextSpan(
+                      text: unit,
+                      style: const TextStyle(fontSize: 11, color: _muted),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: const TextStyle(fontSize: 10, color: _muted),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: const TextStyle(fontSize: 10, color: _muted),
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -367,6 +417,7 @@ class _WeekdayCard extends StatelessWidget {
                 for (var i = 0; i < 7; i++)
                   Expanded(
                     child: _Bar(
+                      index: i,
                       value: weekday[i],
                       label: _hari[i].substring(0, 3),
                       highlight: best?.$1 == i,
@@ -384,23 +435,36 @@ class _WeekdayCard extends StatelessWidget {
 
 class _Bar extends StatelessWidget {
   const _Bar({
+    required this.index,
     required this.value,
     required this.label,
     required this.highlight,
     required this.low,
   });
+  final int index;
   final double? value;
   final String label;
   final bool highlight, low;
 
   @override
   Widget build(BuildContext context) {
-    final v = value ?? 0;
+    return _Reveal(
+      delay: 250 + index * 70,
+      duration: 800,
+      curve: Curves.easeOutBack,
+      builder: (context, t) => _bar(t),
+    );
+  }
+
+  Widget _bar(double t) {
+    final v = (value ?? 0) * t;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Text(
-          value == null ? '–' : '${(v * 100).round()}%',
+          value == null
+              ? '–'
+              : '${(value! * t.clamp(0.0, 1.0) * 100).round()}%',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -412,7 +476,7 @@ class _Bar extends StatelessWidget {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: FractionallySizedBox(
-              heightFactor: v.clamp(0.04, 1),
+              heightFactor: v.clamp(0.04, 1.0),
               child: Container(
                 width: 18,
                 decoration: BoxDecoration(
@@ -482,13 +546,17 @@ class _SholatQualityCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${(on * 100 / timed).round()}%',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF16A34A),
-                    height: 1,
+                _Reveal(
+                  delay: 300,
+                  duration: 1000,
+                  builder: (context, t) => Text(
+                    '${(on * 100 / timed * t).round()}%',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF16A34A),
+                      height: 1,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -566,6 +634,7 @@ class _SholatQualityCard extends StatelessWidget {
                         untimed: s.untimed,
                         missed: s.missed,
                         height: 8,
+                        delay: 450 + stats.indexOf(s) * 90,
                       ),
                     ),
                     SizedBox(
@@ -627,12 +696,33 @@ class _Stacked extends StatelessWidget {
     required this.height,
     this.untimed = 0,
     this.missed = 0,
+    this.delay = 300,
   });
   final int onTime, late, qadha, untimed, missed;
   final double height;
+  final int delay;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _Reveal(
+    delay: delay,
+    duration: 900,
+    builder: (context, t) => ClipRRect(
+      borderRadius: BorderRadius.circular(99),
+      child: ColoredBox(
+        color: const Color(0xFFF5F5F4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          widthFactor: 1,
+          child: FractionallySizedBox(
+            widthFactor: t.clamp(0.0, 1.0),
+            child: _bar(),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _bar() {
     final parts = [
       (onTime, sholatStatusColor[SholatStatus.onTime]!),
       (late, sholatStatusColor[SholatStatus.late]!),
@@ -671,7 +761,7 @@ class _ItemsCard extends StatelessWidget {
     title: 'KONSISTENSI PER IBADAH',
     child: Column(
       children: [
-        for (final s in items)
+        for (final (i, s) in items.indexed)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Column(
@@ -696,18 +786,22 @@ class _ItemsCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 5),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    value: s.rate,
-                    minHeight: 7,
-                    backgroundColor: _cream,
-                    valueColor: AlwaysStoppedAnimation(
-                      s.rate >= 0.8
-                          ? const Color(0xFF16A34A)
-                          : s.rate >= 0.4
-                          ? const Color(0xFFF59E0B)
-                          : const Color(0xFFDC2626),
+                _Reveal(
+                  delay: 350 + i * 70,
+                  duration: 900,
+                  builder: (context, t) => ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      value: s.rate * t,
+                      minHeight: 7,
+                      backgroundColor: _cream,
+                      valueColor: AlwaysStoppedAnimation(
+                        s.rate >= 0.8
+                            ? const Color(0xFF16A34A)
+                            : s.rate >= 0.4
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFFDC2626),
+                      ),
                     ),
                   ),
                 ),
@@ -715,6 +809,51 @@ class _ItemsCard extends StatelessWidget {
             ),
           ),
       ],
+    ),
+  );
+}
+
+/// Animasi masuk 0 → 1 sekali saat pertama dibangun, setelah jeda [delay]
+/// (ms). Diputar ulang bila widget dibuat ulang (mis. ganti rentang).
+class _Reveal extends StatelessWidget {
+  const _Reveal({
+    required this.builder,
+    this.delay = 0,
+    this.duration = 800,
+    this.curve = Curves.easeOutCubic,
+  });
+
+  final Widget Function(BuildContext context, double t) builder;
+  final int delay, duration;
+  final Curve curve;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = delay + duration;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: total),
+      builder: (context, v, _) {
+        final t = ((v * total - delay) / duration).clamp(0.0, 1.0);
+        return builder(context, curve.transform(t));
+      },
+    );
+  }
+}
+
+/// Kartu muncul: memudar & naik sedikit.
+class _Entrance extends StatelessWidget {
+  const _Entrance({required this.child, this.delay = 0});
+  final Widget child;
+  final int delay;
+
+  @override
+  Widget build(BuildContext context) => _Reveal(
+    delay: delay,
+    duration: 600,
+    builder: (context, t) => Opacity(
+      opacity: t,
+      child: Transform.translate(offset: Offset(0, 24 * (1 - t)), child: child),
     ),
   );
 }

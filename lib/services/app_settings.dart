@@ -1,3 +1,4 @@
+import '../widgets/arabic_font.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +30,7 @@ class AppSettings {
   static const onboardedKey = 'onboarded';
   static const userNameKey = 'user_name';
   static const quranTajweedKey = 'quran_tajweed';
+  static const quranFontKey = 'quran_font';
   static const quranLastReadKey = 'quran_last_read';
   static const quranModeKey = 'quran_mode';
   static const quranLastPageKey = 'quran_last_page';
@@ -94,6 +96,10 @@ class AppSettingsController extends ChangeNotifier {
 
   bool _quranTajweed = true;
   int? _quranLastRead;
+  QuranFont _quranFont = QuranFont.lpmq;
+
+  /// Font teks Al-Qur'an di pembaca per surah, mushaf & hafalan.
+  QuranFont get quranFont => _quranFont;
 
   /// Warna hukum tajwid di pembaca Al-Qur'an.
   bool get quranTajweed => _quranTajweed;
@@ -183,6 +189,7 @@ class AppSettingsController extends ChangeNotifier {
       _madzhab = Madzhab.parse(prefs.getString(AppSettings.madzhabKey));
       _onboarded = prefs.getBool(AppSettings.onboardedKey) ?? false;
       _quranTajweed = prefs.getBool(AppSettings.quranTajweedKey) ?? true;
+      _quranFont = QuranFont.parse(prefs.getString(AppSettings.quranFontKey));
       _quranLastRead = prefs.getInt(AppSettings.quranLastReadKey);
       _quranMushaf = prefs.getString(AppSettings.quranModeKey) == 'mushaf';
       _quranLastPage = prefs.getInt(AppSettings.quranLastPageKey);
@@ -213,6 +220,12 @@ class AppSettingsController extends ChangeNotifier {
     _quranTajweed = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.quranTajweedKey, v));
+  }
+
+  Future<void> setQuranFont(QuranFont v) async {
+    _quranFont = v;
+    notifyListeners();
+    await _save((p) => p.setString(AppSettings.quranFontKey, v.key));
   }
 
   Future<void> setQuranLastRead(int index) async {

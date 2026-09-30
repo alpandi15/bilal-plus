@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../widgets/quran/quran_ayah_text.dart';
 import '../../db/app_database_scope.dart';
 import '../../services/app_settings.dart';
 import '../../services/prayer_calculator.dart' as calc;
@@ -204,6 +205,7 @@ class _MushafPageState extends State<MushafPage> {
     final text = _text;
     final settings = AppSettingsScope.maybeOf(context);
     final tajweed = settings?.quranTajweed ?? true;
+    final font = settings?.quranFont ?? QuranFont.lpmq;
     final maxFont = (settings?.readerSize ?? 28).clamp(22.0, 40.0);
     final first = text?.ayahsOnPage(_page).first;
 
@@ -304,6 +306,7 @@ class _MushafPageState extends State<MushafPage> {
                         text: text,
                         page: i + 1,
                         tajweed: tajweed,
+                        font: font,
                         maxFont: maxFont,
                         selected: _selected,
                         onTap: _onAyahTap,
@@ -324,6 +327,7 @@ class _MushafSheet extends StatefulWidget {
     required this.text,
     required this.page,
     required this.tajweed,
+    required this.font,
     required this.maxFont,
     required this.selected,
     required this.onTap,
@@ -332,6 +336,7 @@ class _MushafSheet extends StatefulWidget {
   final QuranText text;
   final int page;
   final bool tajweed;
+  final QuranFont font;
   final double maxFont;
   final int? selected;
   final ValueChanged<QuranAyah> onTap;
@@ -386,9 +391,9 @@ class _Token {
 class _MushafSheetState extends State<_MushafSheet> {
   late final List<_Block> _blocks = _makeBlocks();
 
-  /// Kata-kata tiap blok teks, diukur sekali (per mode tajwid).
+  /// Kata-kata tiap blok teks, diukur sekali (per mode tajwid & font).
   final _tokens = <_TextBlock, List<_Token>>{};
-  bool? _tokensTajweed;
+  (bool, QuranFont)? _tokensFor;
 
   // hasil pencocokan: ukuran huruf & baris-baris tiap blok teks
   Size? _fitFor;
@@ -416,8 +421,8 @@ class _MushafSheetState extends State<_MushafSheet> {
     return blocks;
   }
 
-  static TextStyle _style(double font) => TextStyle(
-    fontFamily: uthmanicFont,
+  TextStyle _style(double font) => TextStyle(
+    fontFamily: widget.font.family,
     fontSize: font,
     height: _lineHeight,
     color: mushafInk,
@@ -441,12 +446,14 @@ class _MushafSheetState extends State<_MushafSheet> {
 
     final out = <_Token>[];
     for (final a in b.ayahs) {
+      final uthmani = widget.font == QuranFont.uthmani;
+      final text = quranTextFor(a, widget.font);
       final segments = widget.tajweed
           ? [
-              for (final s in tajweedSegments(a.uthmani, uthmani: true))
+              for (final s in tajweedSegments(text, uthmani: uthmani))
                 (text: s.text, color: segmentColor(s)),
             ]
-          : [(text: a.uthmani, color: null)];
+          : [(text: text, color: null)];
       var word = <({String text, Color? color})>[];
       void flush() {
         if (word.isEmpty) return;
@@ -544,8 +551,8 @@ class _MushafSheetState extends State<_MushafSheet> {
   }
 
   void _fit(Size area) {
-    if (_tokensTajweed != widget.tajweed) {
-      _tokensTajweed = widget.tajweed;
+    if (_tokensFor != (widget.tajweed, widget.font)) {
+      _tokensFor = (widget.tajweed, widget.font);
       _tokens.clear();
       _fitFor = null;
       for (final b in _blocks) {
@@ -775,7 +782,8 @@ class _MushafSheetState extends State<_MushafSheet> {
                                       child: Center(
                                         child: BasmalahLine(
                                           fontSize: _font * 0.92,
-                                          uthmani: true,
+                                          uthmani:
+                                              widget.font == QuranFont.uthmani,
                                         ),
                                       ),
                                     ),

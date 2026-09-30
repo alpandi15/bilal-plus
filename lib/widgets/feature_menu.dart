@@ -11,6 +11,7 @@ import '../pages/kitab_yasin_page.dart';
 import '../pages/quran/hafalan_page.dart';
 import '../pages/qibla_page.dart';
 import '../pages/settings_page.dart';
+import '../pages/silsilah_page.dart';
 import '../pages/sholat_guide_page.dart';
 import '../pages/takbiran_page.dart';
 import '../pages/tasbih_page.dart';
@@ -39,6 +40,7 @@ final featureGroups = <(String, List<FeatureMenu>)>[
       _dzikir,
       _usaiSholat,
       _asmaulHusna,
+      _silsilah,
       _tasbih,
       _sholat,
       _hadits,
@@ -80,6 +82,12 @@ final _asmaulHusna = FeatureMenu(
   Icons.auto_awesome_rounded,
   const [Color(0xFFF2D38A), Color(0xFFB45309)],
   () => const AsmaulHusnaPage(),
+);
+final _silsilah = FeatureMenu(
+  'Silsilah Nabi',
+  Icons.account_tree_rounded,
+  const [Color(0xFF34D399), Color(0xFF065F46)],
+  () => const SilsilahPage(),
 );
 final _dzikir = FeatureMenu('Dzikir', Icons.auto_stories_rounded, const [
   Color(0xFF34D399),
