@@ -4,6 +4,23 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.10.0 (build 17) · 30 September 2026
+
+**Jadwal Imsakiyah**
+- Tombol "Imsakiyah" di kartu Jadwal Sholat kini membuka jadwal imsak
+  sampai isya sebulan penuh Ramadan, atau per bulan Masehi. Imsak & waktu
+  berbuka disorot, hari ini ditandai, dan jadwal bisa dibagikan.
+
+**Cek pembaruan otomatis**
+- Aplikasi memberi tahu bila ada versi baru, lengkap dengan catatan rilis
+  dan tombol unduh. Bisa dicek manual di Pengaturan → Tentang aplikasi,
+  atau dimatikan.
+
+**Pasang widget dari aplikasi**
+- Menu baru **Widget**: lihat kelima widget dan pasang langsung ke layar
+  utama dengan satu ketukan - membantu di HP yang daftar widgetnya tidak
+  menampilkan Bilal+ (mis. sebagian Xiaomi).
+
 ## 1.9.1 (build 16) · 30 September 2026
 
 **Mushaf lebih mirip mushaf cetak**

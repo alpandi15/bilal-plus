@@ -11,6 +11,7 @@ import '../pages/settings_page.dart';
 import '../pages/sholat_guide_page.dart';
 import '../pages/takbiran_page.dart';
 import '../pages/tasbih_page.dart';
+import '../pages/widgets_page.dart';
 import '../pages/zakat_fitrah_page.dart';
 
 /// Satu menu fitur (grid Beranda & lembar "Lainnya").
@@ -28,7 +29,7 @@ class FeatureMenu {
 final featureGroups = <(String, List<FeatureMenu>)>[
   ('IBADAH & BACAAN', [_dzikir, _tasbih, _sholat, _hadits, _doa, _yasin]),
   ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat]),
-  ('ALAT', [_kalender, _backup, _settings]),
+  ('ALAT', [_kalender, _widgets, _backup, _settings]),
 ];
 
 /// Tujuh menu yang langsung tampil di Beranda (menu kedelapan "Lainnya").
@@ -86,6 +87,10 @@ final _kalender = FeatureMenu(
   const [Color(0xFFFB923C), Color(0xFFEA580C)],
   () => const HijriCalendarPage(),
 );
+final _widgets = FeatureMenu('Widget', Icons.widgets_rounded, const [
+  Color(0xFF2DD4BF),
+  Color(0xFF0C3A33),
+], () => const WidgetsPage());
 final _backup = FeatureMenu('Cadangan Data', Icons.backup_rounded, const [
   Color(0xFF94A3B8),
   Color(0xFF475569),

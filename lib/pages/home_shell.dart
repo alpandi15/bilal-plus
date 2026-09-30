@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/app_settings.dart';
+import '../services/update_checker.dart';
+import '../widgets/update_sheet.dart';
 import 'beranda_page.dart';
 import 'ibadah_page.dart';
 import 'quran_tracker_page.dart';
@@ -22,6 +25,22 @@ class HomeShell extends StatefulWidget {
 
 class HomeShellState extends State<HomeShell> {
   HomeTab _tab = HomeTab.beranda;
+
+  @override
+  void initState() {
+    super.initState();
+    // cek versi baru sesudah beranda tampil (paling sering sekali sehari,
+    // diam bila offline) - lihat UpdateChecker.checkAutomatically
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
+  }
+
+  Future<void> _checkUpdate() async {
+    if (!mounted) return;
+    final settings = AppSettingsScope.maybeOf(context);
+    if (settings == null || !settings.autoUpdate) return;
+    final update = await UpdateChecker().checkAutomatically();
+    if (update != null && mounted) await showUpdateSheet(context, update);
+  }
 
   /// Tab yang pernah dibuka - dibangun saat pertama dikunjungi (bukan
   /// semuanya sekaligus saat aplikasi dibuka), lalu tetap hidup.

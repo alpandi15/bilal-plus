@@ -16,6 +16,7 @@ class AppSettings {
   static const adzanPrayersKey = 'adzan_prayers';
   static const adzanReminderKey = 'adzan_reminder_minutes';
   static const fastReminderKey = 'fast_reminder';
+  static const autoUpdateKey = 'update_auto_check';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -50,6 +51,7 @@ class AppSettingsController extends ChangeNotifier {
   Set<String> _adzanPrayers = adzanPrayerKeys.toSet();
   int _reminderMinutes = 0;
   bool _fastReminder = true;
+  bool _autoUpdate = true;
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -127,6 +129,9 @@ class AppSettingsController extends ChangeNotifier {
   /// sahur). Terpisah dari notifikasi adzan; bawaannya aktif.
   bool get fastReminder => _fastReminder;
 
+  /// Cek versi baru di GitHub Releases saat aplikasi dibuka (bawaan aktif).
+  bool get autoUpdate => _autoUpdate;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -158,6 +163,7 @@ class AppSettingsController extends ChangeNotifier {
           adzanPrayerKeys.toSet();
       _reminderMinutes = prefs.getInt(AppSettings.adzanReminderKey) ?? 0;
       _fastReminder = prefs.getBool(AppSettings.fastReminderKey) ?? true;
+      _autoUpdate = prefs.getBool(AppSettings.autoUpdateKey) ?? true;
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -273,6 +279,12 @@ class AppSettingsController extends ChangeNotifier {
     _fastReminder = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.fastReminderKey, v));
+  }
+
+  Future<void> setAutoUpdate(bool v) async {
+    _autoUpdate = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.autoUpdateKey, v));
   }
 
   Future<void> setHaptic(bool v) async {

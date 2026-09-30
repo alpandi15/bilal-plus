@@ -4,12 +4,16 @@ import '../services/adzan_notifications.dart';
 import '../services/app_settings.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/sholat_time.dart';
+import '../services/system_channel.dart';
+import '../services/update_checker.dart';
 import '../services/user_location_scope.dart';
 import '../widgets/hijri_settings_sheet.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
 import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/privacy_note.dart';
 import '../widgets/sub_header.dart';
+import '../widgets/update_sheet.dart';
+import 'widgets_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -296,6 +300,9 @@ class SettingsPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
+                const _Title('TENTANG APLIKASI'),
+                const _AboutGroup(),
+                const SizedBox(height: 20),
                 const _Title('PRIVASI & DATA'),
                 const PrivacyNote(),
               ],
@@ -535,4 +542,109 @@ class _NameFieldState extends State<_NameField> {
       prefixIcon: Icon(Icons.badge_outlined),
     ),
   );
+}
+
+/// Versi, cek pembaruan (GitHub Releases), dan pasang widget.
+class _AboutGroup extends StatefulWidget {
+  const _AboutGroup();
+
+  @override
+  State<_AboutGroup> createState() => _AboutGroupState();
+}
+
+class _AboutGroupState extends State<_AboutGroup> {
+  String? _version;
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChannel.appVersion().then((v) {
+      if (mounted) setState(() => _version = v);
+    });
+  }
+
+  Future<void> _check() async {
+    setState(() => _checking = true);
+    String? message;
+    try {
+      final update = await UpdateChecker().check();
+      if (!mounted) return;
+      if (update != null) {
+        await showUpdateSheet(context, update);
+      } else {
+        message = 'Bilal+ sudah versi terbaru.';
+      }
+    } catch (_) {
+      message = 'Gagal memeriksa - periksa koneksi internet lalu coba lagi.';
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+    if (message != null && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AppSettingsScope.of(context);
+    return _Group(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.info_outline_rounded, color: _amber),
+          title: Text(
+            _version == null ? 'Bilal+' : 'Bilal+ versi $_version',
+            style: const TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Versi baru dirilis di GitHub - pasang menimpa, catatan tetap aman.',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+          trailing: _checking
+              ? const SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                )
+              : TextButton(
+                  style: TextButton.styleFrom(foregroundColor: _amber),
+                  onPressed: _check,
+                  child: const Text('Cek'),
+                ),
+        ),
+        const Divider(height: 1, color: _line),
+        SwitchListTile.adaptive(
+          activeTrackColor: _amber,
+          value: settings.autoUpdate,
+          onChanged: settings.setAutoUpdate,
+          title: const Text(
+            'Cek pembaruan otomatis',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Paling sering sekali sehari saat aplikasi dibuka. Hanya menanyakan '
+            'versi terbaru ke GitHub - tidak ada data pribadi yang dikirim.',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+        ),
+        const Divider(height: 1, color: _line),
+        ListTile(
+          leading: const Icon(Icons.widgets_rounded, color: _amber),
+          title: const Text(
+            'Widget layar utama',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Pasang widget langsung dari aplikasi',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded, color: _muted),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const WidgetsPage())),
+        ),
+      ],
+    );
+  }
 }

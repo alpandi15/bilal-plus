@@ -17,7 +17,8 @@ class PrivacyNote extends StatelessWidget {
     'Lokasi (GPS) hanya dipakai di HP untuk menghitung waktu sholat - '
         'tidak pernah dikirim ke mana pun.',
     'Internet hanya dipakai untuk mengunduh pembaruan ketetapan kalender '
-        'hijriah (awal bulan) dan teks kitab hadits yang Anda pilih. '
+        'hijriah (awal bulan), teks kitab hadits yang Anda pilih, dan '
+        'memeriksa versi terbaru aplikasi (bisa dimatikan di Pengaturan). '
         'Permintaan itu tidak membawa data pribadi apa pun.',
     'File cadangan hanya keluar dari HP bila Anda sendiri membagikan atau '
         'menyimpannya ke tempat lain.',

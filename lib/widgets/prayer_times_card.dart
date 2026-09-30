@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/prayer_models.dart';
 import '../pages/hijri_calendar_page.dart';
+import '../pages/imsakiyah_page.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/home_widget_service.dart';
 import '../services/prayer_calculator.dart' as calc;
@@ -486,39 +487,46 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const ImsakiyahPage(),
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              color: night
-                                  ? Colors.white.withOpacity(0.9)
-                                  : const Color(0xE61C1917),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.calendar_month_outlined,
-                                  size: 12,
-                                  color: night
-                                      ? const Color(0xFF1C1917)
-                                      : Colors.white,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  'Imsakiyah',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(999),
+                                color: night
+                                    ? Colors.white.withOpacity(0.9)
+                                    : const Color(0xE61C1917),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month_outlined,
+                                    size: 12,
                                     color: night
                                         ? const Color(0xFF1C1917)
                                         : Colors.white,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'Imsakiyah',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: night
+                                          ? const Color(0xFF1C1917)
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],

@@ -1,12 +1,16 @@
 package com.rinduramadan.app
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -22,6 +26,35 @@ class MainActivity : FlutterActivity() {
                     result.notImplemented()
                 }
             }
+        // versi aplikasi, buka tautan, & halaman info aplikasi (izin launcher)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "bilalplus/system")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "appVersion" -> {
+                        val info = packageManager.getPackageInfo(packageName, 0)
+                        result.success(info.versionName)
+                    }
+                    "openUrl" -> result.success(
+                        start(Intent(Intent.ACTION_VIEW, Uri.parse(call.arguments as String))),
+                    )
+                    "openAppSettings" -> result.success(
+                        start(
+                            Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", packageName, null),
+                            ),
+                        ),
+                    )
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    private fun start(intent: Intent): Boolean = try {
+        startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
     }
 
     /**
