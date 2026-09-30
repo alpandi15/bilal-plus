@@ -29,6 +29,51 @@ abstract final class SystemChannel {
     }
   }
 
+  /// Lepas tampilan di atas layar kunci (sesudah halaman adzan ditutup).
+  static Future<void> clearLockScreen() async {
+    if (!_android) return;
+    try {
+      await _channel.invokeMethod<bool>('clearLockScreen');
+    } on Exception {
+      // abaikan
+    }
+  }
+
+  /// Android 14+: boleh menampilkan notifikasi layar penuh?
+  static Future<bool> canFullScreen() async {
+    if (!_android) return false;
+    try {
+      return await _channel.invokeMethod<bool>('canFullScreen') ?? true;
+    } on Exception {
+      return true;
+    }
+  }
+
+  /// Halaman izin "Notifikasi layar penuh" (Android 14+).
+  static Future<void> openFullScreenSettings() async {
+    if (!_android) return;
+    try {
+      await _channel.invokeMethod<bool>('openFullScreenSettings');
+    } on Exception {
+      // abaikan
+    }
+  }
+
+  /// Deklinasi magnetik (derajat, timur positif) di lokasi - selisih utara
+  /// kompas dengan utara sejati. 0 bila tidak tersedia.
+  static Future<double> declination(double lat, double lon) async {
+    if (!_android) return 0;
+    try {
+      return await _channel.invokeMethod<double>('declination', {
+            'lat': lat,
+            'lon': lon,
+          }) ??
+          0;
+    } on Exception {
+      return 0;
+    }
+  }
+
   /// Halaman info aplikasi (izin, "Pintasan layar utama" di MIUI, dll.).
   static Future<bool> openAppSettings() async {
     if (!_android) return false;

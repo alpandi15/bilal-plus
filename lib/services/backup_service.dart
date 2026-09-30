@@ -87,6 +87,7 @@ class BackupService {
     final cycles = await db.select(db.quranCycles).get();
     final qlogs = await db.select(db.quranLogs).get();
     final notes = await db.select(db.quranNotes).get();
+    final hafalan = await db.select(db.hafalanAyahs).get();
 
     return {
       'app': _appId,
@@ -161,6 +162,9 @@ class BackupService {
             'createdAt': _iso(l.createdAt),
           },
       ],
+      'hafalan': [
+        for (final h in hafalan) {'ayah': h.ayah, 'at': _iso(h.memorizedAt)},
+      ],
       'quranNotes': [
         for (final n in notes)
           {
@@ -233,6 +237,7 @@ class BackupService {
     try {
       if (replace) {
         await db.delete(db.quranNotes).go();
+        await db.delete(db.hafalanAyahs).go();
         await db.delete(db.quranLogs).go();
         await db.delete(db.quranCycles).go();
         await db.delete(db.ibadahLogs).go();
@@ -357,6 +362,20 @@ class BackupService {
 
       final quranCount = await _importQuran(data, replace: replace);
       await _importNotes(data);
+      // hafalan: gabung (berkas lama tanpa hafalan dilewati)
+      for (final h in _list(data, 'hafalan')) {
+        final ayah = h['ayah'] as int;
+        if (ayah < 1 || ayah > totalAyahs) continue;
+        await db
+            .into(db.hafalanAyahs)
+            .insert(
+              HafalanAyahsCompanion.insert(
+                ayah: Value(ayah),
+                memorizedAt: _date(h['at']),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
 
       return ImportResult(
         ibadahLogs: ibadahCount,

@@ -17,6 +17,7 @@ class AppSettings {
   static const adzanReminderKey = 'adzan_reminder_minutes';
   static const fastReminderKey = 'fast_reminder';
   static const autoUpdateKey = 'update_auto_check';
+  static const adzanFullScreenKey = 'adzan_full_screen';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -52,6 +53,7 @@ class AppSettingsController extends ChangeNotifier {
   int _reminderMinutes = 0;
   bool _fastReminder = true;
   bool _autoUpdate = true;
+  bool _adzanFullScreen = false;
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -132,6 +134,10 @@ class AppSettingsController extends ChangeNotifier {
   /// Cek versi baru di GitHub Releases saat aplikasi dibuka (bawaan aktif).
   bool get autoUpdate => _autoUpdate;
 
+  /// Adzan tampil layar penuh seperti alarm (di atas layar kunci). Bawaan
+  /// mati - notifikasi biasa.
+  bool get adzanFullScreen => _adzanFullScreen;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -164,6 +170,7 @@ class AppSettingsController extends ChangeNotifier {
       _reminderMinutes = prefs.getInt(AppSettings.adzanReminderKey) ?? 0;
       _fastReminder = prefs.getBool(AppSettings.fastReminderKey) ?? true;
       _autoUpdate = prefs.getBool(AppSettings.autoUpdateKey) ?? true;
+      _adzanFullScreen = prefs.getBool(AppSettings.adzanFullScreenKey) ?? false;
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -279,6 +286,12 @@ class AppSettingsController extends ChangeNotifier {
     _fastReminder = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.fastReminderKey, v));
+  }
+
+  Future<void> setAdzanFullScreen(bool v) async {
+    _adzanFullScreen = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.adzanFullScreenKey, v));
   }
 
   Future<void> setAutoUpdate(bool v) async {

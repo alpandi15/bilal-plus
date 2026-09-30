@@ -4,6 +4,23 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.11.0 (build 18) · 30 September 2026
+
+**Arah kiblat**
+- Menu baru **Kiblat**: kompas yang mengikuti putaran HP dengan ikon Ka'bah
+  di arah kiblat. Saat HP tepat menghadap kiblat, penanda berubah hijau &
+  HP bergetar. Koreksi utara magnetik dihitung otomatis.
+
+**Adzan layar penuh**
+- Pilihan baru di Pengaturan → Notifikasi adzan: saat waktu sholat masuk,
+  layar menyala & adzan tampil di atas layar kunci seperti alarm, dengan
+  tombol **Sudah sholat**, **Tunda 5 menit**, dan **Tutup**.
+
+**Mode hafalan**
+- Hafalkan Al-Qur'an ayat demi ayat: sembunyikan ayat (kata pertama jadi
+  petunjuk), hitung ulangan, dan tandai ayat yang sudah hafal. Progres per
+  surah & total hafalan tampil rapi, dan ikut tersimpan di cadangan data.
+
 ## 1.10.0 (build 17) · 30 September 2026
 
 **Jadwal Imsakiyah**

@@ -405,6 +405,42 @@ class _AdzanGroup extends StatelessWidget {
         ),
         if (settings.adzan) ...[
           const Divider(height: 1, color: _line),
+          SwitchListTile.adaptive(
+            activeTrackColor: _amber,
+            value: settings.adzanFullScreen,
+            onChanged: (on) async {
+              if (on) {
+                await AdzanNotifications.instance.requestFullScreen();
+                if (!await SystemChannel.canFullScreen()) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Izinkan "Notifikasi layar penuh" untuk Bilal+ '
+                        'supaya adzan bisa tampil seperti alarm.',
+                      ),
+                      action: SnackBarAction(
+                        label: 'Izin',
+                        onPressed: SystemChannel.openFullScreenSettings,
+                      ),
+                    ),
+                  );
+                }
+              }
+              await settings.setAdzanFullScreen(on);
+            },
+            title: const Text(
+              'Adzan layar penuh',
+              style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+            ),
+            subtitle: const Text(
+              'Seperti alarm: layar menyala & tampil di atas layar kunci, '
+              'dengan tombol Sudah sholat & Tunda 5 menit. Saat HP sedang '
+              'dipakai, muncul sebagai notifikasi di atas layar.',
+              style: TextStyle(fontSize: 12, color: _muted),
+            ),
+          ),
+          const Divider(height: 1, color: _line),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             child: Column(

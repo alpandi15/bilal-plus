@@ -173,6 +173,16 @@ class QuranNotes extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 }
 
+/// Ayat yang sudah dihafal (nomor ayat global 1..6236) - mode hafalan.
+@DataClassName('HafalanAyah')
+class HafalanAyahs extends Table {
+  IntColumn get ayah => integer()();
+  DateTimeColumn get memorizedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {ayah};
+}
+
 @DriftDatabase(
   tables: [
     IbadahItems,
@@ -182,6 +192,7 @@ class QuranNotes extends Table {
     QuranCycles,
     QuranLogs,
     QuranNotes,
+    HafalanAyahs,
   ],
   daos: [QuranDao, IbadahDao],
 )
@@ -199,7 +210,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -234,6 +245,10 @@ class AppDatabase extends _$AppDatabase {
         if (!cols.contains('weekdays')) {
           await m.addColumn(ibadahItems, ibadahItems.weekdays);
         }
+      }
+      if (from < 7) {
+        // v7: mode hafalan
+        await m.createTable(hafalanAyahs);
       }
     },
     beforeOpen: (details) async {
@@ -803,11 +818,33 @@ class QuranProgress {
   int? get nextAyah => lastAyah >= totalAyahs ? null : lastAyah + 1;
 }
 
-@DriftAccessor(tables: [QuranCycles, QuranLogs, QuranNotes])
+@DriftAccessor(tables: [QuranCycles, QuranLogs, QuranNotes, HafalanAyahs])
 class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
   QuranDao(super.db);
 
   /// Semua catatan ayat, urut mushaf lalu yang terbaru.
+  /// Ayat yang sudah dihafal (nomor ayat global).
+  Stream<Set<int>> watchHafalan() => select(
+    hafalanAyahs,
+  ).watch().map((rows) => {for (final r in rows) r.ayah});
+
+  /// Tandai/lepas tanda hafal pada ayat global [from]..[to].
+  Future<void> setHafal(int from, int to, bool hafal) => transaction(() async {
+    if (!hafal) {
+      await (delete(
+        hafalanAyahs,
+      )..where((h) => h.ayah.isBetweenValues(from, to))).go();
+      return;
+    }
+    final now = DateTime.now();
+    await batch(
+      (b) => b.insertAll(hafalanAyahs, [
+        for (var a = from; a <= to; a++)
+          HafalanAyahsCompanion.insert(ayah: Value(a), memorizedAt: now),
+      ], mode: InsertMode.insertOrIgnore),
+    );
+  });
+
   Stream<List<QuranNote>> watchNotes() =>
       (select(quranNotes)..orderBy([
             (n) => OrderingTerm.asc(n.fromAyah),

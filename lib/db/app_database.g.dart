@@ -302,7 +302,7 @@ class IbadahItem extends DataClass implements Insertable<IbadahItem> {
   final bool builtIn;
 
   /// Hanya pada hari tertentu dalam sepekan (mis. baca Al-Kahfi tiap
-  /// Jumat): bit ke-(weekday - 1), Senin = bit 0 ... Ahad = bit 6. Null =
+  /// Jumat): bit ke-(weekday - 1), Senin = bit 0 ... Minggu = bit 6. Null =
   /// tanpa batasan hari. Berlaku BERSAMA [scope] - lihat [appliesOnWeekday].
   final int? weekdays;
   const IbadahItem({
@@ -3053,6 +3053,212 @@ class QuranNotesCompanion extends UpdateCompanion<QuranNote> {
   }
 }
 
+class $HafalanAyahsTable extends HafalanAyahs
+    with TableInfo<$HafalanAyahsTable, HafalanAyah> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HafalanAyahsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ayahMeta = const VerificationMeta('ayah');
+  @override
+  late final GeneratedColumn<int> ayah = GeneratedColumn<int>(
+    'ayah',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _memorizedAtMeta = const VerificationMeta(
+    'memorizedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> memorizedAt = GeneratedColumn<DateTime>(
+    'memorized_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [ayah, memorizedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hafalan_ayahs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HafalanAyah> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('ayah')) {
+      context.handle(
+        _ayahMeta,
+        ayah.isAcceptableOrUnknown(data['ayah']!, _ayahMeta),
+      );
+    }
+    if (data.containsKey('memorized_at')) {
+      context.handle(
+        _memorizedAtMeta,
+        memorizedAt.isAcceptableOrUnknown(
+          data['memorized_at']!,
+          _memorizedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_memorizedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ayah};
+  @override
+  HafalanAyah map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HafalanAyah(
+      ayah: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ayah'],
+      )!,
+      memorizedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}memorized_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HafalanAyahsTable createAlias(String alias) {
+    return $HafalanAyahsTable(attachedDatabase, alias);
+  }
+}
+
+class HafalanAyah extends DataClass implements Insertable<HafalanAyah> {
+  final int ayah;
+  final DateTime memorizedAt;
+  const HafalanAyah({required this.ayah, required this.memorizedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['ayah'] = Variable<int>(ayah);
+    map['memorized_at'] = Variable<DateTime>(memorizedAt);
+    return map;
+  }
+
+  HafalanAyahsCompanion toCompanion(bool nullToAbsent) {
+    return HafalanAyahsCompanion(
+      ayah: Value(ayah),
+      memorizedAt: Value(memorizedAt),
+    );
+  }
+
+  factory HafalanAyah.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HafalanAyah(
+      ayah: serializer.fromJson<int>(json['ayah']),
+      memorizedAt: serializer.fromJson<DateTime>(json['memorizedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ayah': serializer.toJson<int>(ayah),
+      'memorizedAt': serializer.toJson<DateTime>(memorizedAt),
+    };
+  }
+
+  HafalanAyah copyWith({int? ayah, DateTime? memorizedAt}) => HafalanAyah(
+    ayah: ayah ?? this.ayah,
+    memorizedAt: memorizedAt ?? this.memorizedAt,
+  );
+  HafalanAyah copyWithCompanion(HafalanAyahsCompanion data) {
+    return HafalanAyah(
+      ayah: data.ayah.present ? data.ayah.value : this.ayah,
+      memorizedAt: data.memorizedAt.present
+          ? data.memorizedAt.value
+          : this.memorizedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HafalanAyah(')
+          ..write('ayah: $ayah, ')
+          ..write('memorizedAt: $memorizedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(ayah, memorizedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HafalanAyah &&
+          other.ayah == this.ayah &&
+          other.memorizedAt == this.memorizedAt);
+}
+
+class HafalanAyahsCompanion extends UpdateCompanion<HafalanAyah> {
+  final Value<int> ayah;
+  final Value<DateTime> memorizedAt;
+  const HafalanAyahsCompanion({
+    this.ayah = const Value.absent(),
+    this.memorizedAt = const Value.absent(),
+  });
+  HafalanAyahsCompanion.insert({
+    this.ayah = const Value.absent(),
+    required DateTime memorizedAt,
+  }) : memorizedAt = Value(memorizedAt);
+  static Insertable<HafalanAyah> custom({
+    Expression<int>? ayah,
+    Expression<DateTime>? memorizedAt,
+  }) {
+    return RawValuesInsertable({
+      if (ayah != null) 'ayah': ayah,
+      if (memorizedAt != null) 'memorized_at': memorizedAt,
+    });
+  }
+
+  HafalanAyahsCompanion copyWith({
+    Value<int>? ayah,
+    Value<DateTime>? memorizedAt,
+  }) {
+    return HafalanAyahsCompanion(
+      ayah: ayah ?? this.ayah,
+      memorizedAt: memorizedAt ?? this.memorizedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ayah.present) {
+      map['ayah'] = Variable<int>(ayah.value);
+    }
+    if (memorizedAt.present) {
+      map['memorized_at'] = Variable<DateTime>(memorizedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HafalanAyahsCompanion(')
+          ..write('ayah: $ayah, ')
+          ..write('memorizedAt: $memorizedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3063,6 +3269,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuranCyclesTable quranCycles = $QuranCyclesTable(this);
   late final $QuranLogsTable quranLogs = $QuranLogsTable(this);
   late final $QuranNotesTable quranNotes = $QuranNotesTable(this);
+  late final $HafalanAyahsTable hafalanAyahs = $HafalanAyahsTable(this);
   late final QuranDao quranDao = QuranDao(this as AppDatabase);
   late final IbadahDao ibadahDao = IbadahDao(this as AppDatabase);
   @override
@@ -3077,6 +3284,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     quranCycles,
     quranLogs,
     quranNotes,
+    hafalanAyahs,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5116,6 +5324,142 @@ typedef $$QuranNotesTableProcessedTableManager =
       QuranNote,
       PrefetchHooks Function()
     >;
+typedef $$HafalanAyahsTableCreateCompanionBuilder =
+    HafalanAyahsCompanion Function({
+      Value<int> ayah,
+      required DateTime memorizedAt,
+    });
+typedef $$HafalanAyahsTableUpdateCompanionBuilder =
+    HafalanAyahsCompanion Function({
+      Value<int> ayah,
+      Value<DateTime> memorizedAt,
+    });
+
+class $$HafalanAyahsTableFilterComposer
+    extends Composer<_$AppDatabase, $HafalanAyahsTable> {
+  $$HafalanAyahsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get ayah => $composableBuilder(
+    column: $table.ayah,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get memorizedAt => $composableBuilder(
+    column: $table.memorizedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HafalanAyahsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HafalanAyahsTable> {
+  $$HafalanAyahsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get ayah => $composableBuilder(
+    column: $table.ayah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get memorizedAt => $composableBuilder(
+    column: $table.memorizedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HafalanAyahsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HafalanAyahsTable> {
+  $$HafalanAyahsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get ayah =>
+      $composableBuilder(column: $table.ayah, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get memorizedAt => $composableBuilder(
+    column: $table.memorizedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$HafalanAyahsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HafalanAyahsTable,
+          HafalanAyah,
+          $$HafalanAyahsTableFilterComposer,
+          $$HafalanAyahsTableOrderingComposer,
+          $$HafalanAyahsTableAnnotationComposer,
+          $$HafalanAyahsTableCreateCompanionBuilder,
+          $$HafalanAyahsTableUpdateCompanionBuilder,
+          (
+            HafalanAyah,
+            BaseReferences<_$AppDatabase, $HafalanAyahsTable, HafalanAyah>,
+          ),
+          HafalanAyah,
+          PrefetchHooks Function()
+        > {
+  $$HafalanAyahsTableTableManager(_$AppDatabase db, $HafalanAyahsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HafalanAyahsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HafalanAyahsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HafalanAyahsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> ayah = const Value.absent(),
+                Value<DateTime> memorizedAt = const Value.absent(),
+              }) => HafalanAyahsCompanion(ayah: ayah, memorizedAt: memorizedAt),
+          createCompanionCallback:
+              ({
+                Value<int> ayah = const Value.absent(),
+                required DateTime memorizedAt,
+              }) => HafalanAyahsCompanion.insert(
+                ayah: ayah,
+                memorizedAt: memorizedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HafalanAyahsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HafalanAyahsTable,
+      HafalanAyah,
+      $$HafalanAyahsTableFilterComposer,
+      $$HafalanAyahsTableOrderingComposer,
+      $$HafalanAyahsTableAnnotationComposer,
+      $$HafalanAyahsTableCreateCompanionBuilder,
+      $$HafalanAyahsTableUpdateCompanionBuilder,
+      (
+        HafalanAyah,
+        BaseReferences<_$AppDatabase, $HafalanAyahsTable, HafalanAyah>,
+      ),
+      HafalanAyah,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5134,12 +5478,15 @@ class $AppDatabaseManager {
       $$QuranLogsTableTableManager(_db, _db.quranLogs);
   $$QuranNotesTableTableManager get quranNotes =>
       $$QuranNotesTableTableManager(_db, _db.quranNotes);
+  $$HafalanAyahsTableTableManager get hafalanAyahs =>
+      $$HafalanAyahsTableTableManager(_db, _db.hafalanAyahs);
 }
 
 mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
   $QuranCyclesTable get quranCycles => attachedDatabase.quranCycles;
   $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
   $QuranNotesTable get quranNotes => attachedDatabase.quranNotes;
+  $HafalanAyahsTable get hafalanAyahs => attachedDatabase.hafalanAyahs;
   QuranDaoManager get managers => QuranDaoManager(this);
 }
 
@@ -5152,6 +5499,8 @@ class QuranDaoManager {
       $$QuranLogsTableTableManager(_db.attachedDatabase, _db.quranLogs);
   $$QuranNotesTableTableManager get quranNotes =>
       $$QuranNotesTableTableManager(_db.attachedDatabase, _db.quranNotes);
+  $$HafalanAyahsTableTableManager get hafalanAyahs =>
+      $$HafalanAyahsTableTableManager(_db.attachedDatabase, _db.hafalanAyahs);
 }
 
 mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {

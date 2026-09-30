@@ -61,8 +61,9 @@ class AdzanNotifications {
   static bool get supported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-  /// [onOpen] dipanggil saat notifikasi diketuk (aplikasi dibuka).
-  Future<void> init({void Function()? onOpen}) async {
+  /// [onOpen] dipanggil saat notifikasi diketuk / adzan layar penuh terbuka
+  /// (aplikasi dibuka), dengan payload notifikasinya.
+  Future<void> init({void Function(String? payload)? onOpen}) async {
     if (!supported || _ready) return;
     tzdata.initializeTimeZones();
     await _plugin.initialize(
@@ -73,7 +74,7 @@ class AdzanNotifications {
         if (r.actionId == _doneAction) {
           await _logDone(r.payload);
         } else {
-          onOpen?.call();
+          onOpen?.call(r.payload);
         }
       },
       onDidReceiveBackgroundNotificationResponse: adzanNotificationBackground,
@@ -89,7 +90,9 @@ class AdzanNotifications {
 
     // dibuka dari notifikasi saat aplikasi tertutup
     final launch = await _plugin.getNotificationAppLaunchDetails();
-    if (launch?.didNotificationLaunchApp ?? false) onOpen?.call();
+    if (launch?.didNotificationLaunchApp ?? false) {
+      onOpen?.call(launch!.notificationResponse?.payload);
+    }
   }
 
   /// Status izin saat ini: notifikasi & alarm tepat waktu (Android 14+
@@ -180,7 +183,10 @@ class AdzanNotifications {
         final at = times.times[sholatPrayerKey[key]]!;
         final label =
             '${times.labels[sholatPrayerKey[key]]} ${calc.tzLabel[zone]}';
-        final payload = '${dateKey(date)}|$key';
+        // "alarm|" = tampil layar penuh (MainActivity membaca awalan ini)
+        final payload =
+            '${settings.adzanFullScreen ? adzanAlarmPrefix : ''}'
+            '${dateKey(date)}|$key';
 
         if (at.isAfter(now)) {
           final m = adzanMessage(
@@ -202,7 +208,10 @@ class AdzanNotifications {
                 channelDescription: _adzanChannel.description,
                 importance: Importance.high,
                 priority: Priority.high,
-                category: AndroidNotificationCategory.reminder,
+                category: settings.adzanFullScreen
+                    ? AndroidNotificationCategory.alarm
+                    : AndroidNotificationCategory.reminder,
+                fullScreenIntent: settings.adzanFullScreen,
                 styleInformation: BigTextStyleInformation(m.body),
                 color: const Color(0xFFB45309),
                 actions: const [
@@ -300,6 +309,49 @@ class AdzanNotifications {
     }
   }
 
+  /// "Tunda": adzan layar penuh [payload] muncul lagi [minutes] menit lagi.
+  Future<void> snooze(
+    String payload, {
+    required String title,
+    required String body,
+    int minutes = 5,
+  }) async {
+    if (!supported || !_ready) return;
+    final at = tz.TZDateTime.now(tz.UTC).add(Duration(minutes: minutes));
+    await _plugin.zonedSchedule(
+      id: 990,
+      title: title,
+      body: body,
+      scheduledDate: at,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _adzanChannel.id,
+          _adzanChannel.name,
+          channelDescription: _adzanChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.alarm,
+          fullScreenIntent: true,
+          styleInformation: BigTextStyleInformation(body),
+          color: const Color(0xFFB45309),
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: payload.startsWith(adzanAlarmPrefix)
+          ? payload
+          : '$adzanAlarmPrefix$payload',
+    );
+  }
+
+  /// Izin notifikasi layar penuh (Android 14+ bisa dicabut pengguna).
+  Future<void> requestFullScreen() async {
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestFullScreenIntentPermission();
+  }
+
   /// Tampilkan contoh notifikasi sekarang (tombol "Coba" di Pengaturan).
   Future<void> showTest({
     required AppSettingsController settings,
@@ -332,11 +384,18 @@ class AdzanNotifications {
   }
 }
 
+/// Awalan payload adzan layar penuh: "alarm|tanggal|kunci".
+const adzanAlarmPrefix = 'alarm|';
+
+/// Catat sholat dari halaman adzan layar penuh ([payload] boleh berawalan
+/// [adzanAlarmPrefix]).
+Future<void> logSholatFromAlarm(String payload) => _logDone(payload);
+
 /// "Sudah sholat" dari notifikasi: catat sholat [payload] (`tanggal|kunci`)
 /// lewat callback widget (yang juga mengisi jam & tempat dan memperbarui
 /// widget layar utama).
 Future<void> _logDone(String? payload) async {
-  final parts = payload?.split('|');
+  final parts = payload?.replaceFirst(adzanAlarmPrefix, '').split('|');
   if (parts == null || parts.length != 2) return;
   final db = AppDatabase();
   int? id;

@@ -11,6 +11,7 @@ import '../widgets/quran/progress_ring.dart';
 import '../widgets/quran/quran_log_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/quran/quran_goto.dart';
+import 'quran/hafalan_page.dart';
 import 'quran/quran_notes_page.dart';
 
 const _amber = Color(0xFFB45309);
@@ -931,6 +932,17 @@ class _ReadCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Color(0x66FFFFFF)),
+              minimumSize: const Size.fromHeight(40),
+            ),
+            onPressed: () => _push(context, const HafalanPage()),
+            icon: const Icon(Icons.psychology_rounded, size: 18),
+            label: const Text('Mode hafalan'),
           ),
         ],
       ),

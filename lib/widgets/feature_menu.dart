@@ -7,6 +7,8 @@ import '../pages/dzikir_page.dart';
 import '../pages/hadits_page.dart';
 import '../pages/hijri_calendar_page.dart';
 import '../pages/kitab_yasin_page.dart';
+import '../pages/quran/hafalan_page.dart';
+import '../pages/qibla_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/sholat_guide_page.dart';
 import '../pages/takbiran_page.dart';
@@ -27,14 +29,33 @@ class FeatureMenu {
 
 /// Kelompok menu di lembar "Lainnya".
 final featureGroups = <(String, List<FeatureMenu>)>[
-  ('IBADAH & BACAAN', [_dzikir, _tasbih, _sholat, _hadits, _doa, _yasin]),
+  (
+    'IBADAH & BACAAN',
+    [_kiblat, _hafalan, _dzikir, _tasbih, _sholat, _hadits, _doa, _yasin],
+  ),
   ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat]),
   ('ALAT', [_kalender, _widgets, _backup, _settings]),
 ];
 
 /// Tujuh menu yang langsung tampil di Beranda (menu kedelapan "Lainnya").
-final homeFeatures = [_dzikir, _tasbih, _hadits, _doa, _sholat, _bilal, _zakat];
+final homeFeatures = [
+  _kiblat,
+  _dzikir,
+  _tasbih,
+  _hadits,
+  _doa,
+  _sholat,
+  _bilal,
+];
 
+final _kiblat = FeatureMenu('Kiblat', Icons.explore_rounded, const [
+  Color(0xFF4ADE80),
+  Color(0xFF00503C),
+], () => const QiblaPage());
+final _hafalan = FeatureMenu('Hafalan', Icons.psychology_rounded, const [
+  Color(0xFFA3E635),
+  Color(0xFF047857),
+], () => const HafalanPage());
 final _dzikir = FeatureMenu('Dzikir', Icons.auto_stories_rounded, const [
   Color(0xFF34D399),
   Color(0xFF059669),

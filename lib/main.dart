@@ -13,6 +13,7 @@ import 'services/hijri_config_scope.dart';
 import 'services/tracker_widget_sync.dart';
 import 'services/user_location_controller.dart';
 import 'services/user_location_scope.dart';
+import 'pages/adzan_alarm_page.dart';
 import 'pages/backup_page.dart';
 import 'pages/hijri_calendar_page.dart';
 import 'pages/home_shell.dart';
@@ -98,9 +99,18 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   /// berubah (dan saat aplikasi dibuka). Ketuk notifikasi = tab Ibadah.
   Future<void> _startAdzan() async {
     await AdzanNotifications.instance.init(
-      onOpen: () => WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _shell.currentState?.goTo(HomeTab.ibadah),
-      ),
+      onOpen: (payload) => WidgetsBinding.instance.addPostFrameCallback((_) {
+        // adzan layar penuh -> halaman adzan; notifikasi biasa -> tab Ibadah
+        if (payload != null && payload.startsWith(adzanAlarmPrefix)) {
+          _navigator.currentState?.push(
+            MaterialPageRoute<void>(
+              builder: (_) => AdzanAlarmPage(payload: payload),
+            ),
+          );
+        } else {
+          _shell.currentState?.goTo(HomeTab.ibadah);
+        }
+      }),
     );
     _settings.addListener(_scheduleAdzan);
     _location.addListener(_scheduleAdzan);
