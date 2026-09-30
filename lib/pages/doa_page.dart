@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../services/app_settings.dart';
 import '../widgets/arabic_font.dart';
+import '../widgets/hadith_ref_text.dart';
 import '../widgets/sub_header.dart';
 
 const _amber = Color(0xFFB45309);
@@ -348,9 +349,14 @@ class _DoaCard extends StatelessWidget {
                 ],
                 if (r.source != null) ...[
                   const SizedBox(height: 6),
-                  Text(
+                  // "HR. Abu Daud no. 2010" -> buka hadits di aplikasi
+                  HadithRefText(
                     r.source!,
-                    style: const TextStyle(fontSize: 11, color: _muted),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      height: 1.45,
+                      color: _muted,
+                    ),
                   ),
                 ],
                 if (r.note != null) ...[

@@ -209,6 +209,27 @@ void main() {
       await db.deleteBook('malik');
       expect(await db.storedCount('malik'), 0);
     });
+
+    test('cari di semua kitab yang sudah diunduh & ambil per nomor', () async {
+      Hadith h(String book, int n, String t) =>
+          Hadith(book: book, number: n, arab: '', translation: t);
+      await db.insertPage('muslim', [h('muslim', 5, 'sabar itu cahaya')]);
+      await db.insertPage('bukhari', [
+        h('bukhari', 9, 'orang yang sabar'),
+        h('bukhari', 10, 'tentang wudhu'),
+      ]);
+
+      expect(await db.countMatching(null, 'sabar'), 2);
+      // urut menurut urutan kitab (Bukhari sebelum Muslim), lalu nomor
+      final rows = await db.page(null, 'sabar', offset: 0, limit: 10);
+      expect(rows.map((r) => (r.book, r.number)), [
+        ('bukhari', 9),
+        ('muslim', 5),
+      ]);
+      expect((await db.byNumber('bukhari', 10))?.translation, 'tentang wudhu');
+      expect(await db.byNumber('ahmad', 1), isNull);
+      expect(haditsBookName('abu-daud'), 'Sunan Abu Daud');
+    });
   });
 
   test("do'a: 19 do'a dari web, bacaan lengkap", () {

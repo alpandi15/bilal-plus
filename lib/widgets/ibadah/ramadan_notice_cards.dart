@@ -10,6 +10,7 @@ import '../../services/ramadan_notices.dart';
 import '../../services/ramadan_recap.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
+import '../entrance_fade.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -116,7 +117,14 @@ class _RamadanNoticeCardsState extends State<RamadanNoticeCards> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final c in cards) ...[c, const SizedBox(height: 12)],
+        for (final c in cards)
+          EntranceFade(
+            key: ValueKey(c.runtimeType),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: c,
+            ),
+          ),
       ],
     );
   }

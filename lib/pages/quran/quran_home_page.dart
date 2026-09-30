@@ -7,6 +7,7 @@ import '../../services/quran_text.dart';
 import '../../widgets/arabic_font.dart';
 import '../../widgets/quran/quran_note_sheet.dart';
 import '../../widgets/sub_header.dart';
+import '../../widgets/highlight_text.dart';
 import 'quran_notes_page.dart';
 import 'mushaf_page.dart';
 import 'quran_reader_page.dart';
@@ -420,6 +421,7 @@ class _SearchResults extends StatelessWidget {
     final hits = query.length < 3 && !query.contains(RegExp(r'\d'))
         ? const <QuranSearchHit>[]
         : text.search(query, limit: 100);
+    final words = QuranText.searchWords(query);
     if (surahs.isEmpty && hits.isEmpty) {
       return const Center(
         child: Padding(
@@ -485,8 +487,14 @@ class _SearchResults extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          h.ayah.translation,
+                        // potongan di sekitar kata yang dicari, disorot
+                        Text.rich(
+                          TextSpan(
+                            children: highlightSpans(
+                              excerptAround(h.ayah.translation, words),
+                              words,
+                            ),
+                          ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

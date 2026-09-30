@@ -29,6 +29,19 @@ class Hadiths extends Table {
   Set<Column> get primaryKey => {book, number};
 }
 
+/// Kata-kata pencarian hadits (untuk kueri & sorotan); kosong bila [query]
+/// berupa nomor hadits.
+List<String> haditsSearchWords(String query) {
+  final q = query.trim();
+  if (q.isEmpty || int.tryParse(q) != null) return const [];
+  return q.split(RegExp(r'\s+'));
+}
+
+/// Nama kitab per kunci ('bukhari' -> 'Shahih Bukhari').
+String haditsBookName(String key) => haditsCatalog
+    .firstWhere((c) => c.$1 == key, orElse: () => (key, key, 0))
+    .$2;
+
 /// Sembilan kitab di web Bilal Tarawih (sumber teks & terjemahan).
 const haditsCatalog = <(String, String, int)>[
   ('bukhari', 'Shahih Bukhari', 6638),
@@ -101,21 +114,24 @@ class HaditsDatabase extends _$HaditsDatabase {
     return row.read(count) ?? 0;
   }
 
-  Expression<bool> _match(Hadiths h, String book, String query) {
-    Expression<bool> e = h.book.equals(book);
+  /// [book] null = semua kitab yang sudah diunduh.
+  Expression<bool> _match(Hadiths h, String? book, String query) {
+    Expression<bool> e = book == null
+        ? const Constant(true)
+        : h.book.equals(book);
     final q = query.trim();
     if (q.isEmpty) return e;
     final n = int.tryParse(q);
     if (n != null) return e & h.number.equals(n);
-    for (final w in q.split(RegExp(r'\s+'))) {
+    for (final w in haditsSearchWords(q)) {
       e = e & h.translation.like('%$w%');
     }
     return e;
   }
 
-  /// Jumlah hadits di [book] yang cocok dengan [query] (kata di terjemahan,
-  /// atau nomor hadits).
-  Future<int> countMatching(String book, String query) async {
+  /// Jumlah hadits di [book] (null = semua kitab) yang cocok dengan [query]
+  /// (kata di terjemahan, atau nomor hadits).
+  Future<int> countMatching(String? book, String query) async {
     final count = hadiths.number.count();
     final row =
         await (selectOnly(hadiths)
@@ -125,17 +141,36 @@ class HaditsDatabase extends _$HaditsDatabase {
     return row.read(count) ?? 0;
   }
 
+  /// Satu halaman hasil; lintas kitab diurutkan menurut urutan kitab lalu
+  /// nomor hadits.
   Future<List<Hadith>> page(
-    String book,
+    String? book,
     String query, {
     required int offset,
     required int limit,
   }) =>
       (select(hadiths)
             ..where((h) => _match(h, book, query))
-            ..orderBy([(h) => OrderingTerm.asc(h.number)])
+            ..orderBy([
+              (h) => OrderingTerm.asc(
+                CustomExpression<int>(
+                  '(SELECT sort FROM hadits_books WHERE hadits_books."key" = hadiths.book)',
+                ),
+              ),
+              (h) => OrderingTerm.asc(h.number),
+            ])
             ..limit(limit, offset: offset))
           .get();
+
+  /// Satu hadits (null bila kitabnya belum diunduh).
+  Future<Hadith?> byNumber(String book, int number) =>
+      (select(hadiths)
+            ..where((h) => h.book.equals(book) & h.number.equals(number)))
+          .getSingleOrNull();
+
+  /// Kitab [key] (null bila tidak dikenal).
+  Future<HaditsBook?> book(String key) =>
+      (select(haditsBooks)..where((b) => b.key.equals(key))).getSingleOrNull();
 
   Future<void> insertPage(String book, List<Hadith> rows) => batch(
     (b) => b.insertAll(hadiths, rows, mode: InsertMode.insertOrReplace),

@@ -9,6 +9,7 @@ import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
 import '../widgets/arabic_font.dart';
 import '../widgets/sub_header.dart';
+import '../widgets/hadith_ref_text.dart';
 import 'tasbih_page.dart';
 
 const _amber = Color(0xFFB45309);
@@ -419,7 +420,7 @@ class _DzikirCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: HadithRefText(
                   dzikir.source,
                   style: const TextStyle(fontSize: 11, color: _muted),
                 ),

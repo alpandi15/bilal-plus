@@ -15,6 +15,7 @@ import '../../services/sholat_motivation.dart';
 import '../../services/sholat_time.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
+import '../entrance_fade.dart';
 
 /// Pesan penyemangat sholat di awal waktu.
 class SholatNudge {
@@ -345,10 +346,15 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final n in nudges) ...[
-              _NudgeCard(nudge: n, onLog: onLog),
-              const SizedBox(height: 12),
-            ],
+            for (final (i, n) in nudges.indexed)
+              EntranceFade(
+                // kunci stabil (judul berubah tiap menit: "… menit lalu")
+                key: ValueKey('$i|${n.tone.name}|${n.item?.id}|${n.icon}'),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _NudgeCard(nudge: n, onLog: onLog),
+                ),
+              ),
           ],
         );
       },

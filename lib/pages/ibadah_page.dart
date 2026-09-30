@@ -73,6 +73,13 @@ class IbadahPage extends StatefulWidget {
 class _IbadahPageState extends State<IbadahPage> {
   String? _date; // tanggal yang dibuka; null = hari ini
   Stream<IbadahDayData>? _stream;
+
+  /// Data hari terakhir yang tampil - tetap ditampilkan selama data tanggal
+  /// baru dimuat (tidak berkedip ke indikator muat), lalu disilangkan.
+  IbadahDayData? _shown;
+
+  /// Arah geser saat berganti tanggal: 1 = ke tanggal sesudahnya.
+  int _dir = 1;
   String? _streamKey;
   bool _lockChecked = false;
 
@@ -96,7 +103,12 @@ class _IbadahPageState extends State<IbadahPage> {
     return _stream!;
   }
 
-  void _go(String date) => setState(() => _date = date);
+  void _go(String date) => setState(() {
+    final current = _date ?? _today();
+    if (date == current) return;
+    _dir = date.compareTo(current) > 0 ? 1 : -1;
+    _date = date;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -160,19 +172,75 @@ class _IbadahPageState extends State<IbadahPage> {
             child: StreamBuilder<IbadahDayData>(
               stream: _dayStream(dao, date, today),
               builder: (context, snap) {
-                final data = snap.data;
-                if (data == null || data.date != date) {
+                final fresh = snap.data;
+                if (fresh != null && fresh.date == date) _shown = fresh;
+                final data = _shown;
+                if (data == null) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                return _DayView(
-                  data: data,
-                  day: day,
-                  today: today,
-                  schedule: schedule,
-                  latitude: location.lat,
-                  longitude: location.long,
-                  onGo: _go,
-                  dao: dao,
+                return Column(
+                  children: [
+                    // filter tanggal selalu di atas (tidak ikut tergulir),
+                    // langsung menandai tanggal baru walau datanya masih dimuat
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: _WeekStrip(
+                            date: date,
+                            today: today,
+                            summaries: data.summaries,
+                            onTap: _go,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 360),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        layoutBuilder: (current, previous) => Stack(
+                          alignment: Alignment.topCenter,
+                          children: [...previous, ?current],
+                        ),
+                        transitionBuilder: (child, animation) {
+                          // yang masuk dari arah tujuan, yang keluar ke sisi
+                          // sebaliknya
+                          final incoming = child.key == ValueKey(data.date);
+                          final dx = (incoming ? 1 : -1) * _dir * 0.08;
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween(
+                                begin: Offset(dx, 0),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _DayView(
+                          key: ValueKey(data.date),
+                          data: data,
+                          day: ibadahDay(data.date, anchors),
+                          today: today,
+                          schedule: data.date == date
+                              ? schedule
+                              : calc.calculatePrayerTimes(
+                                  latitude: location.lat,
+                                  longitude: location.long,
+                                  date: parseDateKey(data.date),
+                                ),
+                          latitude: location.lat,
+                          longitude: location.long,
+                          onGo: _go,
+                          dao: dao,
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -185,6 +253,7 @@ class _IbadahPageState extends State<IbadahPage> {
 
 class _DayView extends StatelessWidget {
   const _DayView({
+    super.key,
     required this.data,
     required this.day,
     required this.today,
@@ -302,7 +371,7 @@ class _DayView extends StatelessWidget {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         16,
-        14,
+        8,
         16,
         32 + MediaQuery.paddingOf(context).bottom,
       ),
@@ -312,21 +381,27 @@ class _DayView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RamadanNoticeCards(today: today),
-              if (data.date == today)
-                SholatNudgeCards(
-                  // sholat: lembar catat jam/tempat; puasa: langsung tercentang
-                  onLog: (item) => item.groupKey == sholatWajibGroup
-                      ? _tapSholat(context, item)
-                      : dao.setValue(data.date, item.id, 1),
+              // pesan pengingat di bawah filter tanggal - muncul dengan
+              // tinggi yang tumbuh halus, bukan melompat
+              AnimatedSize(
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    RamadanNoticeCards(today: today),
+                    if (data.date == today)
+                      SholatNudgeCards(
+                        // sholat: lembar catat jam/tempat; puasa: langsung
+                        // tercentang
+                        onLog: (item) => item.groupKey == sholatWajibGroup
+                            ? _tapSholat(context, item)
+                            : dao.setValue(data.date, item.id, 1),
+                      ),
+                  ],
                 ),
-              _WeekStrip(
-                date: data.date,
-                today: today,
-                summaries: data.summaries,
-                onTap: onGo,
               ),
-              const SizedBox(height: 14),
               _SummaryCard(
                 date: data.date,
                 today: today,
@@ -436,6 +511,8 @@ class _SectionTitle extends StatelessWidget {
 /// Tujuh hari (Senin-Minggu) pekan tanggal yang dibuka; tiap hari
 /// menunjukkan berapa dari lima waktu yang tercentang. Hari mendatang
 /// tidak bisa dibuka.
+/// Filter tanggal sepekan. Sorotan hari terpilih berupa pil yang bergeser
+/// halus ke hari baru; berganti pekan, deretan harinya bersilang pudar.
 class _WeekStrip extends StatelessWidget {
   const _WeekStrip({
     required this.date,
@@ -449,6 +526,8 @@ class _WeekStrip extends StatelessWidget {
   final Map<String, IbadahDaySummary> summaries;
   final ValueChanged<String> onTap;
 
+  static const _motion = Duration(milliseconds: 320);
+
   @override
   Widget build(BuildContext context) {
     final d = parseDateKey(date);
@@ -457,6 +536,9 @@ class _WeekStrip extends StatelessWidget {
     final nextWeek = dateKey(d.add(const Duration(days: 7)));
     final canNext =
         dateKey(monday.add(const Duration(days: 7))).compareTo(today) <= 0;
+    final days = [
+      for (var i = 0; i < 7; i++) dateKey(monday.add(Duration(days: i))),
+    ];
 
     return Row(
       children: [
@@ -464,19 +546,62 @@ class _WeekStrip extends StatelessWidget {
           icon: Icons.chevron_left_rounded,
           onTap: () => onTap(prevWeek),
         ),
-        for (var i = 0; i < 7; i++)
-          Expanded(
-            child: _DayCell(
-              dateKey: dateKey(monday.add(Duration(days: i))),
-              weekday: i,
-              selected: dateKey(monday.add(Duration(days: i))) == date,
-              isToday: dateKey(monday.add(Duration(days: i))) == today,
-              future:
-                  dateKey(monday.add(Duration(days: i))).compareTo(today) > 0,
-              summary: summaries[dateKey(monday.add(Duration(days: i)))],
-              onTap: onTap,
-            ),
+        Expanded(
+          child: Stack(
+            children: [
+              // pil hari terpilih - bergeser, bukan berganti seketika
+              Positioned.fill(
+                child: AnimatedAlign(
+                  duration: _motion,
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment(-1 + 2 * (d.weekday - 1) / 6, 0),
+                  child: FractionallySizedBox(
+                    widthFactor: 1 / 7,
+                    heightFactor: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: _amber,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x33B45309),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedSwitcher(
+                duration: _motion,
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: Row(
+                  key: ValueKey(days.first),
+                  children: [
+                    for (final (i, key) in days.indexed)
+                      Expanded(
+                        child: _DayCell(
+                          dateKey: key,
+                          weekday: i,
+                          selected: key == date,
+                          isToday: key == today,
+                          future: key.compareTo(today) > 0,
+                          summary: summaries[key],
+                          onTap: onTap,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
+        ),
         _NavArrow(
           icon: Icons.chevron_right_rounded,
           onTap: canNext
@@ -505,6 +630,9 @@ class _NavArrow extends StatelessWidget {
   );
 }
 
+/// Durasi perpindahan warna teks hari - seirama dengan pil yang bergeser.
+const _cellMotion = Duration(milliseconds: 320);
+
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.dateKey,
@@ -531,7 +659,8 @@ class _DayCell extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Material(
-        color: selected ? _amber : Colors.transparent,
+        // latar terpilih = pil bergeser di _WeekStrip
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -540,8 +669,8 @@ class _DayCell extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
-                Text(
-                  _hariPendek[weekday],
+                AnimatedDefaultTextStyle(
+                  duration: _cellMotion,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -551,6 +680,7 @@ class _DayCell extends StatelessWidget {
                         ? _line
                         : _muted,
                   ),
+                  child: Text(_hariPendek[weekday]),
                 ),
                 const SizedBox(height: 4),
                 SizedBox.square(
@@ -560,8 +690,8 @@ class _DayCell extends StatelessWidget {
                     children: [
                       if (!future)
                         ProgressRing(value: fraction, size: 30, stroke: 3),
-                      Text(
-                        '$dayNum',
+                      AnimatedDefaultTextStyle(
+                        duration: _cellMotion,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: isToday || selected
@@ -573,16 +703,20 @@ class _DayCell extends StatelessWidget {
                               ? _line
                               : _stone,
                         ),
+                        child: Text('$dayNum'),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  s?.excused == true ? 'uzur' : (isToday ? 'hari ini' : ''),
+                AnimatedDefaultTextStyle(
+                  duration: _cellMotion,
                   style: TextStyle(
                     fontSize: 8,
                     color: selected ? const Color(0xE6FFFFFF) : _muted,
+                  ),
+                  child: Text(
+                    s?.excused == true ? 'uzur' : (isToday ? 'hari ini' : ''),
                   ),
                 ),
               ],

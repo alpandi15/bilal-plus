@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'beranda_page.dart';
 import 'ibadah_page.dart';
@@ -26,6 +27,29 @@ class HomeShellState extends State<HomeShell> {
   /// semuanya sekaligus saat aplikasi dibuka), lalu tetap hidup.
   final _visited = {HomeTab.beranda};
 
+  /// Waktu tombol kembali terakhir ditekan - tekan dua kali dalam
+  /// [_exitWindow] untuk menutup aplikasi.
+  DateTime? _lastBack;
+  static const _exitWindow = Duration(seconds: 2);
+
+  void _onBack() {
+    final now = DateTime.now();
+    if (_lastBack != null && now.difference(_lastBack!) < _exitWindow) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBack = now;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Tekan kembali sekali lagi untuk keluar'),
+          duration: _exitWindow,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   void _select(HomeTab tab) => setState(() {
     _tab = tab;
     _visited.add(tab);
@@ -49,62 +73,73 @@ class HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return HomeShellScope(
       goTo: goTo,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFFFAF3),
-        body: IndexedStack(
-          index: _tab.index,
-          children: [
-            for (final t in HomeTab.values)
-              _visited.contains(t) ? _page(t) : const SizedBox.shrink(),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _tab.index,
-          onDestinationSelected: (i) => _select(HomeTab.values[i]),
-          backgroundColor: const Color(0xFFFFFBF3),
-          indicatorColor: const Color(0xFFFDE68A),
-          surfaceTintColor: Colors.transparent,
-          height: 68,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded, color: Color(0xFF92400E)),
-              label: 'Beranda',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.check_circle_outline_rounded),
-              selectedIcon: Icon(
-                Icons.check_circle_rounded,
-                color: Color(0xFF92400E),
+      // halaman lain di atas tab ini tetap kembali seperti biasa; di tab
+      // utama tekan kembali dua kali untuk keluar
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBack();
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFFFFAF3),
+          body: IndexedStack(
+            index: _tab.index,
+            children: [
+              for (final t in HomeTab.values)
+                _visited.contains(t) ? _page(t) : const SizedBox.shrink(),
+            ],
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _tab.index,
+            onDestinationSelected: (i) => _select(HomeTab.values[i]),
+            backgroundColor: const Color(0xFFFFFBF3),
+            indicatorColor: const Color(0xFFFDE68A),
+            surfaceTintColor: Colors.transparent,
+            height: 68,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(
+                  Icons.home_rounded,
+                  color: Color(0xFF92400E),
+                ),
+                label: 'Beranda',
               ),
-              label: 'Ibadah',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              selectedIcon: Icon(
-                Icons.menu_book_rounded,
-                color: Color(0xFF92400E),
+              NavigationDestination(
+                icon: Icon(Icons.check_circle_outline_rounded),
+                selectedIcon: Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF92400E),
+                ),
+                label: 'Ibadah',
               ),
-              label: "Qur'an",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(
-                Icons.insights_rounded,
-                color: Color(0xFF92400E),
+              NavigationDestination(
+                icon: Icon(Icons.menu_book_outlined),
+                selectedIcon: Icon(
+                  Icons.menu_book_rounded,
+                  color: Color(0xFF92400E),
+                ),
+                label: "Qur'an",
               ),
-              label: 'Laporan',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.nightlight_outlined),
-              selectedIcon: Icon(
-                Icons.nightlight_round,
-                color: Color(0xFF92400E),
+              NavigationDestination(
+                icon: Icon(Icons.insights_outlined),
+                selectedIcon: Icon(
+                  Icons.insights_rounded,
+                  color: Color(0xFF92400E),
+                ),
+                label: 'Laporan',
               ),
-              label: 'Ramadan',
-            ),
-          ],
+              NavigationDestination(
+                icon: Icon(Icons.nightlight_outlined),
+                selectedIcon: Icon(
+                  Icons.nightlight_round,
+                  color: Color(0xFF92400E),
+                ),
+                label: 'Ramadan',
+              ),
+            ],
+          ),
         ),
       ),
     );
