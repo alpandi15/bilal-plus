@@ -225,4 +225,5 @@ test/            uji unit & widget
 
 ## Catatan rilis
 
-Riwayat perubahan tiap versi ada di [CHANGELOG.md](CHANGELOG.md).
+Riwayat perubahan tiap versi ada di [CHANGELOG.md](CHANGELOG.md). Setiap versi ditandai
+dengan tag git `vX.Y.Z`; langkah merilis ada di [docs/RELEASING.md](docs/RELEASING.md).
