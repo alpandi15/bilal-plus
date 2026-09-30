@@ -15,6 +15,7 @@ import '../../services/sholat_motivation.dart';
 import '../../services/sholat_time.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
+import '../../pages/quran/quran_reader_page.dart';
 import '../entrance_fade.dart';
 
 /// Pesan penyemangat sholat di awal waktu.
@@ -25,6 +26,7 @@ class SholatNudge {
     required this.tone,
     this.item,
     this.icon,
+    this.openSurah,
   });
 
   final String title;
@@ -38,6 +40,40 @@ class SholatNudge {
 
   /// Ikon kartu (null = sesuai jenisnya).
   final IconData? icon;
+
+  /// Tombol "Baca" yang membuka surah ini (mis. 18 = Al-Kahfi).
+  final int? openSurah;
+}
+
+/// Amalan Jumat: Kamis sesudah Maghrib (malam Jumat) sampai Jumat Maghrib,
+/// selama Al-Kahfi hari itu belum tercentang. Null di luar itu.
+SholatNudge? fridayNudge({
+  required String today,
+  required DateTime now,
+  required DateTime maghribToday,
+  required bool kahfiDone,
+}) {
+  final weekday = parseDateKey(today).weekday;
+  final seed = dailySeed(today, 5);
+  if (weekday == DateTime.friday && now.isBefore(maghribToday) && !kahfiDone) {
+    return SholatNudge(
+      title: 'Hari Jumat, sayyidul ayyam 🌙',
+      message: pickMessage(fridayDay(), seed),
+      tone: SholatStatus.onTime,
+      icon: Icons.auto_stories_rounded,
+      openSurah: 18,
+    );
+  }
+  if (weekday == DateTime.thursday && !now.isBefore(maghribToday)) {
+    return SholatNudge(
+      title: 'Malam Jumat 🌙',
+      message: pickMessage(fridayEve(), seed),
+      tone: SholatStatus.onTime,
+      icon: Icons.auto_stories_rounded,
+      openSurah: 18,
+    );
+  }
+  return null;
 }
 
 /// Pengingat puasa Tarwiyah (8 Dzulhijjah) & Arafah (9 Dzulhijjah): pada
@@ -342,6 +378,23 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
             fast,
           );
         }
+        // amalan Jumat: sesudah pengingat sholat & puasa
+        final kahfiItem = data.items
+            .where((i) => i.key == kahfiKey)
+            .firstOrNull;
+        final friday = fridayNudge(
+          today: today,
+          now: DateTime.now(),
+          maghribToday: calc
+              .calculatePrayerTimes(
+                latitude: location.lat,
+                longitude: location.long,
+              )
+              .times[PrayerKey.maghrib]!,
+          kahfiDone:
+              kahfiItem != null && (todayLogs[kahfiItem.id]?.value ?? 0) > 0,
+        );
+        if (friday != null) nudges.add(friday);
         if (nudges.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -425,6 +478,16 @@ class _NudgeCard extends StatelessWidget {
               style: TextButton.styleFrom(foregroundColor: accent),
               onPressed: () => onLog!(item),
               child: const Text('Catat'),
+            )
+          else if (nudge.openSurah case final surah?)
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: accent),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QuranReaderPage(surah: surah),
+                ),
+              ),
+              child: const Text('Baca'),
             ),
         ],
       ),

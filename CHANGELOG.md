@@ -4,6 +4,30 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.12.0 (build 19) · 30 September 2026
+
+**Asmaul Husna**
+- Menu baru **Asmaul Husna**: 99 nama Allah dengan kaligrafi, nama latin &
+  artinya dalam kartu bermotif bintang. Bisa dicari, ada mode hafalan (arti
+  disembunyikan), dan tampilan penuh yang bisa digeser dari nama ke nama.
+
+**Dzikir setelah sholat**
+- Menu baru **Usai Sholat** (juga tab ketiga di Dzikir): bacaan setelah
+  salam dari istighfar sampai Ayat Kursi. Sholat terakhir dipilih otomatis;
+  tahlil 10x khusus Subuh & Maghrib.
+
+**Amalan Jumat**
+- Checklist hari Jumat: baca Al-Kahfi (langsung buka surahnya), sholawat &
+  mandi Jumat.
+- Kartu pengingat malam Jumat & hari Jumat, plus notifikasi Jumat pukul
+  07.00 (bisa dimatikan di Pengaturan).
+
+**Perbaikan**
+- Arah kiblat kini benar ke mana pun HP menghadap saat halaman dibuka
+  (sebelumnya di sebagian HP hanya benar bila HP menghadap utara dulu).
+- Pesan di widget untuk sholat yang terlewat, qadha & terlambat kini lebih
+  tegas namun tetap santun: mengajak segera qadha & tidak menunda.
+
 ## 1.11.0 (build 18) · 30 September 2026
 
 **Arah kiblat**

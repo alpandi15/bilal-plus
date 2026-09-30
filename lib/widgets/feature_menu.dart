@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pages/asmaul_husna_page.dart';
 import '../pages/backup_page.dart';
 import '../pages/bilal_tarawih_page.dart';
 import '../pages/doa_page.dart';
@@ -15,6 +16,7 @@ import '../pages/takbiran_page.dart';
 import '../pages/tasbih_page.dart';
 import '../pages/widgets_page.dart';
 import '../pages/zakat_fitrah_page.dart';
+import '../services/dzikir.dart';
 
 /// Satu menu fitur (grid Beranda & lembar "Lainnya").
 class FeatureMenu {
@@ -31,7 +33,18 @@ class FeatureMenu {
 final featureGroups = <(String, List<FeatureMenu>)>[
   (
     'IBADAH & BACAAN',
-    [_kiblat, _hafalan, _dzikir, _tasbih, _sholat, _hadits, _doa, _yasin],
+    [
+      _kiblat,
+      _hafalan,
+      _dzikir,
+      _usaiSholat,
+      _asmaulHusna,
+      _tasbih,
+      _sholat,
+      _hadits,
+      _doa,
+      _yasin,
+    ],
   ),
   ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat]),
   ('ALAT', [_kalender, _widgets, _backup, _settings]),
@@ -56,6 +69,18 @@ final _hafalan = FeatureMenu('Hafalan', Icons.psychology_rounded, const [
   Color(0xFFA3E635),
   Color(0xFF047857),
 ], () => const HafalanPage());
+final _usaiSholat = FeatureMenu(
+  'Usai Sholat',
+  Icons.mosque_rounded,
+  const [Color(0xFF6EE7B7), Color(0xFF0F766E)],
+  () => const DzikirPage(session: DzikirSession.sholat),
+);
+final _asmaulHusna = FeatureMenu(
+  'Asmaul Husna',
+  Icons.auto_awesome_rounded,
+  const [Color(0xFFF2D38A), Color(0xFFB45309)],
+  () => const AsmaulHusnaPage(),
+);
 final _dzikir = FeatureMenu('Dzikir', Icons.auto_stories_rounded, const [
   Color(0xFF34D399),
   Color(0xFF059669),

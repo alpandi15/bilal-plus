@@ -459,15 +459,31 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     )
                 } else {
                     pick(
-                        if (narrow) listOf("$n belum dicatat", "Yuk, $n dulu")
+                        if (narrow) listOf("$n belum sholat", "Jangan tunda $n")
                         else listOf(
-                            "Awal waktu $n sudah lewat, tapi waktunya masih ada. Yuk sekarang.",
-                            "Belum terlambat untuk $n - jangan sampai qadha.",
-                            "Jangan tunda lagi, sholat $n dulu yuk.",
+                            "Awal waktu $n sudah lewat. Jangan tunda lagi, sholat sekarang.",
+                            "Waktu $n masih ada - tunaikan sekarang sebelum terlewat.",
+                            "Urusan lain bisa menunggu, $n tidak. Sholat sekarang ya.",
                         ),
                         s,
                     )
                 }
+            }
+
+            // terlewat hari ini (waktunya habis, belum dicentang): tegas, tapi
+            // tetap membuka pintu - segera qadha & istighfar
+            val missed = sholat.filter { it.end in 1..now && !it.done && !it.excused }
+            if (missed.isNotEmpty()) {
+                val n = if (missed.size == 1) missed.single().name else "${missed.size} sholat"
+                return pick(
+                    if (narrow) listOf("$n terlewat!", "Segera qadha $n")
+                    else listOf(
+                        "$n terlewat. Sholat itu kewajiban - segera qadha, jangan ditunda.",
+                        "$n belum tertunai. Qadha sekarang lalu istighfar, Allah Maha Pengampun.",
+                        "Lupa mencatat $n? Centang. Terlewat? Qadha sekarang juga.",
+                    ),
+                    seed + missed.first().id,
+                )
             }
 
             val last = sholat.lastOrNull { it.done } ?: return null
@@ -476,28 +492,28 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             val s = seed + last.id
             return when (last.status) {
                 "late" -> pick(
-                    if (narrow) listOf("$n telat, semangat!", "Yuk lebih awal")
+                    if (narrow) listOf("Next di awal waktu", "Jangan telat lagi")
                     else if (next != null) listOf(
-                        "$n tadi terlambat. Yuk $next nanti di awal waktu.",
-                        "Terlambat bukan akhir - $next jadi kesempatan baru.",
-                        "Pasang niat & alarm sebelum adzan $next ya.",
+                        "$n tadi terlambat. $next harus di awal waktu ya.",
+                        "Jangan biasakan terlambat - siap-siap sebelum adzan $next.",
+                        "Pasang niat & alarm sebelum adzan $next, jangan telat lagi.",
                     )
                     else listOf(
-                        "$n tadi terlambat. Besok insyaa Allah lebih awal.",
-                        "Terlambat bukan akhir - esok kesempatan baru.",
+                        "$n tadi terlambat. Besok niatkan semua di awal waktu.",
+                        "Jangan biasakan terlambat - esok semua di awal waktu ya.",
                     ),
                     s,
                 )
                 "qadha" -> pick(
-                    if (narrow) listOf("$n diqadha, semangat!", "Istighfar & bangkit")
+                    if (narrow) listOf("Istighfar ya", "Jangan terulang ya")
                     else if (next != null) listOf(
-                        "$n sudah diqadha. Jaga $next di awal waktu ya.",
-                        "Perbanyak istighfar, lalu sambut $next begitu adzan.",
-                        "Pasang alarm sebelum $next, jangan sampai terlewat.",
+                        "$n sudah diqadha. Istighfar, dan jaga $next di awal waktu.",
+                        "Qadha bukan kebiasaan - sambut $next begitu adzan.",
+                        "Pasang alarm sebelum $next, jangan sampai terlewat lagi.",
                     )
                     else listOf(
-                        "$n sudah diqadha. Besok insyaa Allah tepat waktu.",
-                        "Perbanyak istighfar & pasang alarm untuk Subuh esok.",
+                        "$n sudah diqadha. Istighfar, besok jangan terulang.",
+                        "Qadha bukan kebiasaan - pasang alarm untuk Subuh esok.",
                     ),
                     s,
                 )

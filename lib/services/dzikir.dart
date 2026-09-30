@@ -3,16 +3,34 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/dzikir_data.dart';
+import '../data/dzikir_sholat_data.dart';
 import '../models/prayer_models.dart';
 import 'prayer_calculator.dart' as calc;
 
 /// Kapan sebuah dzikir dibaca.
-enum DzikirTime { both, pagi, petang }
+enum DzikirTime {
+  both,
+  pagi,
+  petang,
+
+  /// setelah setiap sholat wajib
+  sholat,
+
+  /// setelah sholat Subuh & Maghrib saja
+  sholatSubuhMaghrib,
+
+  /// setelah sholat Subuh saja
+  sholatSubuh,
+}
 
 /// Sesi baca.
 enum DzikirSession {
   pagi('Dzikir Pagi', 'dzikir_pagi'),
-  petang('Dzikir Petang', 'dzikir_petang');
+  petang('Dzikir Petang', 'dzikir_petang'),
+
+  /// Dzikir & doa setelah sholat wajib - tidak ada item checklist (dibaca
+  /// lima kali sehari); progresnya per waktu sholat.
+  sholat('Dzikir Setelah Sholat', '');
 
   const DzikirSession(this.title, this.itemKey);
   final String title;
@@ -45,11 +63,17 @@ class Dzikir {
   final String arabic, latin, arti, source;
   final String? arabicPetang, latinPetang, artiPetang, note;
 
-  bool readIn(DzikirSession s) =>
-      time == DzikirTime.both ||
-      (s == DzikirSession.pagi
-          ? time == DzikirTime.pagi
-          : time == DzikirTime.petang);
+  /// Dibaca pada sesi [s]; untuk sesi setelah sholat, [prayer] = kunci
+  /// sholatnya ('subuh'..'isya').
+  bool readIn(DzikirSession s, {String? prayer}) => switch (time) {
+    DzikirTime.sholat => s == DzikirSession.sholat,
+    DzikirTime.sholatSubuhMaghrib =>
+      s == DzikirSession.sholat && (prayer == 'subuh' || prayer == 'maghrib'),
+    DzikirTime.sholatSubuh => s == DzikirSession.sholat && prayer == 'subuh',
+    DzikirTime.both => s != DzikirSession.sholat,
+    DzikirTime.pagi => s == DzikirSession.pagi,
+    DzikirTime.petang => s == DzikirSession.petang,
+  };
 
   String arabicFor(DzikirSession s) =>
       s == DzikirSession.petang ? arabicPetang ?? arabic : arabic;
@@ -59,10 +83,35 @@ class Dzikir {
       s == DzikirSession.petang ? artiPetang ?? arti : arti;
 }
 
-List<Dzikir> dzikirFor(DzikirSession s) => [
-  for (final d in dzikirList)
-    if (d.readIn(s)) d,
+List<Dzikir> dzikirFor(DzikirSession s, {String? prayer}) => [
+  for (final d in s == DzikirSession.sholat ? dzikirSholatList : dzikirList)
+    if (d.readIn(s, prayer: prayer)) d,
 ];
+
+/// Sholat wajib yang terakhir masuk pada [now] ('subuh'..'isya') - untuk
+/// dzikir setelah sholat. Sebelum Subuh = Isya (malam sebelumnya).
+String lastSholat(
+  DateTime now, {
+  required double latitude,
+  required double longitude,
+}) {
+  final t = calc.calculatePrayerTimes(
+    latitude: latitude,
+    longitude: longitude,
+    date: DateTime(now.year, now.month, now.day),
+  );
+  const order = [
+    (PrayerKey.isha, 'isya'),
+    (PrayerKey.maghrib, 'maghrib'),
+    (PrayerKey.asr, 'ashar'),
+    (PrayerKey.dhuhr, 'dzuhur'),
+    (PrayerKey.fajr, 'subuh'),
+  ];
+  for (final (k, name) in order) {
+    if (!now.isBefore(t.times[k]!)) return name;
+  }
+  return 'isya';
+}
 
 /// Sesi yang disarankan saat [now]: pagi sejak Subuh sampai sebelum Ashar,
 /// petang sejak Ashar (dan malam hari).
@@ -71,7 +120,11 @@ DzikirSession suggestedSession(
   required double latitude,
   required double longitude,
 }) {
-  final t = calc.calculatePrayerTimes(latitude: latitude, longitude: longitude);
+  final t = calc.calculatePrayerTimes(
+    latitude: latitude,
+    longitude: longitude,
+    date: DateTime(now.year, now.month, now.day),
+  );
   final fajr = t.times[PrayerKey.fajr]!;
   final asr = t.times[PrayerKey.asr]!;
   return !now.isBefore(fajr) && now.isBefore(asr)

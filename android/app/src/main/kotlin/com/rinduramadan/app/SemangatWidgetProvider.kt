@@ -315,11 +315,11 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 val until = hm(current.end, sholat, tomorrowSubuh)
                 return Messages(
                     listOf(
-                        "$n masih ada waktu sampai $until. Belum telat buat mulai, yuk sekarang 💪",
-                        "Masih keburu kok! $n sampai $until, sholat dulu baru lanjut 🙏",
-                        "$n belum kecentang nih. Waktunya masih ada sampai $until, gas ya 🚀",
+                        "$n tinggal sampai $until. Jangan ditunda lagi, sholat sekarang ya 🙏",
+                        "Awal waktu $n udah lewat. Berhenti dulu, sholat sekarang sebelum habis 💪",
+                        "$n belum ditunaikan, waktunya sampai $until. Urusan lain bisa nunggu, sholat nggak 🕰️",
                     ),
-                    listOf("$n masih sampai $until, gas 💪", "Masih keburu $n kok 🙏"),
+                    listOf("Sholat $n sekarang 🙏", "Jangan tunda $n lagi 💪"),
                 )
             }
 
@@ -360,21 +360,22 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 val c = missed.size
                 return Messages(
                     listOf(
-                        "Ada $c sholat yang belum kecentang hari ini. Kalau kelewat, qadha pelan-pelan aja, gapapa 🤍",
-                        "$c sholat belum ketunai? It's okay, qadha satu-satu. Yang penting balik lagi ✨",
+                        "$c sholat terlewat. Itu utang ke Allah, qadha sekarang ya, jangan ditunda 🤲",
+                        "Ada $c sholat terlewat. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤍",
+                        "$c sholat belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
-                    listOf("$c sholat belum kecentang, gapapa 🤍", "Qadha pelan-pelan aja ya 🤍"),
+                    listOf("$c sholat terlewat, qadha sekarang 🤲", "Segera qadha $c sholat 🙏"),
                 )
             }
             if (missed.size == 1) {
                 val n = missed.single().name
                 return Messages(
                     listOf(
-                        "$n tadi kelewat? It's okay, qadha aja sekarang. Yang penting balik lagi 🤍",
-                        "Gapapa kalau $n tadi kelewat. Qadha dulu, terus kita mulai fresh lagi ✨",
-                        "$n belum kecentang nih. Kalau lupa, centang aja. Kalau kelewat, qadha yuk 🤍",
+                        "$n terlewat. Sholat itu kewajiban, qadha sekarang ya, jangan ditunda 🤲",
+                        "$n belum tertunai. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤍",
+                        "$n belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
-                    listOf("$n kelewat? Qadha aja, gapapa 🤍", "Qadha $n yuk, pelan-pelan 🤍"),
+                    listOf("$n terlewat, qadha sekarang 🤲", "Segera qadha $n 🙏"),
                 )
             }
 
@@ -386,22 +387,22 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 when (last.status) {
                     "late" -> return Messages(
                         if (upcoming != null) listOf(
-                            "$n tadi agak mepet, gapapa. $upcoming nanti kita gas di awal waktu ya ⏰",
-                            "$n done ✅ Next, $upcoming coba lebih awal yuk, pasti bisa!",
-                            "Yang penting $n udah ditunaikan 🙌 Pasang alarm buat $upcoming biar on time.",
+                            "$n udah tertunai, tapi telat. $upcoming harus di awal waktu ya ⏰",
+                            "$n tertunai ✅ tapi telat. Siap-siap sebelum adzan $upcoming, pasti bisa!",
+                            "Alhamdulillah $n tertunai. Pasang alarm buat $upcoming, jangan sampai telat lagi 🙌",
                         ) else listOf(
-                            "$n done ✅ Besok kita coba lebih awal lagi ya ✨",
-                            "Yang penting $n udah ditunaikan 🙌 Besok on time bareng ya.",
+                            "$n tertunai ✅ tapi telat. Besok niatkan semua di awal waktu ya ✨",
+                            "Alhamdulillah $n tertunai. Besok jangan sampai telat lagi ya 🙌",
                         ),
-                        listOf("$n done ✅ next lebih awal ya", "$n beres, next on time ⏰"),
+                        listOf("$n telat, next awal waktu ⏰", "Next jangan telat lagi ya ✅"),
                     )
                     "qadha" -> return Messages(
                         listOf(
-                            "Respect udah qadha $n 🫡 Next time kita on time bareng ya.",
-                            "$n udah diqadha, proud of you 🤍" +
-                                (upcoming?.let { " $it nanti gas di awal waktu." } ?: " Besok kita mulai fresh."),
+                            "$n udah diqadha 🤍 Istighfar, dan jangan sampai terlewat lagi ya.",
+                            "$n udah dibayar 🫡 Tapi qadha bukan kebiasaan" +
+                                (upcoming?.let { ", $it harus tepat waktu." } ?: ", besok tepat waktu."),
                         ),
-                        listOf("Respect udah qadha $n 🫡", "$n diqadha, proud of you 🤍"),
+                        listOf("$n diqadha, jangan terulang 🤍", "Istighfar, next tepat waktu 🫡"),
                     )
                     "onTime" -> return Messages(
                         listOf(

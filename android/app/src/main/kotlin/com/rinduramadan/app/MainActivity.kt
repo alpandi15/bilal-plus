@@ -125,25 +125,38 @@ class MainActivity : FlutterActivity() {
     }
 
     /**
-     * Arah kompas (derajat dari utara magnetik, 0..360) dari sensor rotation
-     * vector - dipakai halaman Kiblat. Akurasi sensor ikut dikirim supaya
-     * aplikasi bisa meminta kalibrasi (gerakan angka 8).
+     * Arah kompas (derajat dari utara magnetik, 0..360) dari akselerometer +
+     * magnetometer - dipakai halaman Kiblat. Sengaja TIDAK memakai
+     * TYPE_ROTATION_VECTOR: di sebagian HP (mis. Xiaomi) sensor gabungan itu
+     * mengacu ke arah HP saat aplikasi dibuka, bukan ke utara, sehingga kiblat
+     * hanya benar bila HP menghadap utara ketika halaman dibuka. Gravitasi &
+     * medan magnet memberi arah mutlak; keduanya dihaluskan (low-pass).
+     * Akurasi magnetometer ikut dikirim supaya aplikasi bisa meminta
+     * kalibrasi (gerakan angka 8).
      */
     private inner class HeadingStream : EventChannel.StreamHandler, SensorEventListener {
         private var sink: EventChannel.EventSink? = null
         private val manager get() = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         private val rotation = FloatArray(9)
         private val orientation = FloatArray(3)
+        private val gravity = FloatArray(3)
+        private val geomagnetic = FloatArray(3)
+        private var hasGravity = false
+        private var hasMagnetic = false
         private var accuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
 
         override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
-            val sensor = manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-            if (sensor == null) {
+            val accel = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val magnet = manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+            if (accel == null || magnet == null) {
                 events.error("no_sensor", "Kompas tidak tersedia", null)
                 return
             }
             sink = events
-            manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+            hasGravity = false
+            hasMagnetic = false
+            manager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
+            manager.registerListener(this, magnet, SensorManager.SENSOR_DELAY_GAME)
         }
 
         override fun onCancel(arguments: Any?) {
@@ -151,15 +164,33 @@ class MainActivity : FlutterActivity() {
             sink = null
         }
 
+        private fun lowPass(input: FloatArray, output: FloatArray, first: Boolean) {
+            for (i in 0..2) {
+                output[i] = if (first) input[i] else output[i] + 0.15f * (input[i] - output[i])
+            }
+        }
+
         override fun onSensorChanged(event: SensorEvent) {
-            SensorManager.getRotationMatrixFromVector(rotation, event.values)
+            when (event.sensor.type) {
+                Sensor.TYPE_ACCELEROMETER -> {
+                    lowPass(event.values, gravity, !hasGravity)
+                    hasGravity = true
+                }
+                Sensor.TYPE_MAGNETIC_FIELD -> {
+                    lowPass(event.values, geomagnetic, !hasMagnetic)
+                    hasMagnetic = true
+                }
+                else -> return
+            }
+            if (!hasGravity || !hasMagnetic) return
+            if (!SensorManager.getRotationMatrix(rotation, null, gravity, geomagnetic)) return
             SensorManager.getOrientation(rotation, orientation)
             val deg = (Math.toDegrees(orientation[0].toDouble()) + 360) % 360
             sink?.success(mapOf("heading" to deg, "accuracy" to accuracy))
         }
 
         override fun onAccuracyChanged(sensor: Sensor, value: Int) {
-            accuracy = value
+            if (sensor.type == Sensor.TYPE_MAGNETIC_FIELD) accuracy = value
         }
     }
 

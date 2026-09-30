@@ -338,6 +338,7 @@ IbadahItemsCompanion _item(
   int target = 1,
   String? group,
   bool active = true,
+  int? weekdays,
 }) => IbadahItemsCompanion.insert(
   key: key,
   name: name,
@@ -348,7 +349,14 @@ IbadahItemsCompanion _item(
   sort: Value(sort),
   active: Value(active),
   builtIn: const Value(true),
+  weekdays: Value(weekdays),
 );
+
+/// Bitmask hari Jumat ([IbadahItems.weekdays]).
+const fridayMask = 1 << 4;
+
+/// Kunci item amalan Jumat (baca Al-Kahfi) - ikon kitab membuka surah 18.
+const kahfiKey = 'kahfi';
 
 final defaultIbadahItems = [
   _item('subuh', 'Subuh', 0, group: sholatWajibGroup),
@@ -396,6 +404,17 @@ final defaultIbadahItems = [
   _item('dzikir_petang', 'Dzikir petang', 36),
   _item('istighfar', 'Istighfar', 37, kind: IbadahKind.counter, target: 100),
   _item('sedekah', 'Sedekah', 38),
+  // amalan Jumat - hanya tampil di hari Jumat (bisa diubah di Daftar ibadah)
+  _item(kahfiKey, 'Baca Al-Kahfi', 39, weekdays: fridayMask),
+  _item(
+    'sholawat',
+    'Sholawat',
+    40,
+    kind: IbadahKind.counter,
+    target: 100,
+    weekdays: fridayMask,
+  ),
+  _item('mandi_jumat', 'Mandi Jumat', 41, weekdays: fridayMask),
 ];
 
 /// Data layar satu hari - lihat [IbadahDao.watchDay].

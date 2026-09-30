@@ -21,6 +21,14 @@ const _green = Color(0xFF16A34A);
 /// Bacaan dzikir pagi & petang (Hisnul Muslim) dengan penghitung per
 /// dzikir. Selesai semua = item "Dzikir pagi/petang" di checklist hari ini
 /// tercentang otomatis. Hitungan tersimpan per tanggal & sesi.
+const _prayerNames = {
+  'subuh': 'Subuh',
+  'dzuhur': 'Dzuhur',
+  'ashar': 'Ashar',
+  'maghrib': 'Maghrib',
+  'isya': 'Isya',
+};
+
 class DzikirPage extends StatefulWidget {
   const DzikirPage({super.key, this.session});
 
@@ -33,6 +41,9 @@ class DzikirPage extends StatefulWidget {
 
 class _DzikirPageState extends State<DzikirPage> {
   DzikirSession? _session;
+
+  /// Sholat yang dzikirnya sedang dibaca (sesi setelah sholat).
+  String _prayer = 'subuh';
   Map<int, int> _counts = {};
   bool _loaded = false;
   String? _today;
@@ -50,11 +61,30 @@ class _DzikirPageState extends State<DzikirPage> {
           latitude: loc.lat,
           longitude: loc.long,
         );
+    _prayer = lastSholat(
+      DateTime.now(),
+      latitude: loc.lat,
+      longitude: loc.long,
+    );
+    _load();
+  }
+
+  /// Kunci simpan progres: per tanggal, dan per sholat untuk sesi setelah
+  /// sholat (dibaca lima kali sehari).
+  String get _slot =>
+      _session == DzikirSession.sholat ? '${_today!}_$_prayer' : _today!;
+
+  void _switchPrayer(String p) {
+    if (p == _prayer) return;
+    setState(() {
+      _prayer = p;
+      _loaded = false;
+    });
     _load();
   }
 
   Future<void> _load() async {
-    final counts = await DzikirProgressStore.load(_session!, _today!);
+    final counts = await DzikirProgressStore.load(_session!, _slot);
     if (mounted) {
       setState(() {
         _counts = counts;
@@ -77,7 +107,7 @@ class _DzikirPageState extends State<DzikirPage> {
   Future<void> _setCount(Dzikir d, int value) async {
     final before = _allDone;
     setState(() => _counts[d.id] = value.clamp(0, 99999));
-    await DzikirProgressStore.save(_session!, _today!, _counts);
+    await DzikirProgressStore.save(_session!, _slot, _counts);
     if (!before && _allDone) await _markChecklist();
   }
 
@@ -109,7 +139,7 @@ class _DzikirPageState extends State<DzikirPage> {
     );
   }
 
-  List<Dzikir> get _list => dzikirFor(_session!);
+  List<Dzikir> get _list => dzikirFor(_session!, prayer: _prayer);
 
   bool get _allDone => _list.every((d) => (_counts[d.id] ?? 0) >= d.repeat);
 
@@ -117,15 +147,17 @@ class _DzikirPageState extends State<DzikirPage> {
     final db = AppDatabaseScope.of(context);
     final items = await db.ibadahDao.watchItems(includeInactive: true).first;
     final item = items.where((i) => i.key == _session!.itemKey).firstOrNull;
-    if (item == null) return;
-    await db.ibadahDao.setValue(_today!, item.id, 1);
+    if (item != null) await db.ibadahDao.setValue(_today!, item.id, 1);
     if (!mounted) return;
     if (_haptic) Haptics.play(HapticKind.complete);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Masyaa Allah, ${_session!.title.toLowerCase()} selesai - '
-          'tercatat di checklist hari ini.',
+          item != null
+              ? 'Masyaa Allah, ${_session!.title.toLowerCase()} selesai - '
+                    'tercatat di checklist hari ini.'
+              : 'Masyaa Allah, dzikir setelah sholat '
+                    '${_prayerNames[_prayer]} selesai.',
         ),
       ),
     );
@@ -152,7 +184,7 @@ class _DzikirPageState extends State<DzikirPage> {
                 if (v == 'arti') settings?.setShowArti(!settings.showArti);
                 if (v == 'reset') {
                   setState(() => _counts = {});
-                  DzikirProgressStore.save(session, _today!, _counts);
+                  DzikirProgressStore.save(session, _slot, _counts);
                 }
               },
               itemBuilder: (_) => [
@@ -191,11 +223,38 @@ class _DzikirPageState extends State<DzikirPage> {
                       icon: Icon(Icons.nights_stay_rounded, size: 16),
                       label: Text('Petang'),
                     ),
+                    ButtonSegment(
+                      value: DzikirSession.sholat,
+                      icon: Icon(Icons.mosque_rounded, size: 16),
+                      label: Text('Usai Sholat'),
+                    ),
                   ],
                   selected: {session},
                   showSelectedIcon: false,
                   onSelectionChanged: (v) => _switch(v.first),
                 ),
+                if (session == DzikirSession.sholat) ...[
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final p in _prayerNames.keys)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ChoiceChip(
+                              label: Text(_prayerNames[p]!),
+                              selected: _prayer == p,
+                              selectedColor: const Color(0xFFFDE68A),
+                              showCheckmark: false,
+                              visualDensity: VisualDensity.compact,
+                              onSelected: (_) => _switchPrayer(p),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(99),

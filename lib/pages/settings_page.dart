@@ -106,7 +106,7 @@ class SettingsPage extends StatelessWidget {
                 const _Title('NOTIFIKASI ADZAN'),
                 const _AdzanGroup(),
                 const SizedBox(height: 20),
-                const _Title('PENGINGAT PUASA'),
+                const _Title('PENGINGAT PUASA & JUMAT'),
                 const _FastReminderGroup(),
                 const SizedBox(height: 20),
                 const _Title('SHOLAT WAJIB'),
@@ -530,6 +530,25 @@ class _FastReminderGroup extends StatelessWidget {
           subtitle: const Text(
             'Notifikasi pukul 20.00 malam sebelumnya: ajakan niat puasa & '
             'siapkan sahur. Tanggalnya mengikuti kalender hijriah aplikasi.',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+        ),
+        const Divider(height: 1, color: _line),
+        SwitchListTile.adaptive(
+          activeTrackColor: _amber,
+          value: settings.fridayReminder,
+          onChanged: (on) async {
+            if (on) await AdzanNotifications.instance.requestPermissions();
+            await settings.setFridayReminder(on);
+          },
+          title: const Text(
+            'Amalan Jumat',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Notifikasi Jumat pukul 07.00: ajakan membaca Al-Kahfi & '
+            'memperbanyak sholawat. Item Al-Kahfi, sholawat & mandi Jumat '
+            'otomatis muncul di checklist tiap Jumat.',
             style: TextStyle(fontSize: 12, color: _muted),
           ),
         ),

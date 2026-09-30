@@ -37,13 +37,18 @@ const _reminderChannel = AndroidNotificationChannel(
 
 const _fastChannel = AndroidNotificationChannel(
   'fast_reminder',
-  'Pengingat puasa sunnah',
-  description: 'Malam sebelum Hari Tarwiyah & Arafah: niat & siapkan sahur',
+  'Pengingat puasa & Jumat',
+  description:
+      'Malam sebelum Tarwiyah & Arafah (niat & sahur) dan Jumat pagi '
+      '(Al-Kahfi & sholawat)',
   importance: Importance.defaultImportance,
 );
 
 /// Jam pengingat puasa (malam sebelumnya).
 const fastReminderHour = 20;
+
+/// Jam pengingat amalan Jumat (pagi).
+const fridayReminderHour = 7;
 
 const _doneAction = 'sholat_done';
 
@@ -145,7 +150,9 @@ class AdzanNotifications {
   }) async {
     if (!supported || !_ready) return;
     await _plugin.cancelAll();
-    if (!settings.adzan && !settings.fastReminder) return;
+    if (!settings.adzan && !settings.fastReminder && !settings.fridayReminder) {
+      return;
+    }
 
     final zone = calc.timezoneFromLongitude(longitude);
     final location = tz.getLocation(tzIds[zone]!);
@@ -168,6 +175,9 @@ class AdzanNotifications {
         now,
         mode,
       );
+    }
+    if (settings.fridayReminder) {
+      await _scheduleFridayReminders(today, location, now, mode);
     }
     if (!settings.adzan) return;
 
@@ -293,6 +303,45 @@ class AdzanNotifications {
       await _plugin.zonedSchedule(
         id: 900 + day,
         title: 'Besok ${fast.label} 🌙',
+        body: body,
+        scheduledDate: at,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _fastChannel.id,
+            _fastChannel.name,
+            channelDescription: _fastChannel.description,
+            color: const Color(0xFFB45309),
+            styleInformation: BigTextStyleInformation(body),
+          ),
+        ),
+        androidScheduleMode: mode,
+      );
+    }
+  }
+
+  /// Pukul [fridayReminderHour] tiap Jumat dalam [adzanDays] hari ke depan:
+  /// ajakan membaca Al-Kahfi & memperbanyak sholawat.
+  Future<void> _scheduleFridayReminders(
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      if (date.weekday != DateTime.friday) continue;
+      final at = tz.TZDateTime(
+        location,
+        date.year,
+        date.month,
+        date.day,
+        fridayReminderHour,
+      );
+      if (!at.isAfter(now)) continue;
+      final body = pickMessage(fridayDay(), dailySeed(dateKey(date), 5));
+      await _plugin.zonedSchedule(
+        id: 950 + day,
+        title: 'Hari Jumat · Al-Kahfi & sholawat 🌙',
         body: body,
         scheduledDate: at,
         notificationDetails: NotificationDetails(

@@ -129,3 +129,23 @@ List<String> fastEve({required bool arafah}) => arafah
             'Arafah.',
         'Besok sudah 8 Dzulhijjah. Siapkan sahur untuk puasa Tarwiyah ya.',
       ];
+
+/// Hari Jumat (sebelum Maghrib): amalan & dalilnya.
+List<String> fridayDay() => [
+  'Barangsiapa membaca surah Al-Kahfi pada hari Jumat, ia disinari cahaya '
+      'di antara dua Jumat (HR. Al-Hakim & Al-Baihaqi, dishahihkan '
+      'Al-Albani).',
+  'Perbanyaklah sholawat kepadaku pada hari Jumat, karena sholawat kalian '
+      'disampaikan kepadaku (HR. Abu Daud). Jangan lupa juga Al-Kahfi.',
+  'Pada hari Jumat ada satu waktu yang bila seorang muslim berdoa, pasti '
+      'dikabulkan (HR. Bukhari & Muslim) - banyak ulama menyebut akhir '
+      'waktu Ashar.',
+];
+
+/// Malam Jumat (Kamis sesudah Maghrib).
+List<String> fridayEve() => [
+  'Malam Jumat telah masuk - Al-Kahfi sudah boleh dibaca sejak Maghrib '
+      'tadi. Perbanyak juga sholawat.',
+  'Sambut hari Jumat: siapkan niat membaca Al-Kahfi, sholawat, dan '
+      'berangkat Jumat lebih awal.',
+];

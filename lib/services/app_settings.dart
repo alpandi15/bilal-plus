@@ -18,6 +18,7 @@ class AppSettings {
   static const fastReminderKey = 'fast_reminder';
   static const autoUpdateKey = 'update_auto_check';
   static const adzanFullScreenKey = 'adzan_full_screen';
+  static const fridayReminderKey = 'friday_reminder';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -54,6 +55,7 @@ class AppSettingsController extends ChangeNotifier {
   bool _fastReminder = true;
   bool _autoUpdate = true;
   bool _adzanFullScreen = false;
+  bool _fridayReminder = true;
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -138,6 +140,9 @@ class AppSettingsController extends ChangeNotifier {
   /// mati - notifikasi biasa.
   bool get adzanFullScreen => _adzanFullScreen;
 
+  /// Notifikasi Jumat pagi: Al-Kahfi & sholawat (bawaan aktif).
+  bool get fridayReminder => _fridayReminder;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -171,6 +176,7 @@ class AppSettingsController extends ChangeNotifier {
       _fastReminder = prefs.getBool(AppSettings.fastReminderKey) ?? true;
       _autoUpdate = prefs.getBool(AppSettings.autoUpdateKey) ?? true;
       _adzanFullScreen = prefs.getBool(AppSettings.adzanFullScreenKey) ?? false;
+      _fridayReminder = prefs.getBool(AppSettings.fridayReminderKey) ?? true;
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -286,6 +292,12 @@ class AppSettingsController extends ChangeNotifier {
     _fastReminder = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.fastReminderKey, v));
+  }
+
+  Future<void> setFridayReminder(bool v) async {
+    _fridayReminder = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.fridayReminderKey, v));
   }
 
   Future<void> setAdzanFullScreen(bool v) async {

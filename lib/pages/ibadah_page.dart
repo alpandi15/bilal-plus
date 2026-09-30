@@ -21,6 +21,7 @@ import '../widgets/sub_header.dart';
 import '../services/dzikir.dart';
 import 'bilal_tarawih_page.dart';
 import 'dzikir_page.dart';
+import 'quran/quran_reader_page.dart';
 import 'quran_tracker_page.dart';
 import 'tasbih_page.dart';
 import 'ramadan_recap_page.dart';
@@ -469,6 +470,9 @@ class _DayView extends StatelessWidget {
       qadhaKey => 'Sisa hutang ${data.qadhaRemaining} hari',
       'dzikir_pagi' || 'dzikir_petang' =>
         'Ketuk ikon kitab untuk membaca - tercentang saat selesai',
+      kahfiKey => 'Sunnah di hari Jumat - ketuk ikon kitab untuk membaca',
+      'sholawat' => 'Perbanyak sholawat di hari Jumat',
+      'mandi_jumat' => 'Sunnah sebelum berangkat Sholat Jumat',
       tilawahKey =>
         data.hasTilawah
             ? "Tercatat dari bacaan Al-Qur'an"
@@ -1346,6 +1350,21 @@ class _ItemTile extends StatelessWidget {
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const QuranTrackerPage(),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 20,
+                      color: _amber,
+                    ),
+                  ),
+                if (item.key == kahfiKey)
+                  IconButton(
+                    tooltip: 'Baca surah Al-Kahfi',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const QuranReaderPage(surah: 18),
                       ),
                     ),
                     icon: const Icon(
