@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash sebelum Android 12: latar zamrud + logo Bilal+ (sama dengan ikon
-     adaptif). Android 12+ memakai values-v31/styles.xml. -->
+<!-- Splash sebelum Android 12: latar zamrud + wordmark Bilal+ (sama dengan
+     splash Flutter). Android 12+ memakai values-v31/styles.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/ic_launcher_background" />
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/ic_launcher_foreground" />
-    </item>
+    <!-- 288dp = ukuran ikon splash Android 12+ (dan wordmark splash Flutter) -->
+    <item
+        android:width="288dp"
+        android:height="288dp"
+        android:gravity="center"
+        android:drawable="@drawable/splash_logo" />
 </layer-list>

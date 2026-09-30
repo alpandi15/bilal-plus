@@ -8,8 +8,7 @@ import 'onboarding_page.dart';
 const splashBackground = Color(0xFF00503C);
 const _gold = Color(0xFFE3BE6A);
 
-/// Medali logo Bilal+ - ukurannya sama dengan ikon splash Android 12+
-/// (lingkaran 160dp), jadi splash native berganti ke Flutter tanpa loncatan.
+/// Medali logo Bilal+ (ikon aplikasi) - dipakai di halaman setup awal.
 class BilalLogo extends StatelessWidget {
   const BilalLogo({super.key, this.size = 160});
   final double size;
@@ -33,6 +32,29 @@ class BilalLogo extends StatelessWidget {
   );
 }
 
+/// Wordmark "Bilal+" emas (assets/branding/logo-only.png) - ukuran & letaknya
+/// sama persis dengan ikon splash native (res/drawable-xxxhdpi/splash_logo.png,
+/// digambar Android 12+ di kanvas 288dp: wordmark ±152dp di tengah layar),
+/// jadi perpindahannya tanpa loncatan.
+class BilalWordmark extends StatelessWidget {
+  const BilalWordmark({super.key});
+
+  /// Lebar gambar penuh 500px = 225dp (wordmark-nya 337px = 152dp).
+  static const _imageWidth = 225.0;
+
+  @override
+  Widget build(BuildContext context) => Transform.translate(
+    // pusat wordmark ada 28,5px di atas pusat gambar -> geser supaya pas tengah
+    offset: const Offset(0.7, 12.8),
+    child: Image.asset(
+      'assets/branding/logo-only.png',
+      width: _imageWidth,
+      height: _imageWidth,
+      semanticLabel: 'Bilal+',
+    ),
+  );
+}
+
 /// Layar splash: sambungan splash native sampai pengaturan terbaca.
 class SplashView extends StatelessWidget {
   const SplashView({super.key});
@@ -43,7 +65,7 @@ class SplashView extends StatelessWidget {
       backgroundColor: splashBackground,
       body: Stack(
         children: [
-          Center(child: BilalLogo()),
+          Center(child: BilalWordmark()),
           Positioned(
             left: 0,
             right: 0,

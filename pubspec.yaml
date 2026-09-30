@@ -80,6 +80,7 @@ flutter:
     - assets/kitab/yasin/
     - assets/hijri_config.json
     - assets/branding/logo.png
+    - assets/branding/logo-only.png
     - assets/quran/quran.json
     - assets/quran/uthmani.json
     - assets/doa/doa.json
