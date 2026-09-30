@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'quran_index.dart';
+import 'quran_ruku.dart';
 
 /// Keterangan satu surah.
 class QuranSurah {
@@ -29,6 +30,28 @@ class QuranSurah {
   bool get hasBasmalah => number != 1 && number != 9;
 }
 
+/// Tanda 'ain (ع) di ayat terakhir sebuah ruku'.
+class RukuMark {
+  const RukuMark({
+    required this.number,
+    required this.inSurah,
+    required this.ayahCount,
+    required this.inJuz,
+  });
+
+  /// Ruku' ke-n dari seluruh Al-Qur'an (1..556).
+  final int number;
+
+  /// Ruku' ke-n dalam surahnya (angka atas tanda 'ain).
+  final int inSurah;
+
+  /// Jumlah ayat ruku' ini (angka tengah).
+  final int ayahCount;
+
+  /// Ruku' ke-n dalam juz tempat ruku' ini berakhir (angka bawah).
+  final int inJuz;
+}
+
 /// Satu ayat: teks Mushaf Standar Indonesia & terjemahan Kemenag.
 class QuranAyah {
   const QuranAyah({
@@ -40,6 +63,7 @@ class QuranAyah {
     required this.juz,
     required this.page,
     String? uthmani,
+    this.ruku,
   }) : uthmani = uthmani ?? arabic;
 
   /// Nomor ayat global 1..6236.
@@ -50,6 +74,37 @@ class QuranAyah {
   /// Rasm Utsmani riwayat Hafs (KFGQPC) untuk mode Mushaf - dipasangkan
   /// dengan font [uthmanicFont].
   final String uthmani;
+
+  /// Tanda 'ain bila ayat ini mengakhiri sebuah ruku'.
+  final RukuMark? ruku;
+}
+
+/// Tanda 'ain per ayat terakhir ruku' (kunci: nomor ayat global), dari
+/// [rukuStarts] & juz tiap ayat ([juzOf], 1-based index).
+Map<int, RukuMark> rukuMarks(
+  List<int> starts,
+  int Function(int) juzOf,
+  int total,
+) {
+  final marks = <int, RukuMark>{};
+  final inJuz = <int, int>{};
+  var inSurah = 0, surahOfPrev = -1;
+  for (var k = 0; k < starts.length; k++) {
+    final start = starts[k];
+    final end = k + 1 < starts.length ? starts[k + 1] - 1 : total;
+    final surah = surahAyahOf(start).$1;
+    inSurah = surah == surahOfPrev ? inSurah + 1 : 1;
+    surahOfPrev = surah;
+    final juz = juzOf(end);
+    inJuz[juz] = (inJuz[juz] ?? 0) + 1;
+    marks[end] = RukuMark(
+      number: k + 1,
+      inSurah: inSurah,
+      ayahCount: end - start + 1,
+      inJuz: inJuz[juz]!,
+    );
+  }
+  return marks;
 }
 
 const _spelling = {
@@ -142,6 +197,14 @@ class QuranText {
     ];
     final ayahs = <QuranAyah>[];
     final list = data['ayah'] as List;
+    // data uji bisa berupa potongan - tanda 'ain hanya untuk mushaf lengkap
+    final marks = list.length == totalAyahs
+        ? rukuMarks(
+            rukuStarts,
+            (index) => (list[index - 1] as List)[2] as int,
+            list.length,
+          )
+        : const <int, RukuMark>{};
     var i = 0;
     for (final s in surahs) {
       for (var n = 1; n <= s.ayahCount; n++, i++) {
@@ -156,6 +219,7 @@ class QuranText {
             juz: a[2] as int,
             page: a[3] as int,
             uthmani: uthmani?[i],
+            ruku: marks[i + 1],
           ),
         );
       }
@@ -173,6 +237,17 @@ class QuranText {
     return _ayahs.sublist(s.firstIndex - 1, s.firstIndex - 1 + s.ayahCount);
   }
 
+  /// Kata yang dicari di terjemahan untuk [query] (ejaan lazim sudah
+  /// diganti ejaan Kemenag) - dipakai juga untuk menyorot hasil. Kosong bila
+  /// [query] berupa rujukan "2:255".
+  static List<String> searchWords(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty || RegExp(r'^(\d{1,3})\s*[:\s.]\s*(\d{1,3})$').hasMatch(q)) {
+      return const [];
+    }
+    return [for (final w in q.split(RegExp(r'\s+'))) _spelling[w] ?? w];
+  }
+
   /// Cari di terjemahan (semua kata harus ada) - atau "2:255" / "2 255"
   /// untuk langsung ke ayat.
   List<QuranSearchHit> search(String query, {int limit = 200}) {
@@ -188,7 +263,7 @@ class QuranText {
       return const [];
     }
     // ejaan yang lazim dipakai -> ejaan terjemahan Kemenag
-    final words = [for (final w in q.split(RegExp(r'\s+'))) _spelling[w] ?? w];
+    final words = searchWords(q);
     final hits = <QuranSearchHit>[];
     for (final a in _ayahs) {
       final t = a.translation.toLowerCase();

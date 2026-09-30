@@ -309,3 +309,62 @@ class MushafFramePainter extends CustomPainter {
   @override
   bool shouldRepaint(MushafFramePainter oldDelegate) => false;
 }
+
+/// "Akhir ruku' ke-3 Al-Baqarah · 7 ayat · ruku' ke-5 juz 1".
+String rukuLabel(RukuMark r, String surahName, int juz) =>
+    "Akhir ruku' ke-${r.inSurah} $surahName · ${r.ayahCount} ayat · "
+    "ruku' ke-${r.inJuz} juz $juz";
+
+/// Tanda 'ain (ع) akhir ruku' seperti di mushaf cetak: huruf 'ain merah marun
+/// dengan tiga angka kecil - atas: ruku' ke-n dalam surah, kanan: jumlah
+/// ayatnya, bawah: ruku' ke-n dalam juz. [size] = tinggi keseluruhan.
+/// Memakai font Arab sistem - metrik vertikal LPMQ terlalu tinggi untuk
+/// disusun rapat seperti ini.
+class RukuSign extends StatelessWidget {
+  const RukuSign({super.key, required this.mark, required this.size});
+  final RukuMark mark;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    Text digits(int n) => Text(
+      arabicNumber(n),
+      textScaler: TextScaler.noScaling,
+      style: TextStyle(
+        fontSize: size * 0.26,
+        height: 1,
+        fontWeight: FontWeight.w700,
+        color: mushafInk,
+      ),
+    );
+    return SizedBox(
+      width: size * 1.1,
+      height: size,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          digits(mark.inSurah),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            textDirection: TextDirection.rtl,
+            children: [
+              Text(
+                'ع',
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(
+                  fontSize: size * 0.46,
+                  height: 1,
+                  fontWeight: FontWeight.w700,
+                  color: mushafRed,
+                ),
+              ),
+              SizedBox(width: size * 0.06),
+              digits(mark.ayahCount),
+            ],
+          ),
+          digits(mark.inJuz),
+        ],
+      ),
+    );
+  }
+}

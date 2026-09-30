@@ -564,6 +564,16 @@ class _AyahTile extends StatelessWidget {
                 'Juz ${ayah.juz} · Hal ${ayah.page}',
                 style: const TextStyle(fontSize: 11, color: _muted),
               ),
+              // tanda 'ain: ayat terakhir ruku' (ketuk untuk keterangan)
+              if (ayah.ruku case final r?) ...[
+                const SizedBox(width: 8),
+                Tooltip(
+                  triggerMode: TooltipTriggerMode.tap,
+                  showDuration: const Duration(seconds: 4),
+                  message: rukuLabel(r, surahName(ayah.surah), ayah.juz),
+                  child: RukuSign(mark: r, size: 38),
+                ),
+              ],
               const Spacer(),
               IconButton(
                 tooltip: 'Catatan ayat ${ayah.number}',

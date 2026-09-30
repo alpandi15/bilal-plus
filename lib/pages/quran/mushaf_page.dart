@@ -584,7 +584,7 @@ class _MushafSheetState extends State<_MushafSheet> {
   Widget _tokenView(_Token t, double font) {
     final selected = widget.selected == t.ayah.index;
     final Widget child = t.medallion
-        ? AyahMedallion(number: t.ayah.number, size: _medallion(font))
+        ? _medallionView(t.ayah, font)
         : Text.rich(
             TextSpan(
               style: _style(font),
@@ -613,6 +613,37 @@ class _MushafSheetState extends State<_MushafSheet> {
               child: child,
             )
           : child,
+    );
+  }
+
+  /// Medali nomor ayat; ayat terakhir ruku' diberi tanda 'ain (ع) kecil di
+  /// atasnya - di celah antar-baris, jadi lebar baris (rata kanan-kiri)
+  /// tidak berubah. Rincian ruku'-nya ada di lembar ayat saat diketuk.
+  Widget _medallionView(QuranAyah ayah, double font) {
+    final size = _medallion(font);
+    final medallion = AyahMedallion(number: ayah.number, size: size);
+    if (ayah.ruku == null) return medallion;
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        medallion,
+        // di atas kelopak teratas medali, tidak menimpa angkanya
+        Positioned(
+          bottom: size * 0.98,
+          child: Text(
+            'ع',
+            textDirection: TextDirection.rtl,
+            textScaler: TextScaler.noScaling,
+            style: TextStyle(
+              fontFamily: arabicFont,
+              fontSize: font * 0.42,
+              height: 1,
+              color: mushafRed,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -811,6 +842,10 @@ class _AyahSheet extends StatelessWidget {
                 ),
               ],
             ),
+            if (ayah.ruku case final r?) ...[
+              const SizedBox(height: 10),
+              _RukuInfo(mark: r, label: rukuLabel(r, surah.name, ayah.juz)),
+            ],
             const SizedBox(height: 10),
             Text(
               ayah.translation,
@@ -855,4 +890,33 @@ class _AyahSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Keterangan tanda 'ain di lembar ayat.
+class _RukuInfo extends StatelessWidget {
+  const _RukuInfo({required this.mark, required this.label});
+  final RukuMark mark;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(8, 6, 12, 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF7ED),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: const Color(0x55C9A24A)),
+    ),
+    child: Row(
+      children: [
+        RukuSign(mark: mark, size: 40),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 12, height: 1.4, color: _stone),
+          ),
+        ),
+      ],
+    ),
+  );
 }
