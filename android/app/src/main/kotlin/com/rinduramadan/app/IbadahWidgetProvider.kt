@@ -296,7 +296,36 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     seed,
                 )
                 else -> sholatMessage(sholat, now, onTimeMs, narrow, seed)
-                    ?: when {
+                    // tidak ada yang mendesak: motivasi sesuai waktu (pagi,
+                    // Dhuha, siang, malam, jangan begadang), streak ikut
+                    // bergiliran
+                    ?: if (!narrow) {
+                        val counted = sholat.filter { !it.excused }
+                        val lines = WidgetMotivation.lines(
+                            now,
+                            WidgetMotivation.Times(
+                                subuh = sholat.getOrNull(0)?.at ?: 0L,
+                                sunrise = sholat.getOrNull(0)?.end ?: 0L,
+                                dzuhur = sholat.getOrNull(1)?.at ?: 0L,
+                                ashar = sholat.getOrNull(2)?.at ?: 0L,
+                                maghrib = sholat.getOrNull(3)?.at ?: 0L,
+                                isya = sholat.getOrNull(4)?.at ?: 0L,
+                            ),
+                            WidgetMotivation.status(
+                                day.optJSONArray("items"),
+                                pending,
+                                today,
+                                allSholat = counted.isNotEmpty() && counted.all { it.done },
+                            ),
+                            seed,
+                        )
+                        pick(
+                            lines.short + listOfNotNull(
+                                if (streak > 0) "🔥 $streak hari terjaga" else null,
+                            ),
+                            cal.get(Calendar.HOUR_OF_DAY),
+                        )
+                    } else when {
                         streak > 0 -> if (narrow) "🔥 $streak hari" else "🔥 $streak hari terjaga"
                         // "15 Rabiul Akhir 1448 H" -> tanpa tahun bila sempit
                         else -> day.optString("hijri", "").let {
@@ -486,7 +515,10 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 )
             }
 
-            val last = sholat.lastOrNull { it.done } ?: return null
+            // tanggapan hanya ±2 jam setelah waktu sholatnya
+            val last = sholat.lastOrNull { it.done }
+                ?.takeIf { now < minOf(it.end, it.at + 2 * 60 * 60_000L) }
+                ?: return null
             val n = last.name
             val next = sholat.firstOrNull { it.at > last.at && !it.done && !it.excused }?.name
             val s = seed + last.id

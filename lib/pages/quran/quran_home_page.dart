@@ -78,7 +78,10 @@ class _QuranHomePageState extends State<QuranHomePage> {
                     s?.setQuranMode(mushaf: true);
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute<void>(
-                        builder: (_) => MushafPage(page: s?.quranLastPage ?? 1),
+                        builder: (_) => MushafPage(
+                          page: s?.quranLastPage ?? 1,
+                          bookmark: s?.quranLastPage != null,
+                        ),
                       ),
                     );
                   },

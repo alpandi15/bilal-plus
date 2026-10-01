@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../widgets/quran/mushaf_bookmark.dart';
 import '../../widgets/quran/quran_ayah_text.dart';
 import '../../db/app_database_scope.dart';
 import '../../services/app_settings.dart';
@@ -32,9 +33,17 @@ const _lineHeight = 1.95;
 /// dengan pembagian Mushaf Standar Indonesia pojok). Digeser ke kanan untuk
 /// halaman berikutnya.
 class MushafPage extends StatefulWidget {
-  const MushafPage({super.key, this.page = 1, this.ayah});
+  const MushafPage({
+    super.key,
+    this.page = 1,
+    this.ayah,
+    this.bookmark = false,
+  });
 
   final int page;
+
+  /// Dibuka melanjutkan bacaan: pembatas tergantung di [page].
+  final bool bookmark;
 
   /// Ayat global yang disorot saat dibuka.
   final int? ayah;
@@ -50,6 +59,9 @@ class _MushafPageState extends State<MushafPage> {
   late final int _startPage = _page;
   late int? _selected = widget.ayah;
   Timer? _save;
+
+  /// Halaman tempat pembatas tergantung; null = sudah dibuka/dilepas.
+  late int? _bookmarkPage = widget.bookmark ? _page : null;
 
   @override
   void initState() {
@@ -258,6 +270,11 @@ class _MushafPageState extends State<MushafPage> {
                           settings?.setReaderSize(maxFont - 2);
                         case 'surah':
                           _openSurahMode();
+                        case 'bookmark':
+                          final on = !(settings?.mushafBookmark ?? true);
+                          settings?.setMushafBookmark(on);
+                          // dinyalakan: langsung tergantung di halaman ini
+                          setState(() => _bookmarkPage = on ? _page : null);
                       }
                     },
                     itemBuilder: (_) => [
@@ -278,6 +295,11 @@ class _MushafPageState extends State<MushafPage> {
                       const PopupMenuItem(
                         value: 'smaller',
                         child: Text('Huruf lebih kecil'),
+                      ),
+                      CheckedPopupMenuItem(
+                        value: 'bookmark',
+                        checked: settings?.mushafBookmark ?? true,
+                        child: const Text('Pembatas halaman'),
                       ),
                       const PopupMenuDivider(),
                       const PopupMenuItem(
@@ -301,16 +323,34 @@ class _MushafPageState extends State<MushafPage> {
                         setState(() => _page = i + 1);
                         _remember();
                       },
-                      itemBuilder: (context, i) => _MushafSheet(
-                        key: ValueKey(i + 1),
-                        text: text,
-                        page: i + 1,
-                        tajweed: tajweed,
-                        font: font,
-                        maxFont: maxFont,
-                        selected: _selected,
-                        onTap: _onAyahTap,
-                      ),
+                      itemBuilder: (context, i) {
+                        final sheet = _MushafSheet(
+                          key: ValueKey(i + 1),
+                          text: text,
+                          page: i + 1,
+                          tajweed: tajweed,
+                          font: font,
+                          maxFont: maxFont,
+                          selected: _selected,
+                          onTap: _onAyahTap,
+                        );
+                        if (i + 1 != _bookmarkPage ||
+                            !(settings?.mushafBookmark ?? true)) {
+                          return sheet;
+                        }
+                        // pembatas ikut halamannya saat digeser
+                        return Stack(
+                          children: [
+                            Positioned.fill(child: sheet),
+                            Positioned.fill(
+                              child: MushafBookmark(
+                                onRemoved: () =>
+                                    setState(() => _bookmarkPage = null),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
             ),
           ],

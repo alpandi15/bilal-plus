@@ -31,6 +31,7 @@ class AppSettings {
   static const userNameKey = 'user_name';
   static const quranTajweedKey = 'quran_tajweed';
   static const quranFontKey = 'quran_font';
+  static const mushafBookmarkKey = 'mushaf_bookmark';
   static const quranLastReadKey = 'quran_last_read';
   static const quranModeKey = 'quran_mode';
   static const quranLastPageKey = 'quran_last_page';
@@ -100,6 +101,11 @@ class AppSettingsController extends ChangeNotifier {
 
   /// Font teks Al-Qur'an di pembaca per surah, mushaf & hafalan.
   QuranFont get quranFont => _quranFont;
+
+  bool _mushafBookmark = true;
+
+  /// Pembatas halaman tergantung di halaman mushaf terakhir dibaca.
+  bool get mushafBookmark => _mushafBookmark;
 
   /// Warna hukum tajwid di pembaca Al-Qur'an.
   bool get quranTajweed => _quranTajweed;
@@ -190,6 +196,7 @@ class AppSettingsController extends ChangeNotifier {
       _onboarded = prefs.getBool(AppSettings.onboardedKey) ?? false;
       _quranTajweed = prefs.getBool(AppSettings.quranTajweedKey) ?? true;
       _quranFont = QuranFont.parse(prefs.getString(AppSettings.quranFontKey));
+      _mushafBookmark = prefs.getBool(AppSettings.mushafBookmarkKey) ?? true;
       _quranLastRead = prefs.getInt(AppSettings.quranLastReadKey);
       _quranMushaf = prefs.getString(AppSettings.quranModeKey) == 'mushaf';
       _quranLastPage = prefs.getInt(AppSettings.quranLastPageKey);
@@ -220,6 +227,12 @@ class AppSettingsController extends ChangeNotifier {
     _quranTajweed = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.quranTajweedKey, v));
+  }
+
+  Future<void> setMushafBookmark(bool v) async {
+    _mushafBookmark = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.mushafBookmarkKey, v));
   }
 
   Future<void> setQuranFont(QuranFont v) async {

@@ -4,6 +4,23 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.13.1 (build 21) · 1 Oktober 2026
+
+**Pembatas halaman mushaf**
+- Saat melanjutkan bacaan di mode mushaf, pembatas halaman tergantung di
+  halaman terakhir dibaca. Ketuk untuk menyembunyikan, geser ke atas untuk
+  membuka pembatas. Bisa dimatikan di menu tampilan mushaf.
+
+**Hafalan**
+- Tombol "Sembunyikan ayat" & "Terjemahan" kini menempel di bawah layar -
+  bisa dibuka di tengah hafalan tanpa menggulir ke atas.
+
+**Ucapan widget lebih bervariasi**
+- Pesan mengikuti waktu: dzikir pagi, ajakan sholat Dhuha, motivasi siang
+  & sore, tilawah, tidur lebih awal setelah Isya, jangan begadang lewat jam
+  23, dan tahajud di akhir malam. Berganti setiap jam.
+- Ikon pesan memakai ikon umum (tanpa ikon hati).
+
 ## 1.13.0 (build 20) · 30 September 2026
 
 **Silsilah Nabi ﷺ**

@@ -529,7 +529,10 @@ Future<void> continueQuran(BuildContext context) async {
   if (settings?.quranMushaf ?? false) {
     await nav.push(
       MaterialPageRoute<void>(
-        builder: (_) => MushafPage(page: settings?.quranLastPage ?? 1),
+        builder: (_) => MushafPage(
+          page: settings?.quranLastPage ?? 1,
+          bookmark: settings?.quranLastPage != null,
+        ),
       ),
     );
     return;
@@ -602,7 +605,9 @@ Future<void> showQuranModeSheet(BuildContext context) => showModalBottomSheet(
               last: lastPage == null ? null : 'Terakhir: halaman $lastPage',
               onTap: () {
                 settings?.setQuranMode(mushaf: true);
-                open(MushafPage(page: lastPage ?? 1));
+                open(
+                  MushafPage(page: lastPage ?? 1, bookmark: lastPage != null),
+                );
               },
             ),
           ],

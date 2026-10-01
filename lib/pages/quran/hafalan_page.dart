@@ -331,6 +331,32 @@ class _HafalanSurahPageState extends State<HafalanSurahPage> {
     final ayahs = widget.text.ayahsOf(widget.surah.number);
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
+      // sakelar sembunyi & terjemahan menempel di bawah: bisa diubah di
+      // tengah hafalan tanpa menggulir kembali ke atas
+      bottomNavigationBar: _HafalanBar(
+        hide: _hide,
+        showArti: _showArti,
+        onHide: (v) {
+          setState(() {
+            _hide = v;
+            _peek.clear();
+          });
+          if (v) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Hanya kata pertama sebagai petunjuk - ketuk ayat untuk '
+                    'mengintip.',
+                  ),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+          }
+        },
+        onArti: (v) => setState(() => _showArti = v),
+      ),
       body: Column(
         children: [
           SubHeader(
@@ -344,25 +370,13 @@ class _HafalanSurahPageState extends State<HafalanSurahPage> {
               final done = ayahs.where((a) => hafal.contains(a.index)).length;
               return Expanded(
                 child: ListView.builder(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    12,
-                    16,
-                    32 + MediaQuery.paddingOf(context).bottom,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   itemCount: ayahs.length + 1,
                   itemBuilder: (context, i) {
                     if (i == 0) {
                       return _Toolbar(
                         done: done,
                         total: ayahs.length,
-                        hide: _hide,
-                        showArti: _showArti,
-                        onHide: (v) => setState(() {
-                          _hide = v;
-                          _peek.clear();
-                        }),
-                        onArti: (v) => setState(() => _showArti = v),
                         onAll: (v) => dao.setHafal(
                           ayahs.first.index,
                           ayahs.last.index,
@@ -404,16 +418,11 @@ class _Toolbar extends StatelessWidget {
   const _Toolbar({
     required this.done,
     required this.total,
-    required this.hide,
-    required this.showArti,
-    required this.onHide,
-    required this.onArti,
     required this.onAll,
   });
 
   final int done, total;
-  final bool hide, showArti;
-  final ValueChanged<bool> onHide, onArti, onAll;
+  final ValueChanged<bool> onAll;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -454,34 +463,123 @@ class _Toolbar extends StatelessWidget {
             valueColor: const AlwaysStoppedAnimation(_emerald),
           ),
         ),
-        const SizedBox(height: 4),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          activeTrackColor: _amber,
-          value: hide,
-          onChanged: onHide,
-          title: const Text(
-            'Sembunyikan ayat',
-            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
-          ),
-          subtitle: const Text(
-            'Hanya kata pertama sebagai petunjuk - ketuk ayat untuk mengintip.',
-            style: TextStyle(fontSize: 11.5, color: _muted),
-          ),
-        ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          activeTrackColor: _amber,
-          value: showArti,
-          onChanged: onArti,
-          title: const Text(
-            'Tampilkan terjemahan',
-            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
-          ),
+        const SizedBox(height: 6),
+      ],
+    ),
+  );
+}
+
+/// Bilah bawah tetap: sakelar "Sembunyikan ayat" & "Terjemahan".
+class _HafalanBar extends StatelessWidget {
+  const _HafalanBar({
+    required this.hide,
+    required this.showArti,
+    required this.onHide,
+    required this.onArti,
+  });
+
+  final bool hide, showArti;
+  final ValueChanged<bool> onHide, onArti;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      border: Border(top: BorderSide(color: _line)),
+      boxShadow: [
+        BoxShadow(
+          color: Color(0x14785624),
+          blurRadius: 16,
+          offset: Offset(0, -4),
         ),
       ],
+    ),
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _BarToggle(
+                on: hide,
+                onChanged: onHide,
+                icon: hide
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                label: hide ? 'Ayat disembunyikan' : 'Sembunyikan ayat',
+                activeColor: _amber,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: _BarToggle(
+                on: showArti,
+                onChanged: onArti,
+                icon: Icons.translate_rounded,
+                label: 'Terjemahan',
+                activeColor: _emerald,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _BarToggle extends StatelessWidget {
+  const _BarToggle({
+    required this.on,
+    required this.onChanged,
+    required this.icon,
+    required this.label,
+    required this.activeColor,
+  });
+
+  final bool on;
+  final ValueChanged<bool> onChanged;
+  final IconData icon;
+  final String label;
+  final Color activeColor;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: on ? activeColor : const Color(0xFFFFF7E8),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => onChanged(!on),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: on ? Colors.transparent : _line),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: on ? Colors.white : _stone),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: on ? Colors.white : _stone,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }

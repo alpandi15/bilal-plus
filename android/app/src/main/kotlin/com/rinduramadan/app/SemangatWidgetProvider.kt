@@ -70,6 +70,9 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
     companion object {
         /** "Bentar lagi ..." mulai sekian menit sebelum adzan. */
         private const val SOON_MIN = 20
+
+        /** Lama tanggapan atas sholat yang baru dicatat tetap tampil. */
+        private const val RESPONSE_MS = 2 * 60 * 60_000L
         private const val MINUTE = 60_000L
         private const val LIVE_REFRESH_MS = 5 * MINUTE
         private const val IDLE_REFRESH_MS = 30 * MINUTE
@@ -227,7 +230,26 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 tomorrow = loaded.tomorrow?.optString("fast", "")?.ifEmpty { null },
                 maghrib = (sholat.firstOrNull { it.name == "Maghrib" } ?: sholat.getOrNull(3))?.at ?: 0L,
             )
-            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs, fast)
+            val counted5 = sholat.filter { !it.excused }
+            val motivation = WidgetMotivation.lines(
+                now,
+                WidgetMotivation.Times(
+                    subuh = sholat.getOrNull(0)?.at ?: 0L,
+                    sunrise = sholat.getOrNull(0)?.end ?: 0L,
+                    dzuhur = sholat.getOrNull(1)?.at ?: 0L,
+                    ashar = sholat.getOrNull(2)?.at ?: 0L,
+                    maghrib = sholat.getOrNull(3)?.at ?: 0L,
+                    isya = sholat.getOrNull(4)?.at ?: 0L,
+                ),
+                WidgetMotivation.status(
+                    day.optJSONArray("items"),
+                    pending,
+                    date,
+                    allSholat = counted5.isNotEmpty() && counted5.all { it.done },
+                ),
+                seed,
+            )
+            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs, fast, motivation)
             val salt = seed + (sholat.firstOrNull { !it.done }?.id ?: 0)
             fun rotate(list: List<String>): List<String> {
                 val start = Math.floorMod(salt, list.size)
@@ -284,6 +306,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             now: Long,
             onTimeMs: Long,
             fast: Fast,
+            motivation: WidgetMotivation.Lines,
         ): Messages {
             if (excused) {
                 return Messages(
@@ -344,6 +367,10 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             val counted = sholat.filter { !it.excused }
             if (counted.isNotEmpty() && counted.all { it.done }) {
                 val c = "${counted.size}/${counted.size}"
+                // sesudah Isya pesan malam (tidur awal, jangan begadang)
+                // sudah memuat pujian lima waktu
+                val night = sholat.getOrNull(4)?.let { now >= it.at } ?: false
+                if (night) return Messages(motivation.long, motivation.short)
                 return Messages(
                     listOf(
                         "$c hari ini, masyaa Allah 🔥 Kamu keren!",
@@ -361,7 +388,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 return Messages(
                     listOf(
                         "$c sholat terlewat. Itu utang ke Allah, qadha sekarang ya, jangan ditunda 🤲",
-                        "Ada $c sholat terlewat. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤍",
+                        "Ada $c sholat terlewat. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤲",
                         "$c sholat belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
                     listOf("$c sholat terlewat, qadha sekarang 🤲", "Segera qadha $c sholat 🙏"),
@@ -372,7 +399,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 return Messages(
                     listOf(
                         "$n terlewat. Sholat itu kewajiban, qadha sekarang ya, jangan ditunda 🤲",
-                        "$n belum tertunai. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤍",
+                        "$n belum tertunai. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤲",
                         "$n belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
                     listOf("$n terlewat, qadha sekarang 🤲", "Segera qadha $n 🙏"),
@@ -380,7 +407,10 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             }
 
             // tanggapan sholat terakhir yang dicatat
+            // tanggapan hanya sesaat setelah sholatnya (±2 jam) - selebihnya
+            // giliran pesan motivasi sesuai waktu
             val last = sholat.lastOrNull { it.done && !it.excused }
+                ?.takeIf { now < minOf(it.end, it.at + RESPONSE_MS) }
             val upcoming = next?.name
             if (last != null) {
                 val n = last.name
@@ -398,11 +428,11 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                     )
                     "qadha" -> return Messages(
                         listOf(
-                            "$n udah diqadha 🤍 Istighfar, dan jangan sampai terlewat lagi ya.",
+                            "$n udah diqadha 🤲 Istighfar, dan jangan sampai terlewat lagi ya.",
                             "$n udah dibayar 🫡 Tapi qadha bukan kebiasaan" +
                                 (upcoming?.let { ", $it harus tepat waktu." } ?: ", besok tepat waktu."),
                         ),
-                        listOf("$n diqadha, jangan terulang 🤍", "Istighfar, next tepat waktu 🫡"),
+                        listOf("$n diqadha, jangan terulang 🤲", "Istighfar, next tepat waktu 🫡"),
                     )
                     "onTime" -> return Messages(
                         listOf(
@@ -415,19 +445,16 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 }
             }
 
-            // bawaan: sholat berikutnya
-            if (next != null) {
-                val t = next.time.ifEmpty { hm(next.at, sholat, tomorrowSubuh) }
-                return Messages(
-                    listOf(
-                        "Next up: ${next.name} jam $t. Santai dulu, pas adzan langsung gas ✨",
-                        "${next.name} jam $t. Sambil nunggu, dzikir dikit yuk 📿",
-                        "Siap-siap ${next.name} jam $t. Kamu pasti bisa on time 💪",
-                    ),
-                    listOf("Next: ${next.name} jam $t ✨", "${next.name} jam $t, siap-siap 💪"),
-                )
+            // bawaan: motivasi sesuai waktu (pagi, Dhuha, siang, sore, malam,
+            // larut) + sesekali pengingat sholat berikutnya
+            val nextLine = next?.let {
+                val t = it.time.ifEmpty { hm(it.at, sholat, tomorrowSubuh) }
+                "Next up: ${it.name} jam $t. Pas adzan langsung gas ✨"
             }
-            return Messages(listOf("Semoga harimu adem & penuh berkah ✨"), listOf("Have a blessed day ✨"))
+            return Messages(
+                motivation.long + listOfNotNull(nextLine),
+                motivation.short,
+            )
         }
 
         private fun fastMessages(fast: Fast, now: Long): Messages? {
