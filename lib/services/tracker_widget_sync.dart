@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +10,11 @@ import '../db/app_database.dart';
 import '../utils/date_key.dart';
 import 'app_settings.dart';
 import 'hijri_config.dart';
+import '../widgets/arabic_font.dart';
+import 'hafalan_widget_payload.dart';
 import 'prayer_calculator.dart' as calc;
+import 'quran_text.dart';
+import 'sholat_time.dart';
 import 'tracker_widget_payload.dart';
 import 'user_location_controller.dart';
 
@@ -21,6 +26,11 @@ const quranWidgetName = 'QuranWidgetProvider';
 /// Widget Semangat Sholat (`SemangatWidgetProvider.kt`) - memakai data
 /// `ibadah_json` yang sama dengan widget Ibadah Harian.
 const semangatWidgetName = 'SemangatWidgetProvider';
+
+/// Widget Hafalan (`HafalanWidgetProvider.kt`): ayat berikutnya yang belum
+/// hafal.
+const hafalanWidgetName = 'HafalanWidgetProvider';
+const _hafalanKey = 'hafalan_json';
 
 const _ibadahKey = 'ibadah_json';
 const _quranKey = 'quran_json';
@@ -63,6 +73,7 @@ class TrackerWidgetSync {
             db.ramadanRecaps,
             db.quranCycles,
             db.quranLogs,
+            db.hafalanAyahs,
           },
         )
         .watch()
@@ -128,6 +139,7 @@ class TrackerWidgetSync {
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
       await HomeWidget.updateWidget(androidName: semangatWidgetName);
       await HomeWidget.updateWidget(androidName: quranWidgetName);
+      await _syncHafalan(db, settings.quranFont);
     } catch (e) {
       // widget belum dipasang / plugin tidak tersedia - bukan kegagalan fatal
       debugPrint('tracker widget: $e');
@@ -135,12 +147,42 @@ class TrackerWidgetSync {
   }
 }
 
+/// Susun ulang data widget Hafalan & muat ulang widgetnya.
+Future<void> _syncHafalan(AppDatabase db, QuranFont font) async {
+  final payload = await hafalanWidgetPayload(db, QuranText.load, font: font);
+  await HomeWidget.saveWidgetData<String>(_hafalanKey, jsonEncode(payload));
+  await HomeWidget.updateWidget(androidName: hafalanWidgetName);
+}
+
+/// "Hafal" dari widget Hafalan: `rinduramadan://hafalan/set?ayah=N` (nomor
+/// ayat global). Widget sudah maju ke ayat berikutnya lebih dulu
+/// (optimistis); di sini tanda hafal ditulis & antreannya disusun ulang.
+Future<void> _hafalanFromWidget(Uri uri) async {
+  final ayah = int.tryParse(uri.queryParameters['ayah'] ?? '');
+  if (ayah == null) return;
+  final db = AppDatabase();
+  try {
+    await db.quranDao.setHafal(ayah, ayah, true);
+    final prefs = await SharedPreferences.getInstance();
+    await _syncHafalan(
+      db,
+      QuranFont.parse(prefs.getString(AppSettings.quranFontKey)),
+    );
+  } finally {
+    await db.close();
+  }
+}
+
 /// Dipanggil `home_widget` di isolate latar saat pengguna mencentang dari
-/// widget: `rinduramadan://ibadah/set?date=YYYY-MM-DD&item=ID&value=N`.
+/// widget: `rinduramadan://ibadah/set?date=YYYY-MM-DD&item=ID&value=N`, atau
+/// menandai hafal dari widget Hafalan.
 /// Kotlin sudah menampilkan perubahannya lebih dulu (optimistis); di sini
 /// catatan ditulis ke basis data dan data widget diperbarui.
 @pragma('vm:entry-point')
 Future<void> trackerWidgetCallback(Uri? uri) async {
+  if (uri?.host == 'hafalan' && uri?.path == '/set') {
+    return _hafalanFromWidget(uri!);
+  }
   if (uri == null || uri.host != 'ibadah' || uri.path != '/set') return;
   final date = uri.queryParameters['date'];
   final item = int.tryParse(uri.queryParameters['item'] ?? '');
@@ -155,6 +197,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
     DateTime? prayedAt;
     String? place;
     bool? jamaah;
+    var qashar = false;
     if (value > 0) {
       final prefs = await SharedPreferences.getInstance();
       final tracking = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
@@ -163,6 +206,10 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       )..where((i) => i.id.equals(item))).getSingleOrNull();
       if (row?.groupKey == sholatWajibGroup) {
         jamaah = prefs.getBool(AppSettings.lastJamaahKey) ?? false;
+        // sedang safar (sholat terakhir dicatat safar): diqashar
+        qashar =
+            (prefs.getBool(AppSettings.lastSafarKey) ?? false) &&
+            qasharPrayers.contains(row!.key);
         if (tracking) {
           prayedAt = DateTime.now();
           place = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
@@ -176,6 +223,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       prayedAt: prayedAt,
       place: place,
       jamaah: jamaah,
+      qashar: qashar ? const Value(true) : const Value.absent(),
     );
     final raw = await HomeWidget.getWidgetData<String>(_ibadahKey);
     if (raw != null) {

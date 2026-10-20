@@ -34,8 +34,7 @@ void main() {
     return (log: log);
   }
 
-  double topOf(WidgetTester tester) =>
-      tester.getTopLeft(find.byType(Image)).dy;
+  double topOf(WidgetTester tester) => tester.getTopLeft(find.byType(Image)).dy;
 
   testWidgets('ketuk: sembunyi lalu turun lagi; halaman tetap bisa diketuk', (
     tester,

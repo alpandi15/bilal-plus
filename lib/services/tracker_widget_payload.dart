@@ -154,6 +154,8 @@ Future<Map<String, Object?>> ibadahWidgetDay(
           prayedAt,
           window,
           onTimeMinutes: onTimeMinutes,
+          jamak: data.logs[i.id]?.jamak ?? false,
+          qadhaReason: data.logs[i.id]?.qadhaReason,
         ).name,
         'prayed': calc.formatInZone(prayedAt.toUtc(), tz),
       },
@@ -295,6 +297,8 @@ Future<Map<String, Object?>> patchIbadahPayload(
           ),
           onTimeMinutes:
               payload['onTimeMinutes'] as int? ?? defaultOnTimeMinutes,
+          jamak: data.logs[item.id]?.jamak ?? false,
+          qadhaReason: data.logs[item.id]?.qadhaReason,
         ).name;
       } else {
         e.remove('status');
@@ -396,4 +400,8 @@ Future<Map<String, Object?>> quranWidgetPayload(
 /// yang belum, sesuai pilihan jama'ah terakhir (dipakai bila dicentang dari
 /// widget).
 double _weight(IbadahLog? log, int value, double soloWeight, bool lastJamaah) =>
-    sholatWeight(value > 0 ? log?.jamaah : lastJamaah, soloWeight);
+    sholatWeight(
+      value > 0 ? log?.jamaah : lastJamaah,
+      soloWeight,
+      qadhaReason: value > 0 ? log?.qadhaReason : null,
+    );

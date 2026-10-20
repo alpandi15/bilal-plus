@@ -369,6 +369,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     "onTime" -> ", awal waktu"
                     "late" -> ", terlambat"
                     "qadha" -> ", qadha"
+                    "jamak" -> ", jamak"
+                    "uzur" -> ", qadha karena uzur"
                     else -> ""
                 }
                 views.setContentDescription(
@@ -555,6 +557,22 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                         "Masyaa Allah, $n di awal waktu!",
                         "Barakallahu fik, $n tepat waktu.",
                         "Istiqamah ya - $n di awal waktu.",
+                    ),
+                    s,
+                )
+                "jamak" -> pick(
+                    if (narrow) listOf("$n dijamak", "Safar lancar")
+                    else listOf(
+                        "$n dijamak saat safar - sah, nilai penuh.",
+                        "Semoga safarnya lancar & berkah.",
+                    ),
+                    s,
+                )
+                "uzur" -> pick(
+                    if (narrow) listOf("$n tertunai", "Tak berdosa, uzur")
+                    else listOf(
+                        "$n diqadha karena uzur - tidak berdosa.",
+                        "Uzur diterima Allah. Jaga sholat berikutnya ya.",
                     ),
                     s,
                 )

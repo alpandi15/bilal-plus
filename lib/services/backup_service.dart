@@ -120,6 +120,9 @@ class BackupService {
             if (l.prayedAt != null) 'prayedAt': _iso(l.prayedAt!),
             if (l.place != null) 'place': l.place,
             if (l.jamaah != null) 'jamaah': l.jamaah,
+            if (l.qadhaReason != null) 'qadhaReason': l.qadhaReason,
+            if (l.qashar != null) 'qashar': l.qashar,
+            if (l.jamak != null) 'jamak': l.jamak,
           },
       ],
       'dayStatuses': [
@@ -311,6 +314,9 @@ class BackupService {
                 ),
                 place: Value(l['place'] as String?),
                 jamaah: Value(l['jamaah'] as bool?),
+                qadhaReason: Value(l['qadhaReason'] as String?),
+                qashar: Value(l['qashar'] as bool?),
+                jamak: Value(l['jamak'] as bool?),
               ),
             );
         ibadahCount++;

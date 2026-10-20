@@ -53,6 +53,12 @@ class SholatStat {
   final IbadahItem item;
   int onTime = 0, late = 0, qadha = 0;
 
+  /// Dijamak saat safar & diqadha karena uzur - sah, tidak dihitung lalai.
+  int jamak = 0, uzur = 0;
+
+  /// Diqashar saat safar.
+  int qashar = 0;
+
   /// Tercentang tapi jamnya tidak dicatat (mis. sebelum fitur diaktifkan).
   int untimed = 0;
 
@@ -64,9 +70,15 @@ class SholatStat {
   /// Tercentang berjama'ah / sendiri (yang belum dicatat tidak masuk).
   int jamaah = 0, sendiri = 0;
 
-  int get timed => onTime + late + qadha;
+  int get timed => onTime + late + qadha + jamak + uzur;
   int get total => timed + untimed + missed;
-  double get avgDelay => timed == 0 ? 0 : delayMinutes / timed;
+
+  /// Rata-rata menit setelah adzan - jamak & qadha karena uzur tidak ikut
+  /// (bukan soal menunda-nunda).
+  double get avgDelay {
+    final n = onTime + late + qadha;
+    return n == 0 ? 0 : delayMinutes / n;
+  }
 }
 
 class IbadahReport {
@@ -103,12 +115,16 @@ class IbadahReport {
 
   int get fullDays => counted.where((d) => d.done >= d.total).length;
 
-  /// Rekap semua waktu sholat.
+  /// Rekap semua waktu sholat: (awal waktu, terlambat, qadha). Jamak &
+  /// qadha karena uzur ikut dalam [sholatValid].
   (int, int, int) get sholatTotals => sholat.fold((
     0,
     0,
     0,
   ), (a, s) => (a.$1 + s.onTime, a.$2 + s.late, a.$3 + s.qadha));
+
+  /// Jumlah sholat jamak + qadha karena uzur.
+  int get sholatValid => sholat.fold(0, (a, s) => a + s.jamak + s.uzur);
 
   /// (berjama'ah, sendiri) semua waktu sholat.
   (int, int) get jamaahTotals =>
@@ -209,6 +225,7 @@ IbadahReport buildIbadahReport(
       }
       final place = log.place;
       if (place != null) stat.places[place] = (stat.places[place] ?? 0) + 1;
+      if (log.qashar ?? false) stat.qashar++;
       final at = log.prayedAt;
       if (!timed || at == null) {
         stat.untimed++;
@@ -228,13 +245,25 @@ IbadahReport buildIbadahReport(
           date: d.add(const Duration(days: 1)),
         ),
       )!;
-      switch (sholatStatus(at, window, onTimeMinutes: onTimeMinutes)) {
+      switch (sholatStatus(
+        at,
+        window,
+        onTimeMinutes: onTimeMinutes,
+        jamak: log.jamak ?? false,
+        qadhaReason: log.qadhaReason,
+      )) {
         case SholatStatus.onTime:
           stat.onTime++;
         case SholatStatus.late:
           stat.late++;
         case SholatStatus.qadha:
           stat.qadha++;
+        case SholatStatus.jamak:
+          stat.jamak++;
+          continue;
+        case SholatStatus.uzur:
+          stat.uzur++;
+          continue;
       }
       stat.delayMinutes += minutesAfterAdzan(at, window);
     }

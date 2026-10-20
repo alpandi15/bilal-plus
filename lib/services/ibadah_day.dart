@@ -197,7 +197,11 @@ IbadahProgress ibadahProgress(
     if (!itemDone(i, values[i.id] ?? 0, hasTilawah: hasTilawah)) continue;
     done++;
     score += i.groupKey == sholatWajibGroup
-        ? sholatWeight(logs[i.id]?.jamaah, soloWeight)
+        ? sholatWeight(
+            logs[i.id]?.jamaah,
+            soloWeight,
+            qadhaReason: logs[i.id]?.qadhaReason,
+          )
         : 1;
   }
   return IbadahProgress(done, total, score);

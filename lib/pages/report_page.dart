@@ -123,6 +123,7 @@ class _ReportPageState extends State<ReportPage> {
                   showSholat:
                       (settings?.sholatTime ?? false) ||
                       report.sholatTotals != (0, 0, 0) ||
+                      report.sholatValid > 0 ||
                       report.jamaahTotals != (0, 0),
                 );
               },
@@ -511,7 +512,10 @@ class _SholatQualityCard extends StatelessWidget {
     final on = stats.fold<int>(0, (a, s) => a + s.onTime);
     final late = stats.fold<int>(0, (a, s) => a + s.late);
     final qadha = stats.fold<int>(0, (a, s) => a + s.qadha);
-    final timed = on + late + qadha;
+    final jamak = stats.fold<int>(0, (a, s) => a + s.jamak);
+    final uzur = stats.fold<int>(0, (a, s) => a + s.uzur);
+    final qashar = stats.fold<int>(0, (a, s) => a + s.qashar);
+    final timed = on + late + qadha + jamak + uzur;
     final worst = stats
         .where((s) => s.timed > 0)
         .fold<SholatStat?>(
@@ -549,8 +553,10 @@ class _SholatQualityCard extends StatelessWidget {
                 _Reveal(
                   delay: 300,
                   duration: 1000,
+                  // jamak saat safar sah di waktu pasangannya - ikut
+                  // dihitung tepat waktu
                   builder: (context, t) => Text(
-                    '${(on * 100 / timed * t).round()}%',
+                    '${((on + jamak) * 100 / timed * t).round()}%',
                     style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w800,
@@ -569,7 +575,14 @@ class _SholatQualityCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            _Stacked(onTime: on, late: late, qadha: qadha, height: 12),
+            _Stacked(
+              onTime: on,
+              late: late,
+              qadha: qadha,
+              jamak: jamak,
+              uzur: uzur,
+              height: 12,
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 12,
@@ -578,6 +591,8 @@ class _SholatQualityCard extends StatelessWidget {
                   (SholatStatus.onTime, on),
                   (SholatStatus.late, late),
                   (SholatStatus.qadha, qadha),
+                  if (jamak > 0) (SholatStatus.jamak, jamak),
+                  if (uzur > 0) (SholatStatus.uzur, uzur),
                 ])
                   Text(
                     '${sholatStatusLabel[st]} $n',
@@ -631,6 +646,8 @@ class _SholatQualityCard extends StatelessWidget {
                         onTime: s.onTime,
                         late: s.late,
                         qadha: s.qadha,
+                        jamak: s.jamak,
+                        uzur: s.uzur,
                         untimed: s.untimed,
                         missed: s.missed,
                         height: 8,
@@ -653,6 +670,14 @@ class _SholatQualityCard extends StatelessWidget {
               'Menit = rata-rata setelah adzan.',
               style: TextStyle(fontSize: 10, color: _muted),
             ),
+            if (qashar > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '$qashar sholat diqashar saat safar.',
+                  style: const TextStyle(fontSize: 11, color: _stone),
+                ),
+              ),
           ],
           if (placed > 0) ...[
             const SizedBox(height: 12),
@@ -694,11 +719,13 @@ class _Stacked extends StatelessWidget {
     required this.late,
     required this.qadha,
     required this.height,
+    this.jamak = 0,
+    this.uzur = 0,
     this.untimed = 0,
     this.missed = 0,
     this.delay = 300,
   });
-  final int onTime, late, qadha, untimed, missed;
+  final int onTime, late, qadha, jamak, uzur, untimed, missed;
   final double height;
   final int delay;
 
@@ -725,7 +752,9 @@ class _Stacked extends StatelessWidget {
   Widget _bar() {
     final parts = [
       (onTime, sholatStatusColor[SholatStatus.onTime]!),
+      (jamak, sholatStatusColor[SholatStatus.jamak]!),
       (late, sholatStatusColor[SholatStatus.late]!),
+      (uzur, sholatStatusColor[SholatStatus.uzur]!),
       (qadha, sholatStatusColor[SholatStatus.qadha]!),
       (untimed, const Color(0xFFFDE68A)),
       (missed, const Color(0xFFE7E5E4)),

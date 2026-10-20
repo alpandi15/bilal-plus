@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import '../db/app_database.dart';
@@ -310,6 +311,15 @@ class _DayView extends StatelessWidget {
       soloWeight: settings.effectiveSoloWeight,
       prayedAt: log?.prayedAt,
       done: value > 0,
+      qadhaReason: log?.qadhaReason,
+      // catatan lama: sesuai isinya; baru: mengikuti sholat terakhir
+      safar: log != null && value > 0
+          ? (log.qashar ?? false) || (log.jamak ?? false)
+          : settings.lastSafar,
+      qashar: log != null && value > 0
+          ? log.qashar ?? false
+          : settings.lastSafar && qasharPrayers.contains(item.key),
+      jamak: log?.jamak ?? false,
     );
     switch (result) {
       case SholatLogSave(prayedAt: final at, place: final where, :final jamaah):
@@ -320,9 +330,13 @@ class _DayView extends StatelessWidget {
           prayedAt: at,
           place: where,
           jamaah: jamaah,
+          qadhaReason: Value(result.qadhaReason),
+          qashar: Value(result.qashar ? true : null),
+          jamak: Value(result.jamak ? true : null),
         );
         await settings.setLastPlace(where);
         await settings.setLastJamaah(jamaah);
+        await settings.setLastSafar(result.safar);
       case SholatLogRemove():
         await dao.setValue(data.date, item.id, 0);
       case null:
@@ -916,7 +930,13 @@ class _SholatCard extends StatelessWidget {
       );
       return w == null
           ? null
-          : sholatStatus(at, w, onTimeMinutes: settings!.onTimeMinutes);
+          : sholatStatus(
+              at,
+              w,
+              onTimeMinutes: settings!.onTimeMinutes,
+              jamak: logs[i.id]?.jamak ?? false,
+              qadhaReason: logs[i.id]?.qadhaReason,
+            );
     }
 
     // waktu sholat yang sedang berjalan: yang terakhir sudah masuk
@@ -999,6 +1019,10 @@ class _SholatCard extends StatelessWidget {
                         : null,
                     place: tracking ? logs[item.id]?.place : null,
                     jamaah: logs[item.id]?.jamaah,
+                    safarTag: [
+                      if (logs[item.id]?.qashar ?? false) 'Q',
+                      if (logs[item.id]?.jamak ?? false) 'J',
+                    ].join(),
                     onTap: () => onTap(item),
                     onToggleJamaah: onToggleJamaah == null
                         ? null
@@ -1056,32 +1080,51 @@ class _SholatCard extends StatelessWidget {
             ),
           ],
           if (tracking) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 4,
-              children: [
-                for (final st in SholatStatus.values)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: sholatStatusColor[st],
-                          shape: BoxShape.circle,
-                        ),
+            const SizedBox(height: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => showSholatStatusInfo(context),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    for (final st in const [
+                      SholatStatus.onTime,
+                      SholatStatus.late,
+                      SholatStatus.jamak,
+                      SholatStatus.uzur,
+                      SholatStatus.qadha,
+                    ])
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: sholatStatusColor[st],
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            sholatStatusLabel[st]!,
+                            style: const TextStyle(fontSize: 10, color: _muted),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        sholatStatusLabel[st]!,
-                        style: const TextStyle(fontSize: 10, color: _muted),
-                      ),
-                    ],
-                  ),
-              ],
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 13,
+                      color: _muted,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ],
@@ -1177,9 +1220,13 @@ class _PrayerDot extends StatelessWidget {
     this.place,
     this.jamaah,
     this.onToggleJamaah,
+    this.safarTag = '',
   });
 
   final String name, time;
+
+  /// "Q" diqashar, "J" dijamak, "QJ" keduanya - lencana kecil di lingkaran.
+  final String safarTag;
 
   /// Berjama'ah / sendiri (null = belum dicatat).
   final bool? jamaah;
@@ -1206,43 +1253,72 @@ class _PrayerDot extends StatelessWidget {
       label: [
         '$name $time',
         if (status != null) sholatStatusLabel[status]!,
+        if (safarTag.contains('Q')) 'qashar',
+        if (safarTag.contains('J')) 'jamak',
         if (sholatPlaceLabel[place] case final p?) p,
       ].join(', '),
       child: GestureDetector(
         onTap: disabled ? null : onTap,
         child: Column(
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutBack,
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: fill,
-                border: Border.all(
-                  color: current && !done
-                      ? const Color(0xFFF59E0B)
-                      : done
-                      ? doneColor
-                      : _line,
-                  width: current && !done ? 2.5 : 1.5,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: fill,
+                    border: Border.all(
+                      color: current && !done
+                          ? const Color(0xFFF59E0B)
+                          : done
+                          ? doneColor
+                          : _line,
+                      width: current && !done ? 2.5 : 1.5,
+                    ),
+                    boxShadow: done
+                        ? [
+                            BoxShadow(
+                              color: doneColor.withValues(alpha: 0.25),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    done ? Icons.check_rounded : Icons.circle_outlined,
+                    size: done ? 26 : 10,
+                    color: done ? Colors.white : const Color(0xFFE7D8BD),
+                  ),
                 ),
-                boxShadow: done
-                    ? [
-                        BoxShadow(
-                          color: doneColor.withValues(alpha: 0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5),
+                if (done && safarTag.isNotEmpty)
+                  Positioned(
+                    right: -6,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Text(
+                        safarTag,
+                        style: const TextStyle(
+                          fontSize: 8.5,
+                          height: 1.3,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
                         ),
-                      ]
-                    : null,
-              ),
-              child: Icon(
-                done ? Icons.check_rounded : Icons.circle_outlined,
-                size: done ? 26 : 10,
-                color: done ? Colors.white : const Color(0xFFE7D8BD),
-              ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 6),
             Text(

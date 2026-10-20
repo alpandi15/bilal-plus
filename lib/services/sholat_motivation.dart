@@ -58,17 +58,36 @@ List<String> lateToday(String name, String? next) => next != null
         'Terlambat bukan akhir - esok kesempatan baru untuk lebih awal.',
       ];
 
-/// Sholat [name] hari ini tercatat qadha (dikerjakan sesudah waktunya).
+/// Sholat [name] hari ini tercatat qadha tanpa uzur (atau alasannya belum
+/// dipilih): tegas tapi tetap membuka pintu taubat.
 List<String> qadhaToday(String name, String? next) => next != null
     ? [
-        'Alhamdulillah $name sudah diqadha. Jaga $next di awal waktu ya.',
-        'Perbanyak istighfar, lalu sambut $next begitu adzan.',
-        'Pasang alarm sebelum $next, jangan sampai terlewat lagi.',
+        '$name sudah diqadha, tapi menunda sampai habis waktu tanpa uzur '
+            'termasuk lalai. Istighfar, dan jaga $next di awal waktu.',
+        'Qadha bukan kebiasaan. Perbanyak istighfar, lalu sambut $next '
+            'begitu adzan.',
+        'Pasang alarm sebelum $next - jangan sampai terlewat lagi.',
       ]
     : [
-        'Alhamdulillah $name sudah diqadha. Besok insyaa Allah tepat waktu.',
-        'Perbanyak istighfar, dan pasang alarm untuk Subuh esok.',
-        'Semoga esok semua sholat terjaga di awal waktunya.',
+        '$name sudah diqadha. Istighfar & taubat, besok insyaa Allah tepat '
+            'waktu.',
+        'Qadha bukan kebiasaan. Perbanyak istighfar & pasang alarm untuk '
+            'Subuh esok.',
+      ];
+
+/// Sholat [name] hari ini diqadha karena uzur (tertidur, lupa, ...).
+List<String> uzurToday(String name, String? next) => next != null
+    ? [
+        'Tidak berdosa karena uzur - kaffaratnya menunaikan saat ingat '
+            '(HR. Muslim). Jaga $next di awal waktu ya.',
+        'Alhamdulillah $name sudah ditunaikan. Siapkan diri sebelum adzan '
+            '$next.',
+      ]
+    : [
+        'Tidak berdosa karena uzur - kaffaratnya menunaikan saat ingat '
+            '(HR. Muslim). Pasang alarm untuk Subuh esok ya.',
+        'Alhamdulillah $name sudah ditunaikan. Semoga esok semua tepat '
+            'waktu.',
       ];
 
 /// Evaluasi 7 hari: [name] sering terlambat (rata-rata [avgDelay] menit).

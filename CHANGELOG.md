@@ -4,6 +4,26 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.14.0 (build 22) · 20 Oktober 2026
+
+**Widget Hafalan Al-Qur'an**
+- Widget baru (4x2, minimal 3x2): ayat berikutnya yang belum hafal dari
+  surah yang sedang dihafal, besar dengan font mushaf pilihanmu, lengkap
+  dengan terjemahan. Misal Al-Insyiqaq 1-3 sudah hafal, yang tampil ayat 4.
+- Tombol "Tutup" menyembunyikan ayat kecuali kata pertama untuk menguji
+  hafalan; "Hafal" menandai hafal & langsung maju ke ayat berikutnya.
+
+**Qadha, qashar & jamak**
+- Sholat yang diqadha kini memilih alasannya: tertidur, lupa, pingsan,
+  perjalanan, darurat (uzur - tidak berdosa, nilai penuh) atau tanpa uzur
+  (peringatan & nilai 50%).
+- Peringatan meninggalkan sholat per waktu sholat beserta dalil Al-Qur'an
+  & hadits shahih, dan pintu taubatnya.
+- Mode "Sedang safar": tandai sholat diqashar (2 rakaat) atau dijamak -
+  jamak ta'khir tidak lagi dihitung qadha. Lengkap dengan panduan cara
+  qashar & jamak dan dalilnya.
+- Laporan & widget menghitung jamak dan qadha karena uzur secara terpisah.
+
 ## 1.13.1 (build 21) · 1 Oktober 2026
 
 **Pembatas halaman mushaf**

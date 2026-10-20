@@ -95,6 +95,18 @@ class IbadahLogs extends Table {
   /// belum dicatat (catatan dari sebelum fitur ini) - dihitung penuh.
   BoolColumn get jamaah => boolean().nullable()();
 
+  /// Sholat wajib yang diqadha (dikerjakan sesudah waktunya): alasannya -
+  /// lihat `qadhaReasons` (lib/services/sholat_time.dart). 'tanpa' = tanpa
+  /// uzur syar'i; null = tidak qadha / catatan lama.
+  TextColumn get qadhaReason => text().nullable()();
+
+  /// Sholat wajib saat safar: diqashar (4 rakaat jadi 2).
+  BoolColumn get qashar => boolean().nullable()();
+
+  /// Sholat wajib saat safar: dijamak dengan pasangannya (Dzuhur-Ashar,
+  /// Maghrib-Isya) - dikerjakan di waktu pasangannya bukan qadha.
+  BoolColumn get jamak => boolean().nullable()();
+
   @override
   Set<Column> get primaryKey => {date, itemId};
 }
@@ -210,7 +222,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -249,6 +261,21 @@ class AppDatabase extends _$AppDatabase {
       if (from < 7) {
         // v7: mode hafalan
         await m.createTable(hafalanAyahs);
+      }
+      if (from < 8) {
+        // v8: alasan qadha, qashar & jamak (dicek dulu seperti v6)
+        final cols = await customSelect(
+          "SELECT name FROM pragma_table_info('ibadah_logs')",
+        ).map((r) => r.read<String>('name')).get();
+        if (!cols.contains('qadha_reason')) {
+          await m.addColumn(ibadahLogs, ibadahLogs.qadhaReason);
+        }
+        if (!cols.contains('qashar')) {
+          await m.addColumn(ibadahLogs, ibadahLogs.qashar);
+        }
+        if (!cols.contains('jamak')) {
+          await m.addColumn(ibadahLogs, ibadahLogs.jamak);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -694,6 +721,9 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     DateTime? prayedAt,
     String? place,
     bool? jamaah,
+    Value<String?> qadhaReason = const Value.absent(),
+    Value<bool?> qashar = const Value.absent(),
+    Value<bool?> jamak = const Value.absent(),
   }) async {
     if (value <= 0) {
       await (delete(
@@ -710,6 +740,9 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
         prayedAt: prayedAt == null ? const Value.absent() : Value(prayedAt),
         place: place == null ? const Value.absent() : Value(place),
         jamaah: jamaah == null ? const Value.absent() : Value(jamaah),
+        qadhaReason: qadhaReason,
+        qashar: qashar,
+        jamak: jamak,
       ),
     );
   }

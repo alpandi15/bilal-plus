@@ -10,14 +10,52 @@ enum SholatStatus {
   /// sesudah itu, tapi masih di dalam waktunya
   late,
 
-  /// sesudah waktunya habis
+  /// sesudah waktunya habis, tanpa uzur (atau alasannya belum dipilih)
   qadha,
+
+  /// dijamak dengan pasangannya saat safar - dikerjakan di waktu sholat
+  /// pasangannya, sah & bukan qadha
+  jamak,
+
+  /// qadha karena uzur syar'i (tertidur, lupa, ...) - tidak berdosa,
+  /// kaffaratnya menunaikan saat ingat (HR. Muslim no. 1103)
+  uzur,
 }
 
 const sholatStatusLabel = {
   SholatStatus.onTime: 'Awal waktu',
   SholatStatus.late: 'Terlambat',
   SholatStatus.qadha: 'Qadha',
+  SholatStatus.jamak: 'Jamak',
+  SholatStatus.uzur: 'Qadha (uzur)',
+};
+
+/// Alasan qadha yang bisa dipilih. Semua selain 'tanpa' adalah uzur yang
+/// dibenarkan syariat: tertidur & lupa (HR. Muslim no. 1103 & 1099), hilang
+/// kesadaran, keadaan darurat, dan perjalanan yang benar-benar tidak
+/// memungkinkan sholat (bila masih bisa dijamak, pilih Jamak).
+const qadhaReasons = {
+  'tertidur': 'Tertidur',
+  'lupa': 'Lupa',
+  'pingsan': 'Pingsan / tak sadar',
+  'perjalanan': 'Perjalanan',
+  'darurat': 'Darurat',
+  'tanpa': 'Tanpa uzur',
+};
+
+/// Nilai sholat qadha tanpa uzur dibanding yang tepat waktu - tetap wajib
+/// diqadha & tetap dihitung, tapi tidak penuh sebagai pengingat.
+const qadhaNoUzurWeight = 0.5;
+
+/// Sholat yang bisa diqashar (empat rakaat menjadi dua).
+const qasharPrayers = {'dzuhur', 'ashar', 'isya'};
+
+/// Pasangan jamak: Dzuhur-Ashar & Maghrib-Isya.
+const jamakPair = {
+  'dzuhur': 'ashar',
+  'ashar': 'dzuhur',
+  'maghrib': 'isya',
+  'isya': 'maghrib',
 };
 
 /// Tempat sholat yang bisa dipilih.
@@ -43,8 +81,9 @@ String soloWeightLabel(double w) => w == hadithSoloWeight
 
 /// Bobot satu sholat wajib yang sudah dikerjakan: berjama'ah atau belum
 /// tercatat = 1, sendiri = [soloWeight].
-double sholatWeight(bool? jamaah, double soloWeight) =>
-    jamaah == false ? soloWeight : 1;
+double sholatWeight(bool? jamaah, double soloWeight, {String? qadhaReason}) =>
+    (jamaah == false ? soloWeight : 1) *
+    (qadhaReason == 'tanpa' ? qadhaNoUzurWeight : 1);
 
 /// Batas bawaan "awal waktu", menit sesudah adzan.
 const defaultOnTimeMinutes = 15;
@@ -111,15 +150,26 @@ SholatWindow? sholatWindow(
   ),
 );
 
+/// Status sholat dari jam dikerjakan. [jamak]: dikerjakan di waktu
+/// pasangannya (taqdim sebelum waktunya, ta'khir sesudahnya) = Jamak.
+/// [qadhaReason] selain 'tanpa' menjadikan qadha sebagai qadha karena uzur.
 SholatStatus sholatStatus(
   DateTime prayedAt,
   SholatWindow window, {
   int onTimeMinutes = defaultOnTimeMinutes,
+  bool jamak = false,
+  String? qadhaReason,
 }) {
+  final outside =
+      prayedAt.isBefore(window.start) || !prayedAt.isBefore(window.end);
+  if (jamak && outside) return SholatStatus.jamak;
   if (!prayedAt.isAfter(window.start.add(Duration(minutes: onTimeMinutes)))) {
     return SholatStatus.onTime;
   }
-  return prayedAt.isBefore(window.end) ? SholatStatus.late : SholatStatus.qadha;
+  if (prayedAt.isBefore(window.end)) return SholatStatus.late;
+  return qadhaReason != null && qadhaReason != 'tanpa'
+      ? SholatStatus.uzur
+      : SholatStatus.qadha;
 }
 
 /// Menit keterlambatan dari adzan (0 bila sebelum/tepat adzan).

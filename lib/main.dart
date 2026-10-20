@@ -19,6 +19,7 @@ import 'pages/hijri_calendar_page.dart';
 import 'pages/home_shell.dart';
 import 'pages/ibadah_page.dart';
 import 'pages/onboarding_page.dart';
+import 'pages/quran/hafalan_page.dart';
 import 'pages/quran_tracker_page.dart';
 import 'pages/splash_view.dart';
 
@@ -150,10 +151,23 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   void _openFromWidget(Uri? uri) {
     final tab = switch (uri?.host) {
       'ibadah' => HomeTab.ibadah,
-      'quran' => HomeTab.quran,
+      'quran' || 'hafalan' => HomeTab.quran,
       _ => null,
     };
     if (tab == null) return;
+    // widget Hafalan: langsung ke halaman hafalan surahnya
+    if (uri?.host == 'hafalan') {
+      final surah = int.tryParse(uri?.queryParameters['surah'] ?? '');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _shell.currentState?.goTo(tab);
+        _navigator.currentState?.push(
+          MaterialPageRoute<void>(
+            builder: (_) => HafalanOpenPage(surah: surah),
+          ),
+        );
+      });
+      return;
+    }
     // kerangka belum siap saat aplikasi baru dibuka dari widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _shell.currentState?.goTo(tab);

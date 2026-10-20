@@ -132,6 +132,9 @@ List<SholatNudge> sholatNudges({
   required List<IbadahItem> sholatItems,
   required Map<int, int> todayValues,
   Map<int, DateTime> todayPrayedAt = const {},
+
+  /// Catatan sholat hari ini - jamak & alasan qadha.
+  Map<int, IbadahLog> todayLogs = const {},
   required bool excusedToday,
   required IbadahReport week,
   required DateTime now,
@@ -195,8 +198,14 @@ List<SholatNudge> sholatNudges({
             );
       if (last != null && w != null) {
         final at = todayPrayedAt[last.id]!;
-        final status = sholatStatus(at, w, onTimeMinutes: onTimeMinutes);
-        if (status != SholatStatus.onTime) {
+        final status = sholatStatus(
+          at,
+          w,
+          onTimeMinutes: onTimeMinutes,
+          jamak: todayLogs[last.id]?.jamak ?? false,
+          qadhaReason: todayLogs[last.id]?.qadhaReason,
+        );
+        if (status != SholatStatus.onTime && status != SholatStatus.jamak) {
           final after = sholatItems.skip(sholatItems.indexOf(last) + 1);
           final next = after
               .where((i) => (todayValues[i.id] ?? 0) == 0)
@@ -205,15 +214,16 @@ List<SholatNudge> sholatNudges({
           final late = minutesAfterAdzan(at, w);
           nudges.add(
             SholatNudge(
-              title: status == SholatStatus.qadha
-                  ? '${last.name} hari ini diqadha'
-                  : '${last.name} terlambat $late menit dari adzan',
-              message: pickMessage(
-                status == SholatStatus.qadha
-                    ? qadhaToday(last.name, next)
-                    : lateToday(last.name, next),
-                dailySeed(today, last.id),
-              ),
+              title: switch (status) {
+                SholatStatus.uzur => '${last.name} diqadha karena uzur',
+                SholatStatus.qadha => '${last.name} hari ini diqadha',
+                _ => '${last.name} terlambat $late menit dari adzan',
+              },
+              message: pickMessage(switch (status) {
+                SholatStatus.uzur => uzurToday(last.name, next),
+                SholatStatus.qadha => qadhaToday(last.name, next),
+                _ => lateToday(last.name, next),
+              }, dailySeed(today, last.id)),
               tone: status,
             ),
           );
@@ -344,6 +354,7 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
             for (final e in todayLogs.entries)
               if (e.value.prayedAt case final at?) e.key: at,
           },
+          todayLogs: todayLogs,
           excusedToday: data.excused.contains(today),
           week: week,
           now: DateTime.now(),
@@ -423,6 +434,8 @@ const _tone = {
   ),
   SholatStatus.late: (Color(0xFFFFFBEB), Color(0xFFD97706), Color(0xFF78350F)),
   SholatStatus.qadha: (Color(0xFFFEF2F2), Color(0xFFDC2626), Color(0xFF7F1D1D)),
+  SholatStatus.jamak: (Color(0xFFF0FDFA), Color(0xFF0D9488), Color(0xFF134E4A)),
+  SholatStatus.uzur: (Color(0xFFEFF6FF), Color(0xFF2563EB), Color(0xFF1E3A8A)),
 };
 
 class _NudgeCard extends StatelessWidget {

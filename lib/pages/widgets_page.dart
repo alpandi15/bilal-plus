@@ -19,7 +19,7 @@ class HomeWidgetInfo {
   final String title, size, detail;
 
   String get preview =>
-      'assets/widgets/${const {'PrayerWidgetProvider': 'jadwal-sholat', 'IbadahWidgetProvider': 'ibadah', 'QuranWidgetProvider': 'quran', 'SemangatWidgetProvider': 'semangat', 'RamadanWidgetProvider': 'ramadan'}[provider]}.webp';
+      'assets/widgets/${const {'PrayerWidgetProvider': 'jadwal-sholat', 'IbadahWidgetProvider': 'ibadah', 'QuranWidgetProvider': 'quran', 'SemangatWidgetProvider': 'semangat', 'HafalanWidgetProvider': 'hafalan', 'RamadanWidgetProvider': 'ramadan'}[provider]}.webp';
 }
 
 const homeWidgets = [
@@ -46,6 +46,13 @@ const homeWidgets = [
     'Semangat Sholat',
     '3x2',
     'Pesan santai sesuai waktu sholat sekarang, plus lima waktu.',
+  ),
+  HomeWidgetInfo(
+    'HafalanWidgetProvider',
+    "Hafalan Al-Qur'an",
+    '4x2',
+    'Ayat berikutnya yang belum hafal, besar dengan font mushaf. Tutup '
+        'untuk menguji, tandai hafal langsung dari layar utama.',
   ),
   HomeWidgetInfo(
     'RamadanWidgetProvider',

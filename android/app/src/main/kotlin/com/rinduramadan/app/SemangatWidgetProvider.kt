@@ -442,6 +442,20 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                         ),
                         listOf("$n on time, keren! ✨", "$n tepat waktu 🔥"),
                     )
+                    "jamak" -> return Messages(
+                        listOf(
+                            "$n udah dijamak, safarnya aman ✅ Semoga lancar & berkah ✨",
+                            "Musafir tetap jaga sholat 💪 $n dijamak, nilainya penuh.",
+                        ),
+                        listOf("$n dijamak ✅", "Safar aman, sholat jalan 💪"),
+                    )
+                    "uzur" -> return Messages(
+                        listOf(
+                            "$n udah ditunaikan. Karena uzur, nggak berdosa - yang penting langsung dikerjakan 🤲",
+                            "Uzur itu wajar, langsung qadha itu keren 💪 Jaga sholat berikutnya ya.",
+                        ),
+                        listOf("$n tertunai ✅", "Uzur, langsung qadha 💪"),
+                    )
                 }
             }
 

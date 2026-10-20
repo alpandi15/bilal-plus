@@ -32,6 +32,30 @@ const _filterLabel = {
 /// Mode hafalan: progres hafalan per surah; ketuk surah untuk menghafal
 /// ayat demi ayat (ayat bisa disembunyikan, ulangi berkali-kali, tandai
 /// hafal). Tersimpan di HP & ikut cadangan data.
+/// Dibuka dari widget Hafalan: memuat teks Al-Qur'an lalu langsung ke
+/// halaman hafalan [surah] (atau daftar surah bila null).
+class HafalanOpenPage extends StatelessWidget {
+  const HafalanOpenPage({super.key, this.surah});
+  final int? surah;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<QuranText>(
+    future: QuranText.load(),
+    builder: (context, snap) {
+      final text = snap.data;
+      final n = surah;
+      if (n == null || n < 1 || n > 114) return const HafalanPage();
+      if (text == null) {
+        return const Scaffold(
+          backgroundColor: Color(0xFFFFFAF3),
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return HafalanSurahPage(text: text, surah: text.surah(n));
+    },
+  );
+}
+
 class HafalanPage extends StatefulWidget {
   const HafalanPage({super.key});
 

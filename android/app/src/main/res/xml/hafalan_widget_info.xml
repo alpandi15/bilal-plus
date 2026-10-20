@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4x2 sel bawaan (minimal 3x2: 180x110dp), bisa diregangkan melebar &
+     meninggi - ayat besar & terjemahan ikut menyesuaikan. Data hanya
+     berubah saat menandai hafal (dari aplikasi atau widget), jadi tanpa
+     pembaruan berkala. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:maxResizeWidth="460dp"
+    android:maxResizeHeight="320dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/hafalan_widget_layout"
+    android:previewImage="@drawable/widget_preview_hafalan"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/hafalan_widget_description">
+</appwidget-provider>

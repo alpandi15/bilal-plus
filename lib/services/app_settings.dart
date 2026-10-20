@@ -27,6 +27,7 @@ class AppSettings {
   static const readerSizeKey = 'reader_arabic_size';
   static const soloWeightKey = 'sholat_solo_weight';
   static const lastJamaahKey = 'sholat_last_jamaah';
+  static const lastSafarKey = 'sholat_last_safar';
   static const onboardedKey = 'onboarded';
   static const userNameKey = 'user_name';
   static const quranTajweedKey = 'quran_tajweed';
@@ -81,6 +82,12 @@ class AppSettingsController extends ChangeNotifier {
   /// Pilihan jama'ah terakhir - bawaan centang berikutnya (juga dari widget
   /// & notifikasi).
   bool get lastJamaah => _lastJamaah;
+
+  bool _lastSafar = false;
+
+  /// Sholat terakhir dicatat saat safar - centang berikutnya bawaannya juga
+  /// safar (qashar), sampai dimatikan.
+  bool get lastSafar => _lastSafar;
 
   /// Ukuran teks Arab di pembaca bilal tarawih.
   double get readerSize => _readerSize;
@@ -206,6 +213,7 @@ class AppSettingsController extends ChangeNotifier {
       _soloWeight =
           prefs.getDouble(AppSettings.soloWeightKey) ?? hadithSoloWeight;
       _lastJamaah = prefs.getBool(AppSettings.lastJamaahKey) ?? false;
+      _lastSafar = prefs.getBool(AppSettings.lastSafarKey) ?? false;
       _loaded = true;
     } catch (e) {
       debugPrint('pengaturan gagal dibaca: $e');
@@ -366,6 +374,13 @@ class AppSettingsController extends ChangeNotifier {
     _soloWeight = v.clamp(0, 1);
     notifyListeners();
     await _save((p) => p.setDouble(AppSettings.soloWeightKey, _soloWeight));
+  }
+
+  Future<void> setLastSafar(bool v) async {
+    if (v == _lastSafar) return;
+    _lastSafar = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.lastSafarKey, v));
   }
 
   Future<void> setLastJamaah(bool v) async {
