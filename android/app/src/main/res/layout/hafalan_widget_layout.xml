@@ -76,7 +76,7 @@
             android:progress="0"
             android:progressDrawable="@drawable/tracker_bar" />
 
-        <!-- ayat: bitmap font mushaf (ketuk = tutup/lihat) -->
+        <!-- ayat: bitmap font mushaf (ketuk = buka aplikasi) -->
         <FrameLayout
             android:id="@+id/hw_ayah_box"
             android:layout_width="match_parent"

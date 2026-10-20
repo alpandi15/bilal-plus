@@ -4,6 +4,12 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.14.1 (build 23) · 20 Oktober 2026
+
+- Widget Hafalan: mengetuk ayat kini membuka halaman hafalan surahnya
+  (sebelumnya malah menutup ayat). Tutup/lihat ayat cukup lewat tombol
+  "Tutup/Lihat".
+
 ## 1.14.0 (build 22) · 20 Oktober 2026
 
 **Widget Hafalan Al-Qur'an**

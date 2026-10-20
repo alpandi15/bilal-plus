@@ -41,7 +41,7 @@ import kotlin.math.min
  *
  * - "Tutup" ([ACTION_PEEK]) menyembunyikan ayat kecuali kata pertama -
  *   kata lainnya jadi blok samar di posisinya, untuk menguji hafalan.
- *   Ketuk ayat juga membuka/menutup.
+ * - Ketuk di mana pun selain tombol membuka halaman hafalan surahnya.
  * - "Hafal" ([ACTION_HAFAL]) langsung maju ke ayat berikutnya (tertunda,
  *   seperti centang widget Ibadah) lalu diteruskan ke Dart di latar
  *   (`trackerWidgetCallback`) yang menulis ke basis data & menyusun ulang
@@ -222,7 +222,9 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             views.setViewVisibility(R.id.hw_empty, View.GONE)
             views.setImageViewBitmap(R.id.hw_ayah, bitmap)
             views.setContentDescription(R.id.hw_ayah, "$name ayat $number")
-            views.setOnClickPendingIntent(R.id.hw_ayah_box, broadcast(context, ACTION_PEEK, null, 1))
+            // ketuk ayat = buka halaman hafalan surahnya (area terbesar -
+            // harus membuka aplikasi); tutup/lihat hanya lewat tombolnya
+            views.setOnClickPendingIntent(R.id.hw_ayah_box, open(context, surah))
 
             views.setViewVisibility(R.id.hw_translation, if (showTranslation && !hidden) View.VISIBLE else View.GONE)
             views.setTextViewText(R.id.hw_translation, next.optString("tr"))
