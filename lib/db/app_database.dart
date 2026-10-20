@@ -294,6 +294,24 @@ class AppDatabase extends _$AppDatabase {
   );
 }
 
+/// Aliran yang memancar sekali saat didengarkan dan setiap kali salah satu
+/// [tables] berubah.
+///
+/// Nama tabelnya sengaja ditulis di SQL: drift berbagi satu stream untuk
+/// query ber-SQL & variabel sama TANPA melihat `readsFrom`, jadi query
+/// "SELECT 1" polos untuk kumpulan tabel berbeda saling tertukar - mis.
+/// pemantau widget ikut stream Beranda yang tidak memuat tabel hafalan,
+/// sehingga perubahan hafalan tak sampai ke widget.
+Stream<void> watchTables(
+  DatabaseConnectionUser db,
+  Set<ResultSetImplementation> tables,
+) {
+  final names = [for (final t in tables) t.entityName]..sort();
+  return db
+      .customSelect('SELECT 1 /* ${names.join(',')} */', readsFrom: tables)
+      .watch();
+}
+
 /// Kunci kelompok sholat lima waktu.
 const sholatWajibGroup = 'sholat_wajib';
 
@@ -552,16 +570,13 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     required String summariesFrom,
     required String summariesTo,
   }) =>
-      customSelect(
-        'SELECT 1',
-        readsFrom: {
-          ibadahItems,
-          ibadahLogs,
-          dayStatuses,
-          quranLogs,
-          ramadanRecaps,
-        },
-      ).watch().asyncMap(
+      watchTables(attachedDatabase, {
+        ibadahItems,
+        ibadahLogs,
+        dayStatuses,
+        quranLogs,
+        ramadanRecaps,
+      }).asyncMap(
         (_) => loadDay(
           date,
           summariesFrom: summariesFrom,
@@ -626,10 +641,11 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     ramadanRecaps,
   )..orderBy([(r) => OrderingTerm.desc(r.hijriYear)])).watch();
 
-  Stream<QadhaStatus> watchQadha() => customSelect(
-    'SELECT 1',
-    readsFrom: {ramadanRecaps, ibadahLogs, ibadahItems},
-  ).watch().asyncMap((_) => qadhaStatus());
+  Stream<QadhaStatus> watchQadha() => watchTables(attachedDatabase, {
+    ramadanRecaps,
+    ibadahLogs,
+    ibadahItems,
+  }).asyncMap((_) => qadhaStatus());
 
   Future<RamadanRecap?> recapOf(int hijriYear) => (select(
     ramadanRecaps,
@@ -988,10 +1004,10 @@ class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
   }
 
   /// [progress] yang diperbarui setiap kali putaran/sesi baca berubah.
-  Stream<QuranProgress> watchProgress() => customSelect(
-    'SELECT 1',
-    readsFrom: {quranCycles, quranLogs},
-  ).watch().asyncMap((_) => progress());
+  Stream<QuranProgress> watchProgress() => watchTables(attachedDatabase, {
+    quranCycles,
+    quranLogs,
+  }).asyncMap((_) => progress());
 
   /// Catat bacaan sampai (dan termasuk) ayat global [toAyah] pada tanggal
   /// [date] (`YYYY-MM-DD`). Awal sesinya = ayat sesudah posisi terakhir;

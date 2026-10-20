@@ -77,6 +77,10 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   StreamSubscription<Uri?>? _widgetClicks;
   Timer? _adzanDebounce;
 
+  /// Aplikasi ditinggalkan: data widget yang masih menunggu disimpan
+  /// sekarang juga (mis. baru menandai hafal lalu langsung keluar).
+  AppLifecycleListener? _lifecycle;
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +94,10 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
       _widgetSync
         ..start()
         ..schedule();
+      _lifecycle = AppLifecycleListener(
+        onHide: _widgetSync.flush,
+        onPause: _widgetSync.flush,
+      );
       registerTrackerWidgetCallback();
       _listenWidgetLaunch();
       _startAdzan();
@@ -181,6 +189,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     _settings.removeListener(_scheduleAdzan);
     _location.removeListener(_scheduleAdzan);
     _hijri.removeListener(_scheduleAdzan);
+    _lifecycle?.dispose();
     _widgetSync.dispose();
     _location.dispose();
     _hijri.dispose();

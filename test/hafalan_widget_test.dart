@@ -75,4 +75,25 @@ void main() {
     expect(p['memorized'], 6);
     expect(p['queue'], isEmpty);
   });
+
+  test('pemantau tabel berbeda tidak saling tertukar (stream drift)', () async {
+    // Beranda/Ibadah memantau tabel ibadah lebih dulu; pemantau widget
+    // Hafalan harus tetap menerima perubahan tabel hafalan
+    final ibadah = <int>[];
+    final hafalan = <int>[];
+    var n = 0;
+    final a = watchTables(db, {db.ibadahLogs}).listen((_) => ibadah.add(n));
+    final b = watchTables(db, {db.hafalanAyahs}).listen((_) => hafalan.add(n));
+    await pumpEventQueue();
+    expect((ibadah.length, hafalan.length), (1, 1));
+
+    n = 1;
+    await db.quranDao.setHafal(idx(84, 1), idx(84, 1), true);
+    await pumpEventQueue();
+    expect(hafalan, [0, 1]);
+    expect(ibadah, [0], reason: 'tabel ibadah tidak berubah');
+
+    await a.cancel();
+    await b.cancel();
+  });
 }

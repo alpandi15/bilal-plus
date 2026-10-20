@@ -305,13 +305,11 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
     final key = '$from|$today';
     if (_stream == null || key != _key) {
       _key = key;
-      _stream = db
-          .customSelect(
-            'SELECT 1',
-            readsFrom: {db.ibadahItems, db.ibadahLogs, db.dayStatuses},
-          )
-          .watch()
-          .asyncMap((_) => db.ibadahDao.loadRange(from, today));
+      _stream = watchTables(db, {
+        db.ibadahItems,
+        db.ibadahLogs,
+        db.dayStatuses,
+      }).asyncMap((_) => db.ibadahDao.loadRange(from, today));
     }
     return _stream!;
   }

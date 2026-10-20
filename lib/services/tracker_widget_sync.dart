@@ -58,50 +58,97 @@ class TrackerWidgetSync {
   final AppSettingsController settings;
 
   StreamSubscription<void>? _sub;
+  StreamSubscription<void>? _hafalanSub;
   Timer? _debounce;
+  Timer? _hafalanDebounce;
   Timer? _midnight;
 
   void start() {
     if (!_supported) return;
-    _sub = db
-        .customSelect(
-          'SELECT 1',
-          readsFrom: {
-            db.ibadahItems,
-            db.ibadahLogs,
-            db.dayStatuses,
-            db.ramadanRecaps,
-            db.quranCycles,
-            db.quranLogs,
-            db.hafalanAyahs,
-          },
-        )
-        .watch()
-        .listen(
+    _sub =
+        watchTables(db, {
+          db.ibadahItems,
+          db.ibadahLogs,
+          db.dayStatuses,
+          db.ramadanRecaps,
+          db.quranCycles,
+          db.quranLogs,
+        }).listen(
           (_) => schedule(),
           onError: (Object e) {
             debugPrint('tracker widget: $e');
           },
         );
+    // widget Hafalan disinkronkan sendiri - cepat & tidak ikut gagal bila
+    // widget lain bermasalah
+    _hafalanSub = watchTables(db, {db.hafalanAyahs}).listen(
+      (_) => scheduleHafalan(),
+      onError: (Object e) {
+        debugPrint('hafalan widget: $e');
+      },
+    );
     hijri.addListener(schedule);
     location.addListener(schedule);
     settings.addListener(schedule);
+    settings.addListener(scheduleHafalan);
     _armMidnight();
+    _warmQuranText();
+  }
+
+  /// Muat teks Al-Qur'an lebih awal bila ada hafalan, supaya sinkron widget
+  /// Hafalan sesudah menandai hafal tidak menunggu teks dimuat.
+  Future<void> _warmQuranText() async {
+    try {
+      final any = await (db.select(db.hafalanAyahs)..limit(1)).get();
+      if (any.isNotEmpty) await QuranText.load();
+    } catch (e) {
+      debugPrint('hafalan widget: $e');
+    }
   }
 
   void dispose() {
     _sub?.cancel();
+    _hafalanSub?.cancel();
     _debounce?.cancel();
+    _hafalanDebounce?.cancel();
     _midnight?.cancel();
     hijri.removeListener(schedule);
     location.removeListener(schedule);
     settings.removeListener(schedule);
+    settings.removeListener(scheduleHafalan);
   }
 
   /// Sinkron sebentar lagi - beberapa perubahan beruntun cukup sekali.
   void schedule() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), sync);
+  }
+
+  void scheduleHafalan() {
+    _hafalanDebounce?.cancel();
+    _hafalanDebounce = Timer(const Duration(milliseconds: 150), syncHafalan);
+  }
+
+  /// Aplikasi ditinggalkan (layar utama / tutup): jalankan sinkron yang masih
+  /// menunggu sekarang juga, supaya tidak hilang bila prosesnya dihentikan.
+  void flush() {
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+      sync();
+    }
+    if (_hafalanDebounce?.isActive ?? false) {
+      _hafalanDebounce!.cancel();
+      syncHafalan();
+    }
+  }
+
+  Future<void> syncHafalan() async {
+    if (!_supported) return;
+    try {
+      await _syncHafalan(db, settings.quranFont);
+    } catch (e) {
+      debugPrint('hafalan widget: $e');
+    }
   }
 
   void _armMidnight() {
@@ -139,7 +186,6 @@ class TrackerWidgetSync {
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
       await HomeWidget.updateWidget(androidName: semangatWidgetName);
       await HomeWidget.updateWidget(androidName: quranWidgetName);
-      await _syncHafalan(db, settings.quranFont);
     } catch (e) {
       // widget belum dipasang / plugin tidak tersedia - bukan kegagalan fatal
       debugPrint('tracker widget: $e');

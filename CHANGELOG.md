@@ -4,6 +4,13 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.14.2 (build 24) · 20 Oktober 2026
+
+- Widget Hafalan kini langsung ikut berubah saat menandai atau membatalkan
+  hafalan dari aplikasi.
+- Perbaikan umum: data di laporan, progres khatam, rekap Ramadan & widget
+  lainnya tidak lagi sesekali telat diperbarui.
+
 ## 1.14.1 (build 23) · 20 Oktober 2026
 
 - Widget Hafalan: mengetuk ayat kini membuka halaman hafalan surahnya

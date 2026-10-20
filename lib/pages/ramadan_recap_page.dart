@@ -105,19 +105,14 @@ class _RamadanRecapPageState extends State<RamadanRecapPage> {
       _streamKey = key;
       final ramadan = ramadanOfYear(year, anchors);
       final monthEnd = DateTime.utc(month.year, month.month + 1, 0);
-      _stream = db
-          .customSelect(
-            'SELECT 1',
-            readsFrom: {
-              db.ibadahLogs,
-              db.dayStatuses,
-              db.quranLogs,
-              db.quranCycles,
-              db.ramadanRecaps,
-            },
-          )
-          .watch()
-          .asyncMap(
+      _stream =
+          watchTables(db, {
+            db.ibadahLogs,
+            db.dayStatuses,
+            db.quranLogs,
+            db.quranCycles,
+            db.ramadanRecaps,
+          }).asyncMap(
             (_) async => _RecapData(
               summary: await loadRamadanSummary(db, ramadan, today),
               recap: await db.ibadahDao.recapOf(year),

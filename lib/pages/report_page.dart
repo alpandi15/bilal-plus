@@ -57,18 +57,12 @@ class _ReportPageState extends State<ReportPage> {
     final key = '$from|$to';
     if (_stream == null || key != _key) {
       _key = key;
-      _stream = db
-          .customSelect(
-            'SELECT 1',
-            readsFrom: {
-              db.ibadahItems,
-              db.ibadahLogs,
-              db.dayStatuses,
-              db.quranLogs,
-            },
-          )
-          .watch()
-          .asyncMap((_) => db.ibadahDao.loadRange(from, to));
+      _stream = watchTables(db, {
+        db.ibadahItems,
+        db.ibadahLogs,
+        db.dayStatuses,
+        db.quranLogs,
+      }).asyncMap((_) => db.ibadahDao.loadRange(from, to));
     }
     return _stream!;
   }
