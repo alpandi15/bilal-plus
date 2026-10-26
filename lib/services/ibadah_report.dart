@@ -16,6 +16,8 @@ class DayScore {
     required this.excused,
     required this.hasData,
     required this.sholat,
+    this.qadha = 0,
+    this.uzur = 0,
   }) : score = score ?? done * 1.0;
 
   final String date;
@@ -31,6 +33,22 @@ class DayScore {
 
   /// Sholat wajib yang tercentang (0..5).
   final int sholat;
+
+  /// Sholat wajib yang diqadha hari itu: tanpa uzur / karena uzur syar'i.
+  /// Hanya terisi bila jam sholat dicatat.
+  final int qadha, uzur;
+
+  DayScore withQadha(int qadha, int uzur) => DayScore(
+    date: date,
+    done: done,
+    total: total,
+    score: score,
+    excused: excused,
+    hasData: hasData,
+    sholat: sholat,
+    qadha: qadha,
+    uzur: uzur,
+  );
 
   double get fraction => total == 0 ? 0 : score / total;
 
@@ -207,6 +225,7 @@ IbadahReport buildIbadahReport(
     // kualitas sholat wajib
     if (excused) continue;
     calc.DailyPrayerTimes? todayTimes, nextTimes;
+    var dayQadha = 0, dayUzur = 0;
     for (final i in sholatItems) {
       final stat = sholat[i.id]!;
       final log = logs[i.id];
@@ -258,14 +277,19 @@ IbadahReport buildIbadahReport(
           stat.late++;
         case SholatStatus.qadha:
           stat.qadha++;
+          dayQadha++;
         case SholatStatus.jamak:
           stat.jamak++;
           continue;
         case SholatStatus.uzur:
           stat.uzur++;
+          dayUzur++;
           continue;
       }
       stat.delayMinutes += minutesAfterAdzan(at, window);
+    }
+    if (dayQadha + dayUzur > 0) {
+      days[days.length - 1] = days.last.withQadha(dayQadha, dayUzur);
     }
   }
 

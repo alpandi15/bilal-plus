@@ -73,6 +73,9 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
 
         /** Lama tanggapan atas sholat yang baru dicatat tetap tampil. */
         private const val RESPONSE_MS = 2 * 60 * 60_000L
+
+        /** Lama peringatan qadha tanpa uzur tampil sesudah dicatat. */
+        private const val WARN_MS = 6 * 60 * 60_000L
         private const val MINUTE = 60_000L
         private const val LIVE_REFRESH_MS = 5 * MINUTE
         private const val IDLE_REFRESH_MS = 30 * MINUTE
@@ -85,7 +88,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             Triple(R.id.sw_col_4, R.id.sw_dot_4, R.id.sw_name_4),
         )
 
-        private class Prayer(
+        internal class Prayer(
             val id: Int,
             val name: String,
             val at: Long,
@@ -94,6 +97,8 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             var done: Boolean,
             val excused: Boolean,
             var status: String?,
+            /** Kapan dicentang (epoch ms; 0 bila tak diketahui). */
+            val prayedMs: Long,
         )
 
         /** Isi widget saat ini: pesan & kapan perlu digambar ulang. */
@@ -112,6 +117,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                     done = o.optBoolean("done", false),
                     excused = o.optBoolean("excused", false),
                     status = o.optString("status", "").ifEmpty { null },
+                    prayedMs = o.optLong("prayedMs", 0L),
                 )
             }
         }
@@ -294,12 +300,12 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
         private fun minutes(ms: Long) = (ms / MINUTE).coerceAtLeast(1)
 
         /** Variasi pesan keadaan saat ini: [long] biasa & [short] untuk widget kecil. */
-        private class Messages(val long: List<String>, val short: List<String>)
+        internal class Messages(val long: List<String>, val short: List<String>)
 
         /** Puasa Tarwiyah/Arafah hari ini ([today]) / besok ([tomorrow]): "tarwiyah" / "arafah". */
-        private class Fast(val today: String?, val done: Boolean, val tomorrow: String?, val maghrib: Long)
+        internal class Fast(val today: String?, val done: Boolean, val tomorrow: String?, val maghrib: Long)
 
-        private fun messages(
+        internal fun messages(
             sholat: List<Prayer>,
             tomorrowSubuh: Prayer?,
             excused: Boolean,
@@ -364,6 +370,18 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             // puasa Tarwiyah/Arafah - sesudah urusan sholat yang mendesak
             fastMessages(fast, now)?.let { return it }
 
+            // qadha tanpa uzur hari ini: ancaman dari dalil menemani selama
+            // 6 jam sesudah dicatat (qadha karena uzur tidak diancam)
+            sholat.lastOrNull {
+                it.done && it.status == "qadha" &&
+                    (if (it.prayedMs > 0) it.prayedMs else it.at) + WARN_MS > now
+            }?.let {
+                return Messages(
+                    WidgetWarning.qadhaLong(it.name),
+                    WidgetWarning.qadhaShort(it.name),
+                )
+            }
+
             val counted = sholat.filter { !it.excused }
             if (counted.isNotEmpty() && counted.all { it.done }) {
                 val c = "${counted.size}/${counted.size}"
@@ -386,23 +404,25 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             if (missed.size > 1) {
                 val c = missed.size
                 return Messages(
-                    listOf(
+                    WidgetWarning.missedLong("$c sholat") + listOf(
                         "$c sholat terlewat. Itu utang ke Allah, qadha sekarang ya, jangan ditunda 🤲",
                         "Ada $c sholat terlewat. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤲",
                         "$c sholat belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
-                    listOf("$c sholat terlewat, qadha sekarang 🤲", "Segera qadha $c sholat 🙏"),
+                    listOf("$c sholat terlewat, qadha sekarang 🤲", "Segera qadha $c sholat 🙏") +
+                        WidgetWarning.missedShort("$c sholat"),
                 )
             }
             if (missed.size == 1) {
                 val n = missed.single().name
                 return Messages(
-                    listOf(
+                    WidgetWarning.missedLong(n) + listOf(
                         "$n terlewat. Sholat itu kewajiban, qadha sekarang ya, jangan ditunda 🤲",
                         "$n belum tertunai. Segera qadha, lalu istighfar. Allah Maha Penerima taubat 🤲",
                         "$n belum dicentang. Lupa mencatat? Centang. Terlewat? Qadha sekarang 🙏",
                     ),
-                    listOf("$n terlewat, qadha sekarang 🤲", "Segera qadha $n 🙏"),
+                    listOf("$n terlewat, qadha sekarang 🤲", "Segera qadha $n 🙏") +
+                        WidgetWarning.missedShort(n),
                 )
             }
 
@@ -410,7 +430,7 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             // tanggapan hanya sesaat setelah sholatnya (±2 jam) - selebihnya
             // giliran pesan motivasi sesuai waktu
             val last = sholat.lastOrNull { it.done && !it.excused }
-                ?.takeIf { now < minOf(it.end, it.at + RESPONSE_MS) }
+                ?.takeIf { (if (it.prayedMs > 0) it.prayedMs else it.at) + RESPONSE_MS > now }
             val upcoming = next?.name
             if (last != null) {
                 val n = last.name

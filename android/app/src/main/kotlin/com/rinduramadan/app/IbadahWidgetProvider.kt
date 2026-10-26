@@ -114,6 +114,8 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
             /** onTime / late / qadha - hanya bila pencatatan waktu sholat aktif. */
             var status: String?,
             val prayed: String,
+            /** Kapan dicentang (epoch ms; 0 bila tak diketahui). */
+            val prayedMs: Long,
             /** Bobot saat tuntas: sholat wajib sendiri < 1 (lihat ibadah_day.dart). */
             val weight: Double,
         )
@@ -135,6 +137,7 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                     time = o.optString("time", ""),
                     status = o.optString("status", "").ifEmpty { null },
                     prayed = o.optString("prayed", ""),
+                    prayedMs = o.optLong("prayedMs", 0L),
                     weight = o.optDouble("w", 1.0),
                 )
             }.toMutableList()
@@ -512,14 +515,28 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                         "$n terlewat. Sholat itu kewajiban - segera qadha, jangan ditunda.",
                         "$n belum tertunai. Qadha sekarang lalu istighfar, Allah Maha Pengampun.",
                         "Lupa mencatat $n? Centang. Terlewat? Qadha sekarang juga.",
-                    ),
+                    ) + (if (missed.size == 1) WidgetWarning.threats(n).map { "$n terlewat! $it" }
+                    else WidgetWarning.threats("").map { "$n terlewat! $it" }),
                     seed + missed.first().id,
                 )
             }
 
-            // tanggapan hanya ±2 jam setelah waktu sholatnya
+            // qadha tanpa uzur: ancaman dari dalil menemani 6 jam sesudah
+            // dicatat (qadha karena uzur tidak diancam)
+            sholat.lastOrNull {
+                it.done && it.status == "qadha" &&
+                    (if (it.prayedMs > 0) it.prayedMs else it.at) + 6 * 60 * 60_000L > now
+            }?.let {
+                return pick(
+                    if (narrow) listOf("Qadha tanpa uzur = lalai", "Istighfar & taubat ya")
+                    else WidgetWarning.threats(it.name),
+                    seed + it.id,
+                )
+            }
+
+            // tanggapan hanya ±2 jam setelah dicatat
             val last = sholat.lastOrNull { it.done }
-                ?.takeIf { now < minOf(it.end, it.at + 2 * 60 * 60_000L) }
+                ?.takeIf { (if (it.prayedMs > 0) it.prayedMs else it.at) + 2 * 60 * 60_000L > now }
                 ?: return null
             val n = last.name
             val next = sholat.firstOrNull { it.at > last.at && !it.done && !it.excused }?.name

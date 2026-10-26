@@ -158,6 +158,7 @@ Future<Map<String, Object?>> ibadahWidgetDay(
           qadhaReason: data.logs[i.id]?.qadhaReason,
         ).name,
         'prayed': calc.formatInZone(prayedAt.toUtc(), tz),
+        'prayedMs': prayedAt.millisecondsSinceEpoch,
       },
     };
   }
@@ -300,8 +301,10 @@ Future<Map<String, Object?>> patchIbadahPayload(
           jamak: data.logs[item.id]?.jamak ?? false,
           qadhaReason: data.logs[item.id]?.qadhaReason,
         ).name;
+        e['prayedMs'] = prayedAt.millisecondsSinceEpoch;
       } else {
         e.remove('status');
+        e.remove('prayedMs');
       }
       if (e['excused'] != true) {
         total++;

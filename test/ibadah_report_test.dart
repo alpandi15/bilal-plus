@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -164,6 +165,36 @@ void main() {
         expect(r.longestStreak, 3); // Sen, Sel, Rab (berhalangan)
       },
     );
+
+    test('qadha per hari: tanpa uzur & uzur dipisah', () async {
+      // Senin: Subuh qadha tanpa uzur, Dzuhur qadha tertidur
+      await allSholat('2026-09-21');
+      final w = _window('subuh', '2026-09-21');
+      await db.ibadahDao.setValue(
+        '2026-09-21',
+        await idOf('subuh'),
+        1,
+        prayedAt: w.end.add(const Duration(minutes: 30)),
+        qadhaReason: const Value('tanpa'),
+      );
+      await db.ibadahDao.setValue(
+        '2026-09-21',
+        await idOf('ashar'),
+        1,
+        prayedAt: _window(
+          'ashar',
+          '2026-09-21',
+        ).end.add(const Duration(minutes: 10)),
+        qadhaReason: const Value('tertidur'),
+      );
+      await allSholat('2026-09-22');
+
+      final r = await report('2026-09-20', '2026-09-25', '2026-09-25');
+      final mon = r.days.firstWhere((d) => d.date == '2026-09-21');
+      expect((mon.qadha, mon.uzur), (1, 1));
+      final tue = r.days.firstWhere((d) => d.date == '2026-09-22');
+      expect((tue.qadha, tue.uzur), (0, 0));
+    });
 
     test('hari ini yang belum lengkap tidak memutus streak', () async {
       await allSholat('2026-09-23');

@@ -4,6 +4,17 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.14.3 (build 25) · 26 Oktober 2026
+
+- Lembar catat sholat: isi yang panjang bisa digulir, tombol "Simpan" dan
+  "Batalkan centang" menempel di bawah.
+- Kalender Ibadah di Laporan: hari dengan sholat yang diqadha diberi pita
+  yang naik dari dasar kotak - merah untuk qadha tanpa uzur, biru untuk
+  qadha karena uzur; makin tinggi makin banyak. Tekan kotak untuk rinciannya.
+- Widget Semangat Sholat & Ibadah Harian: sholat yang terlewat atau diqadha
+  tanpa uzur kini disertai peringatan dari dalil shahih beserta rujukannya.
+  Qadha karena uzur tidak diancam.
+
 ## 1.14.2 (build 24) · 20 Oktober 2026
 
 - Widget Hafalan kini langsung ikut berubah saat menandai atau membatalkan

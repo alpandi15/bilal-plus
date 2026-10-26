@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../services/ibadah_report.dart';
+import '../../services/sholat_time.dart';
 import '../../utils/date_key.dart';
+import '../ibadah/sholat_log_sheet.dart' show sholatStatusColor;
 
 const _stone = Color(0xFF44403C);
 const _muted = Color(0xFF78716C);
@@ -27,11 +29,59 @@ Color heatColor(DayScore? s) {
   return heatShades[1 + (s.fraction * 4).floor().clamp(0, 3)];
 }
 
-String _tooltip(DayScore s) => !s.hasData
-    ? formatDateKeyShort(s.date)
-    : s.excused
-    ? '${formatDateKeyShort(s.date)} · berhalangan'
-    : '${formatDateKeyShort(s.date)} · ${s.done}/${s.total} ibadah';
+/// Pita qadha: warna sama dengan checklist (merah = tanpa uzur, biru = uzur
+/// syar'i).
+final qadhaColor = sholatStatusColor[SholatStatus.qadha]!;
+final uzurColor = sholatStatusColor[SholatStatus.uzur]!;
+
+String _tooltip(DayScore s) {
+  final date = formatDateKeyShort(s.date);
+  if (!s.hasData) return date;
+  if (s.excused) return '$date · berhalangan';
+  final qadha = [
+    if (s.qadha > 0) '${s.qadha} qadha tanpa uzur',
+    if (s.uzur > 0) '${s.uzur} qadha karena uzur',
+  ];
+  return '$date · ${s.done}/${s.total} ibadah'
+      '${qadha.isEmpty ? '' : '\n${qadha.join(' · ')}'}';
+}
+
+/// Pita qadha di dasar kotak, naik seperti air terisi: tinggi = banyaknya
+/// sholat yang diqadha hari itu (1..5 -> 20%..[maxFill] tinggi kotak).
+/// Merah & biru berdampingan (lebar sebanding jumlahnya) bila keduanya ada.
+/// Null bila tidak ada qadha. Warna dasar kotak (skala tuntas) tidak
+/// berubah, jadi keduanya tetap terbaca.
+Widget? qadhaBand(DayScore? s, {double maxFill = 0.6}) {
+  if (s == null || s.excused || s.qadha + s.uzur == 0) return null;
+  final n = (s.qadha + s.uzur).clamp(1, 5);
+  final fill = 0.2 + (maxFill - 0.2) * (n - 1) / 4;
+  return Positioned.fill(
+    child: FractionallySizedBox(
+      heightFactor: fill,
+      alignment: Alignment.bottomCenter,
+      child: Row(
+        children: [
+          if (s.qadha > 0)
+            Expanded(
+              flex: s.qadha,
+              child: ColoredBox(
+                color: qadhaColor,
+                child: const SizedBox.expand(),
+              ),
+            ),
+          if (s.uzur > 0)
+            Expanded(
+              flex: s.uzur,
+              child: ColoredBox(
+                color: uzurColor,
+                child: const SizedBox.expand(),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
 /// Kalender kontribusi ala GitHub: satu kolom per pekan (Senin di atas),
 /// warna = persen ibadah aktif yang tuntas hari itu. Digulir ke kanan
@@ -107,6 +157,7 @@ class ContributionCalendar extends StatelessWidget {
                     child: Container(
                       width: cell,
                       height: cell,
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         color: heatColor(s),
                         borderRadius: BorderRadius.circular(3),
@@ -114,6 +165,7 @@ class ContributionCalendar extends StatelessWidget {
                           color: s.hasData ? _line : const Color(0x00000000),
                         ),
                       ),
+                      child: Stack(children: [?qadhaBand(s)]),
                     ),
                   ),
                 },
@@ -212,6 +264,7 @@ class MonthHeatmap extends StatelessWidget {
     final color = future ? heatNoData : heatColor(s);
     final dark = !future && s != null && s.hasData && s.fraction >= 0.75;
     final cell = Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(8),
@@ -221,17 +274,23 @@ class MonthHeatmap extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: Text(
-        '$day',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: future
-              ? const Color(0xFFD6D3D1)
-              : dark && !(s.excused)
-              ? Colors.white
-              : _stone,
-        ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          ?(future ? null : qadhaBand(s, maxFill: 0.45)),
+          Text(
+            '$day',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: future
+                  ? const Color(0xFFD6D3D1)
+                  : dark && !(s.excused)
+                  ? Colors.white
+                  : _stone,
+            ),
+          ),
+        ],
       ),
     );
     return s == null ? cell : Tooltip(message: _tooltip(s), child: cell);
@@ -240,11 +299,34 @@ class MonthHeatmap extends StatelessWidget {
 
 /// Keterangan skala warna.
 class HeatLegend extends StatelessWidget {
-  const HeatLegend({super.key, this.showExcused = true});
+  const HeatLegend({super.key, this.showExcused = true, this.showQadha = true});
   final bool showExcused;
+
+  /// Keterangan pita qadha (merah / biru).
+  final bool showQadha;
 
   @override
   Widget build(BuildContext context) {
+    // contoh pita qadha: kotak putih terisi seperempat dari bawah
+    Widget band(Color c) => Container(
+      width: 12,
+      height: 12,
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: _line),
+      ),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: FractionallySizedBox(
+          heightFactor: 0.45,
+          widthFactor: 1,
+          child: ColoredBox(color: c),
+        ),
+      ),
+    );
     Widget box(Color c) => Container(
       width: 12,
       height: 12,
@@ -281,6 +363,33 @@ class HeatLegend extends StatelessWidget {
               ),
             ],
           ),
+        if (showQadha) ...[
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(width: 8),
+              band(qadhaColor),
+              const Text(
+                'qadha tanpa uzur',
+                style: TextStyle(fontSize: 10, color: _muted),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              band(uzurColor),
+              const Text(
+                'qadha uzur',
+                style: TextStyle(fontSize: 10, color: _muted),
+              ),
+            ],
+          ),
+          const Text(
+            'makin tinggi pita, makin banyak',
+            style: TextStyle(fontSize: 10, color: _muted),
+          ),
+        ],
       ],
     );
   }

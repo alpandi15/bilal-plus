@@ -242,192 +242,234 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
         'Dijamak dengan $pair saat safar - sah, bukan qadha.',
     };
 
+    // isi bisa panjang (alasan qadha, safar, peringatan) - digulir, sedangkan
+    // tombol Simpan & Batalkan centang menempel di bawah
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Sholat ${widget.name}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: _stone,
-              ),
-            ),
-            Text(
-              'Adzan ${_hm(widget.window.start)} · waktu berakhir '
-              '${_hm(widget.window.end)}',
-              style: const TextStyle(fontSize: 12, color: _muted),
-            ),
-            const SizedBox(height: 16),
-            Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: _pickTime,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: color.withValues(alpha: 0.5)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sholat ${widget.name}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _stone,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            _hm(_at),
-                            style: const TextStyle(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w800,
-                              color: _stone,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        calc.tzLabel[widget.tz]!,
-                        style: const TextStyle(fontSize: 12, color: _muted),
-                      ),
-                      const SizedBox(width: 8),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
+                  Text(
+                    'Adzan ${_hm(widget.window.start)} · waktu berakhir '
+                    '${_hm(widget.window.end)}',
+                    style: const TextStyle(fontSize: 12, color: _muted),
+                  ),
+                  const SizedBox(height: 16),
+                  Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: _pickTime,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
-                          sholatStatusLabel[status]!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: color,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: color.withValues(alpha: 0.5),
                           ),
                         ),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  _hm(_at),
+                                  style: const TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    color: _stone,
+                                    fontFeatures: [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              calc.tzLabel[widget.tz]!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: _muted,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                sholatStatusLabel[status]!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.edit_rounded,
+                              size: 18,
+                              color: _muted,
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.edit_rounded, size: 18, color: _muted),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(detail, style: TextStyle(fontSize: 12, color: color)),
+                  if (_canSafar) ...[
+                    const SizedBox(height: 14),
+                    _SafarCard(
+                      on: _safar,
+                      onChanged: _setSafar,
+                      canQashar: _canQashar,
+                      canJamak: _canJamak,
+                      qashar: _qashar,
+                      jamak: _jamak,
+                      pair: pair,
+                      onQashar: (v) => setState(() => _qashar = v),
+                      onJamak: (v) => setState(() => _jamak = v),
+                    ),
+                  ],
+                  if (needsReason) ...[
+                    const SizedBox(height: 14),
+                    _QadhaReason(
+                      reason: _reason,
+                      itemKey: widget.itemKey,
+                      canJamak: _canJamak,
+                      onChanged: (r) => setState(() => _reason = r),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  JamaahChoice(
+                    jamaah: _jamaah,
+                    soloWeight: widget.soloWeight,
+                    onChanged: (v) => setState(() => _jamaah = v),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'DI MANA',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: Color(0xCCB45309),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      for (final p in sholatPlaces) ...[
+                        if (p != sholatPlaces.first) const SizedBox(width: 8),
+                        Expanded(
+                          child: _PlaceChoice(
+                            label: sholatPlaceLabel[p]!,
+                            icon: sholatPlaceIcon[p]!,
+                            selected: _place == p,
+                            onTap: () => setState(() {
+                              _place = p;
+                              // di masjid hampir selalu berjama'ah - tetap bisa
+                              // diganti bila sholat sendiri
+                              if (p == 'masjid') _jamaah = true;
+                            }),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(detail, style: TextStyle(fontSize: 12, color: color)),
-            if (_canSafar) ...[
-              const SizedBox(height: 14),
-              _SafarCard(
-                on: _safar,
-                onChanged: _setSafar,
-                canQashar: _canQashar,
-                canJamak: _canJamak,
-                qashar: _qashar,
-                jamak: _jamak,
-                pair: pair,
-                onQashar: (v) => setState(() => _qashar = v),
-                onJamak: (v) => setState(() => _jamak = v),
-              ),
-            ],
-            if (needsReason) ...[
-              const SizedBox(height: 14),
-              _QadhaReason(
-                reason: _reason,
-                itemKey: widget.itemKey,
-                canJamak: _canJamak,
-                onChanged: (r) => setState(() => _reason = r),
-              ),
-            ],
-            const SizedBox(height: 16),
-            JamaahChoice(
-              jamaah: _jamaah,
-              soloWeight: widget.soloWeight,
-              onChanged: (v) => setState(() => _jamaah = v),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'DI MANA',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-                color: Color(0xCCB45309),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                for (final p in sholatPlaces) ...[
-                  if (p != sholatPlaces.first) const SizedBox(width: 8),
-                  Expanded(
-                    child: _PlaceChoice(
-                      label: sholatPlaceLabel[p]!,
-                      icon: sholatPlaceIcon[p]!,
-                      selected: _place == p,
-                      onTap: () => setState(() {
-                        _place = p;
-                        // di masjid hampir selalu berjama'ah - tetap bisa
-                        // diganti bila sholat sendiri
-                        if (p == 'masjid') _jamaah = true;
-                      }),
-                    ),
-                  ),
                 ],
+              ),
+            ),
+          ),
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFAF3),
+              border: Border(top: BorderSide(color: _line)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x14785624),
+                  blurRadius: 12,
+                  offset: Offset(0, -3),
+                ),
               ],
             ),
-            const SizedBox(height: 18),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: _amber,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: needsReason && _reason == null
-                  ? null
-                  : () => Navigator.pop(
-                      context,
-                      SholatLogSave(
-                        _at,
-                        _place,
-                        _jamaah,
-                        qadhaReason: needsReason ? _reason : null,
-                        safar: _safar,
-                        qashar: _safar && _canQashar && _qashar,
-                        jamak: jamak,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _amber,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-              child: Text(
-                needsReason && _reason == null
-                    ? 'Pilih alasan qadha dulu'
-                    : 'Simpan',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
+                    onPressed: needsReason && _reason == null
+                        ? null
+                        : () => Navigator.pop(
+                            context,
+                            SholatLogSave(
+                              _at,
+                              _place,
+                              _jamaah,
+                              qadhaReason: needsReason ? _reason : null,
+                              safar: _safar,
+                              qashar: _safar && _canQashar && _qashar,
+                              jamak: jamak,
+                            ),
+                          ),
+                    child: Text(
+                      needsReason && _reason == null
+                          ? 'Pilih alasan qadha dulu'
+                          : 'Simpan',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (widget.done)
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: _muted),
+                      onPressed: () =>
+                          Navigator.pop(context, const SholatLogRemove()),
+                      child: const Text('Batalkan centang'),
+                    ),
+                ],
               ),
             ),
-            if (widget.done)
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: _muted),
-                onPressed: () =>
-                    Navigator.pop(context, const SholatLogRemove()),
-                child: const Text('Batalkan centang'),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
