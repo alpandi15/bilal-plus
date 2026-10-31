@@ -61,6 +61,19 @@
                 android:resource="@xml/prayer_widget_info"/>
         </receiver>
 
+        <!-- Widget Ayat Harian: satu ayat per hari. Lihat
+             AyatWidgetProvider.kt. -->
+        <receiver android:name=".AyatWidgetProvider"
+            android:exported="true"
+            android:label="Ayat Harian">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ayat_widget_info"/>
+        </receiver>
+
         <!-- Widget Hafalan: ayat berikutnya yang belum hafal. Lihat
              HafalanWidgetProvider.kt. -->
         <receiver android:name=".HafalanWidgetProvider"

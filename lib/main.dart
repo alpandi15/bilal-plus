@@ -7,6 +7,14 @@ import 'package:home_widget/home_widget.dart';
 import 'db/app_database.dart';
 import 'db/app_database_scope.dart';
 import 'services/adzan_notifications.dart';
+import 'services/ayat_harian.dart';
+import 'services/muhasabah.dart';
+import 'services/prayer_calculator.dart' as calc;
+import 'services/quran_text.dart';
+import 'services/reminder_ids.dart';
+import 'services/waktu_penting.dart';
+import 'widgets/ibadah/sholat_dalil_sheet.dart';
+import 'utils/date_key.dart';
 import 'services/app_settings.dart';
 import 'services/hijri_config.dart';
 import 'services/hijri_config_scope.dart';
@@ -16,10 +24,13 @@ import 'services/user_location_scope.dart';
 import 'pages/adzan_alarm_page.dart';
 import 'pages/backup_page.dart';
 import 'pages/hijri_calendar_page.dart';
+import 'pages/ibadah_daily_report_page.dart';
+import 'pages/ibadah_weekly_report_page.dart';
 import 'pages/home_shell.dart';
 import 'pages/ibadah_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/quran/hafalan_page.dart';
+import 'pages/quran/quran_reader_page.dart';
 import 'pages/quran_tracker_page.dart';
 import 'pages/splash_view.dart';
 
@@ -68,11 +79,25 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   );
 
   final _navigator = GlobalKey<NavigatorState>();
+
+  /// Ringkasan ibadah hari ini terbaru (dari sinkron widget) untuk teks
+  /// notifikasi muhasabah.
+  DaySummary? _summary;
+
   late final _widgetSync = TrackerWidgetSync(
     db: _db,
     hijri: _hijri,
     location: _location,
     settings: _settings,
+    onSummary: (s) {
+      _summary = s;
+      // hanya notifikasi muhasabah hari ini yang diperbarui - ringan
+      AdzanNotifications.instance.refreshMuhasabah(
+        settings: _settings,
+        longitude: _location.location.long,
+        summary: s,
+      );
+    },
   );
   StreamSubscription<Uri?>? _widgetClicks;
   Timer? _adzanDebounce;
@@ -108,18 +133,9 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   /// berubah (dan saat aplikasi dibuka). Ketuk notifikasi = tab Ibadah.
   Future<void> _startAdzan() async {
     await AdzanNotifications.instance.init(
-      onOpen: (payload) => WidgetsBinding.instance.addPostFrameCallback((_) {
-        // adzan layar penuh -> halaman adzan; notifikasi biasa -> tab Ibadah
-        if (payload != null && payload.startsWith(adzanAlarmPrefix)) {
-          _navigator.currentState?.push(
-            MaterialPageRoute<void>(
-              builder: (_) => AdzanAlarmPage(payload: payload),
-            ),
-          );
-        } else {
-          _shell.currentState?.goTo(HomeTab.ibadah);
-        }
-      }),
+      onOpen: (payload) => WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _openFromNotification(payload),
+      ),
     );
     _settings.addListener(_scheduleAdzan);
     _location.addListener(_scheduleAdzan);
@@ -128,17 +144,71 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     _scheduleAdzan();
   }
 
+  /// Ketuk notifikasi: adzan layar penuh -> halaman adzan; muhasabah /
+  /// laporan mingguan -> laporannya; ayat harian -> pembaca di ayatnya;
+  /// selain itu tab Ibadah.
+  void _openFromNotification(String? payload) {
+    final nav = _navigator.currentState;
+    if (nav == null) return;
+    Widget? page;
+    if (payload == NotifPayload.prayerTimes) {
+      // sepertiga malam terakhir: lembar waktu penting
+      final ctx = _navigator.currentContext;
+      if (ctx != null) {
+        final loc = _location.location;
+        final now = DateTime.now();
+        showWaktuPentingSheet(
+          ctx,
+          waktu: waktuPenting(now: now, latitude: loc.lat, longitude: loc.long),
+          now: now,
+        );
+        return;
+      }
+    }
+    if (payload != null && payload.startsWith(adzanAlarmPrefix)) {
+      page = AdzanAlarmPage(payload: payload);
+    } else if (NotifPayload.parseDate(payload, NotifPayload.reportDay)
+        case final date?) {
+      page = IbadahDailyReportPage(date: date);
+    } else if (NotifPayload.parseDate(payload, NotifPayload.reportWeek)
+        case final date?) {
+      page = IbadahWeeklyReportPage(week: parseDateKey(date));
+    } else if (NotifPayload.parseAyat(payload) case (final s, final a)) {
+      if (s >= 1 && s <= 114) {
+        page = QuranReaderPage(surah: s, ayah: a);
+      }
+    }
+    if (page != null) {
+      nav.push(MaterialPageRoute<void>(builder: (_) => page!));
+    } else {
+      _shell.currentState?.goTo(HomeTab.ibadah);
+    }
+  }
+
   void _scheduleAdzan() {
     _adzanDebounce?.cancel();
-    _adzanDebounce = Timer(const Duration(seconds: 1), () {
+    _adzanDebounce = Timer(const Duration(seconds: 1), () async {
       if (!_settings.loaded) return;
       final loc = _location.location;
-      AdzanNotifications.instance.reschedule(
+      // ayat harian: isinya tetap per tanggal, disusun dari teks Al-Qur'an
+      var ayat = const <DayNotice>[];
+      if (_settings.ayatNotif) {
+        try {
+          ayat = ayatNotices(
+            await QuranText.load(),
+            calc.todayInZone(calc.timezoneFromLongitude(loc.long)),
+            font: _settings.quranFont,
+          );
+        } catch (_) {}
+      }
+      await AdzanNotifications.instance.reschedule(
         settings: _settings,
         latitude: loc.lat,
         longitude: loc.long,
         placeName: loc.name,
         anchors: _hijri.config.anchors,
+        summary: _summary,
+        ayat: ayat,
       );
     });
   }
@@ -157,6 +227,22 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
   }
 
   void _openFromWidget(Uri? uri) {
+    // widget Ayat Harian: langsung ke ayatnya di pembaca
+    if (uri?.host == 'ayat') {
+      final s = int.tryParse(uri?.queryParameters['s'] ?? '');
+      final a = int.tryParse(uri?.queryParameters['a'] ?? '');
+      if (s != null && a != null && s >= 1 && s <= 114) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _shell.currentState?.goTo(HomeTab.quran);
+          _navigator.currentState?.push(
+            MaterialPageRoute<void>(
+              builder: (_) => QuranReaderPage(surah: s, ayah: a),
+            ),
+          );
+        });
+      }
+      return;
+    }
     final tab = switch (uri?.host) {
       'ibadah' => HomeTab.ibadah,
       'quran' || 'hafalan' => HomeTab.quran,

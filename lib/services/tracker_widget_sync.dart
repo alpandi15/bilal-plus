@@ -11,7 +11,10 @@ import '../utils/date_key.dart';
 import 'app_settings.dart';
 import 'hijri_config.dart';
 import '../widgets/arabic_font.dart';
+import 'adzan_notifications.dart' show refreshMuhasabahInBackground;
+import 'ayat_harian.dart';
 import 'hafalan_widget_payload.dart';
+import 'muhasabah.dart';
 import 'prayer_calculator.dart' as calc;
 import 'quran_text.dart';
 import 'sholat_time.dart';
@@ -30,6 +33,10 @@ const semangatWidgetName = 'SemangatWidgetProvider';
 /// Widget Hafalan (`HafalanWidgetProvider.kt`): ayat berikutnya yang belum
 /// hafal.
 const hafalanWidgetName = 'HafalanWidgetProvider';
+
+/// Widget Ayat Harian (`AyatWidgetProvider.kt`).
+const ayatWidgetName = 'AyatWidgetProvider';
+const _ayatKey = 'ayat_json';
 const _hafalanKey = 'hafalan_json';
 
 const _ibadahKey = 'ibadah_json';
@@ -50,7 +57,12 @@ class TrackerWidgetSync {
     required this.hijri,
     required this.location,
     required this.settings,
+    this.onSummary,
   });
+
+  /// Dipanggil tiap data widget disusun ulang (catatan berubah): ringkasan
+  /// ibadah hari ini untuk teks notifikasi muhasabah.
+  final void Function(DaySummary? summary)? onSummary;
 
   final AppDatabase db;
   final HijriConfigController hijri;
@@ -142,6 +154,25 @@ class TrackerWidgetSync {
     }
   }
 
+  String? _ayatSynced;
+
+  /// Ayat harian untuk 7 hari ke depan ke widget; hanya disusun ulang bila
+  /// hari atau font berganti.
+  Future<void> _syncAyat(String today, String tzId) async {
+    final key = '$today|${settings.quranFont.key}';
+    if (_ayatSynced == key) return;
+    final text = await QuranText.load();
+    final payload = ayatWidgetPayload(
+      text,
+      today: parseDateKey(today),
+      tzId: tzId,
+      font: settings.quranFont,
+    );
+    await HomeWidget.saveWidgetData<String>(_ayatKey, jsonEncode(payload));
+    await HomeWidget.updateWidget(androidName: ayatWidgetName);
+    _ayatSynced = key;
+  }
+
   Future<void> syncHafalan() async {
     if (!_supported) return;
     try {
@@ -184,9 +215,11 @@ class TrackerWidgetSync {
       );
       await HomeWidget.saveWidgetData<String>(_ibadahKey, jsonEncode(ibadah));
       await HomeWidget.saveWidgetData<String>(_quranKey, jsonEncode(quran));
+      onSummary?.call(DaySummary.fromPayload(ibadah, today));
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
       await HomeWidget.updateWidget(androidName: semangatWidgetName);
       await HomeWidget.updateWidget(androidName: quranWidgetName);
+      await _syncAyat(today, tzIds[tz]!);
     } catch (e) {
       // widget belum dipasang / plugin tidak tersedia - bukan kegagalan fatal
       debugPrint('tracker widget: $e');
@@ -291,6 +324,8 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       await HomeWidget.saveWidgetData<String>(_ibadahKey, jsonEncode(payload));
       await HomeWidget.updateWidget(androidName: ibadahWidgetName);
       await HomeWidget.updateWidget(androidName: semangatWidgetName);
+      // angka muhasabah malam ikut diperbarui walau aplikasi tertutup
+      await refreshMuhasabahInBackground(payload);
     }
   } finally {
     await db.close();

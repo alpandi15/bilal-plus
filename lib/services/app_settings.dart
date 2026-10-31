@@ -20,6 +20,13 @@ class AppSettings {
   static const autoUpdateKey = 'update_auto_check';
   static const adzanFullScreenKey = 'adzan_full_screen';
   static const fridayReminderKey = 'friday_reminder';
+  static const muhasabahKey = 'muhasabah';
+  static const muhasabahMinutesKey = 'muhasabah_minutes';
+  static const weeklyReportKey = 'weekly_report';
+  static const weeklyReportMinutesKey = 'weekly_report_minutes';
+  static const ayatNotifKey = 'ayat_notif';
+  static const ayatMinutesKey = 'ayat_minutes';
+  static const tahajudNotifKey = 'tahajud_notif';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -45,6 +52,11 @@ const readerSizeMin = 22.0, readerSizeMax = 40.0, readerSizeDefault = 28.0;
 /// berjamaah di masjid, termasuk Sholat Jumat).
 enum Gender { male, female }
 
+/// Jam pengingat bawaan, menit sejak tengah malam.
+const defaultMuhasabahMinutes = 21 * 60;
+const defaultWeeklyReportMinutes = 20 * 60;
+const defaultAyatMinutes = 6 * 60 + 30;
+
 /// Sholat wajib yang bisa diberi notifikasi adzan.
 const adzanPrayerKeys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
 
@@ -60,6 +72,13 @@ class AppSettingsController extends ChangeNotifier {
   bool _autoUpdate = true;
   bool _adzanFullScreen = false;
   bool _fridayReminder = true;
+  bool _muhasabah = true;
+  int _muhasabahMinutes = defaultMuhasabahMinutes;
+  bool _weeklyReport = true;
+  int _weeklyReportMinutes = defaultWeeklyReportMinutes;
+  bool _ayatNotif = false;
+  int _ayatMinutes = defaultAyatMinutes;
+  bool _tahajudNotif = false;
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -162,6 +181,22 @@ class AppSettingsController extends ChangeNotifier {
   /// Notifikasi Jumat pagi: Al-Kahfi & sholawat (bawaan aktif).
   bool get fridayReminder => _fridayReminder;
 
+  /// Notifikasi muhasabah malam: ajakan melihat laporan ibadah hari ini
+  /// (bawaan aktif, pukul 21.00); tetap berbunyi walau semua ibadah tuntas.
+  bool get muhasabah => _muhasabah;
+  int get muhasabahMinutes => _muhasabahMinutes;
+
+  /// Notifikasi laporan mingguan tiap Minggu (bawaan aktif, pukul 20.00).
+  bool get weeklyReport => _weeklyReport;
+  int get weeklyReportMinutes => _weeklyReportMinutes;
+
+  /// Notifikasi ayat harian (bawaan mati, pukul 06.30).
+  bool get ayatNotif => _ayatNotif;
+  int get ayatMinutes => _ayatMinutes;
+
+  /// Notifikasi awal sepertiga malam terakhir (bawaan mati).
+  bool get tahajudNotif => _tahajudNotif;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -196,6 +231,18 @@ class AppSettingsController extends ChangeNotifier {
       _autoUpdate = prefs.getBool(AppSettings.autoUpdateKey) ?? true;
       _adzanFullScreen = prefs.getBool(AppSettings.adzanFullScreenKey) ?? false;
       _fridayReminder = prefs.getBool(AppSettings.fridayReminderKey) ?? true;
+      _muhasabah = prefs.getBool(AppSettings.muhasabahKey) ?? true;
+      _muhasabahMinutes =
+          prefs.getInt(AppSettings.muhasabahMinutesKey) ??
+          defaultMuhasabahMinutes;
+      _weeklyReport = prefs.getBool(AppSettings.weeklyReportKey) ?? true;
+      _weeklyReportMinutes =
+          prefs.getInt(AppSettings.weeklyReportMinutesKey) ??
+          defaultWeeklyReportMinutes;
+      _ayatNotif = prefs.getBool(AppSettings.ayatNotifKey) ?? false;
+      _ayatMinutes =
+          prefs.getInt(AppSettings.ayatMinutesKey) ?? defaultAyatMinutes;
+      _tahajudNotif = prefs.getBool(AppSettings.tahajudNotifKey) ?? false;
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -332,6 +379,48 @@ class AppSettingsController extends ChangeNotifier {
     _fridayReminder = v;
     notifyListeners();
     await _save((p) => p.setBool(AppSettings.fridayReminderKey, v));
+  }
+
+  Future<void> setMuhasabah(bool v) async {
+    _muhasabah = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.muhasabahKey, v));
+  }
+
+  Future<void> setMuhasabahMinutes(int v) async {
+    _muhasabahMinutes = v;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.muhasabahMinutesKey, v));
+  }
+
+  Future<void> setWeeklyReport(bool v) async {
+    _weeklyReport = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.weeklyReportKey, v));
+  }
+
+  Future<void> setWeeklyReportMinutes(int v) async {
+    _weeklyReportMinutes = v;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.weeklyReportMinutesKey, v));
+  }
+
+  Future<void> setAyatNotif(bool v) async {
+    _ayatNotif = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.ayatNotifKey, v));
+  }
+
+  Future<void> setAyatMinutes(int v) async {
+    _ayatMinutes = v;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.ayatMinutesKey, v));
+  }
+
+  Future<void> setTahajudNotif(bool v) async {
+    _tahajudNotif = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.tahajudNotifKey, v));
   }
 
   Future<void> setAdzanFullScreen(bool v) async {

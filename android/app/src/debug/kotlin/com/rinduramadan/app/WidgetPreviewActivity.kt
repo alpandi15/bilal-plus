@@ -34,6 +34,7 @@ class WidgetPreviewActivity : Activity() {
             "ramadan" -> RamadanWidgetProvider.buildViews(this, prefs, options, now)
             "semangat" -> SemangatWidgetProvider.buildViews(this, prefs, options, now)
             "hafalan" -> HafalanWidgetProvider.buildViews(this, prefs, options)
+            "ayat" -> AyatWidgetProvider.buildViews(this, prefs, options)
             else -> PrayerWidgetProvider.buildPreview(this, prefs, options, now)
         }
 

@@ -283,7 +283,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
          * dalam [w]x[h] px. [hidden]: hanya kata pertama (emas), kata lain
          * jadi blok samar di posisinya.
          */
-        private fun renderAyah(
+        internal fun renderAyah(
             context: Context,
             text: String,
             font: String,

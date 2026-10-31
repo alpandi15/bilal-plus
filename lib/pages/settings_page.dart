@@ -109,7 +109,7 @@ class SettingsPage extends StatelessWidget {
                 const _Title('NOTIFIKASI ADZAN'),
                 const _AdzanGroup(),
                 const SizedBox(height: 20),
-                const _Title('PENGINGAT PUASA & JUMAT'),
+                const _Title('PENGINGAT'),
                 const _FastReminderGroup(),
                 const SizedBox(height: 20),
                 const _Title('SHOLAT WAJIB'),
@@ -654,9 +654,146 @@ class _FastReminderGroup extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: _muted),
           ),
         ),
+        const Divider(height: 1, color: _line),
+        _TimedReminder(
+          title: 'Muhasabah malam',
+          subtitle:
+              'Ajakan melihat laporan ibadah hari ini - tetap berbunyi '
+              'walau semua ibadah sudah tuntas.',
+          on: settings.muhasabah,
+          minutes: settings.muhasabahMinutes,
+          onToggle: settings.setMuhasabah,
+          onMinutes: settings.setMuhasabahMinutes,
+        ),
+        const Divider(height: 1, color: _line),
+        _TimedReminder(
+          title: 'Laporan mingguan',
+          subtitle: 'Tiap Minggu: rangkuman ibadah pekan ini beserta saran.',
+          on: settings.weeklyReport,
+          minutes: settings.weeklyReportMinutes,
+          onToggle: settings.setWeeklyReport,
+          onMinutes: settings.setWeeklyReportMinutes,
+        ),
+        const Divider(height: 1, color: _line),
+        _TimedReminder(
+          title: 'Ayat harian',
+          subtitle:
+              'Satu ayat Al-Qur\'an tiap hari, lengkap dengan terjemahannya. '
+              'Tersedia juga sebagai widget & kartu di Beranda.',
+          on: settings.ayatNotif,
+          minutes: settings.ayatMinutes,
+          onToggle: settings.setAyatNotif,
+          onMinutes: settings.setAyatMinutes,
+        ),
+        const Divider(height: 1, color: _line),
+        SwitchListTile.adaptive(
+          activeTrackColor: _amber,
+          value: settings.tahajudNotif,
+          onChanged: (on) async {
+            if (on) await AdzanNotifications.instance.requestPermissions();
+            await settings.setTahajudNotif(on);
+          },
+          title: const Text(
+            'Awal sepertiga malam terakhir',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+          ),
+          subtitle: const Text(
+            'Pengingat saat sepertiga malam terakhir dimulai - waktu yang '
+            'mustajab untuk tahajud & berdoa. Jamnya dihitung dari jadwal '
+            'Maghrib-Subuh di lokasimu.',
+            style: TextStyle(fontSize: 12, color: _muted),
+          ),
+        ),
       ],
     );
   }
+}
+
+String _hm(int minutes) =>
+    '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
+    '${(minutes % 60).toString().padLeft(2, '0')}';
+
+/// Saklar pengingat dengan jam yang bisa diubah (muncul saat aktif).
+class _TimedReminder extends StatelessWidget {
+  const _TimedReminder({
+    required this.title,
+    required this.subtitle,
+    required this.on,
+    required this.minutes,
+    required this.onToggle,
+    required this.onMinutes,
+  });
+
+  final String title, subtitle;
+  final bool on;
+  final int minutes;
+  final Future<void> Function(bool) onToggle;
+  final Future<void> Function(int) onMinutes;
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+      helpText: title,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked != null) await onMinutes(picked.hour * 60 + picked.minute);
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      SwitchListTile.adaptive(
+        activeTrackColor: _amber,
+        value: on,
+        onChanged: (v) async {
+          if (v) await AdzanNotifications.instance.requestPermissions();
+          await onToggle(v);
+        },
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w700, color: _stone),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: _muted),
+        ),
+      ),
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: on
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ActionChip(
+                    avatar: const Icon(
+                      Icons.schedule_rounded,
+                      size: 16,
+                      color: _amber,
+                    ),
+                    label: Text(
+                      'Pukul ${_hm(minutes)} · ubah',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _stone,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFFFF7E8),
+                    side: const BorderSide(color: _line),
+                    onPressed: () => _pick(context),
+                  ),
+                ),
+              )
+            : const SizedBox(width: double.infinity),
+      ),
+    ],
+  );
 }
 
 /// Nama panggilan untuk sapaan di Beranda - tersimpan saat selesai diketik.

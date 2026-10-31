@@ -10,6 +10,7 @@ import '../services/app_settings.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/home_widget_service.dart';
 import '../services/prayer_calculator.dart' as calc;
+import '../services/waktu_penting.dart';
 import '../services/user_location_scope.dart';
 import 'ibadah/sholat_dalil_sheet.dart';
 import 'location_picker.dart';
@@ -507,45 +508,29 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
+                          _FooterPill(
+                            icon: Icons.schedule_rounded,
+                            label: 'Waktu penting',
+                            night: night,
+                            solid: false,
+                            onTap: () => showWaktuPentingSheet(
+                              context,
+                              waktu: waktuPenting(
+                                now: DateTime.now(),
+                                latitude: userLocation.lat,
+                                longitude: userLocation.long,
+                              ),
+                              now: DateTime.now(),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _FooterPill(
+                            icon: Icons.calendar_month_outlined,
+                            label: 'Imsakiyah',
+                            night: night,
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(
                                 builder: (_) => const ImsakiyahPage(),
-                              ),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(999),
-                                color: night
-                                    ? Colors.white.withOpacity(0.9)
-                                    : const Color(0xE61C1917),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_month_outlined,
-                                    size: 12,
-                                    color: night
-                                        ? const Color(0xFF1C1917)
-                                        : Colors.white,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    'Imsakiyah',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: night
-                                          ? const Color(0xFF1C1917)
-                                          : Colors.white,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -713,4 +698,66 @@ class _JumatNote extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Tombol kecil di footer kartu: [solid] = latar pekat (aksi utama), selain
+/// itu kaca tipis.
+class _FooterPill extends StatelessWidget {
+  const _FooterPill({
+    required this.icon,
+    required this.label,
+    required this.night,
+    required this.onTap,
+    this.solid = true,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool night, solid;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = solid
+        ? (night ? const Color(0xFF1C1917) : Colors.white)
+        : (night ? const Color(0xFFEEF2FF) : const Color(0xFF44403C));
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: solid
+              ? (night
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : const Color(0xE61C1917))
+              : (night
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.7)),
+          border: solid
+              ? null
+              : Border.all(
+                  color: night
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.white.withValues(alpha: 0.85),
+                ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: fg),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

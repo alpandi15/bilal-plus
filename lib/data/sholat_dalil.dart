@@ -370,3 +370,67 @@ const panduanJumat = [
         'itemnya).',
   ]),
 ];
+
+/* -------------------------------------------------------------------------- */
+/*  Waktu penting (sepertiga malam, Dhuha, waktu terlarang)                    */
+/* -------------------------------------------------------------------------- */
+
+/// Dalil sepertiga malam terakhir (Bukhari 1077, Muslim 1261 & 1982 - matan
+/// dicocokkan dengan kitab di aplikasi).
+const dalilSepertigaMalam = [
+  Dalil(
+    text:
+        '"Rabb kita Tabaraka wa Ta\'ala turun setiap malam ke langit dunia '
+        'pada sepertiga malam terakhir dan berfirman: Siapa yang berdoa '
+        'kepada-Ku pasti Aku kabulkan, siapa yang meminta kepada-Ku pasti Aku '
+        'berikan, dan siapa yang memohon ampun kepada-Ku pasti Aku ampuni."',
+    source: 'HR. Bukhari no. 1077',
+  ),
+  Dalil(
+    text: '"Seutama-utama sholat sesudah sholat fardhu adalah sholat malam."',
+    source: 'HR. Muslim no. 1982',
+  ),
+];
+
+const dalilDhuha = [
+  Dalil(
+    text:
+        '"Setiap pagi, tiap persendian kalian ada sedekahnya: setiap tasbih '
+        'sedekah, setiap tahmid sedekah, setiap tahlil sedekah, setiap '
+        'takbir sedekah, amar ma\'ruf nahi munkar sedekah - dan semuanya '
+        'tercukupi dengan dua rakaat Dhuha."',
+    source: 'HR. Muslim no. 1181',
+  ),
+];
+
+const dalilWaktuTerlarang = [
+  Dalil(
+    text:
+        '"Ada tiga waktu yang Rasulullah ﷺ melarang kami sholat (dan '
+        'menguburkan jenazah) pada waktu-waktu itu: saat matahari terbit '
+        'hingga agak meninggi, saat matahari tepat di tengah langit hingga '
+        'condong ke barat, dan saat matahari hampir terbenam hingga '
+        'terbenam." (\'Uqbah bin \'Amir)',
+    source: 'HR. Muslim no. 1373',
+  ),
+  Dalil(
+    text:
+        '"Tidak ada sholat setelah Subuh hingga matahari meninggi, dan tidak '
+        'ada sholat setelah Ashar hingga matahari menghilang." (Abu Sa\'id '
+        'Al-Khudri)',
+    source: 'HR. Bukhari no. 551',
+  ),
+];
+
+/// Catatan fiqih singkat (jumhur / mazhab Syafi'i).
+const catatanWaktuTerlarang = [
+  'Larangan berlaku untuk sholat sunnah mutlak. Sholat yang punya sebab '
+      '(tahiyatul masjid, qadha sholat, sholat jenazah, dll.) diperbolehkan '
+      'menurut sebagian besar ulama, khususnya mazhab Syafi\'i.',
+  'Waktu istiwa\' (tengah hari) di hari Jumat tidak terlarang menurut '
+      'mazhab Syafi\'i.',
+  'Sholat fardhu tidak pernah terlarang di waktu apa pun.',
+  'Rentang di aplikasi adalah perkiraan dari jadwal sholat (selisih ±15 '
+      'menit setelah terbit & ±10 menit sebelum Dzuhur) - bukan batas '
+      'mutlak. Tanyakan ustadz untuk rincian.',
+];

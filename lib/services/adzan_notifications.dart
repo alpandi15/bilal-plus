@@ -2,6 +2,7 @@ import 'dart:ui' show Color;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -11,9 +12,13 @@ import 'adzan_messages.dart';
 import 'app_settings.dart';
 import 'hijri_calendar.dart';
 import 'ibadah_day.dart';
+import 'muhasabah.dart';
 import 'prayer_calculator.dart' as calc;
+import 'reminder_ids.dart';
 import 'sholat_motivation.dart';
 import 'sholat_time.dart';
+import 'waktu_penting.dart';
+import '../models/prayer_models.dart' show PrayerKey;
 import 'tracker_widget_payload.dart' show tzIds;
 import 'tracker_widget_sync.dart';
 
@@ -41,6 +46,27 @@ const _fastChannel = AndroidNotificationChannel(
   description:
       'Malam sebelum Tarwiyah & Arafah (niat & sahur) dan Jumat pagi '
       '(Al-Kahfi & sholawat)',
+  importance: Importance.defaultImportance,
+);
+
+const _muhasabahChannel = AndroidNotificationChannel(
+  'muhasabah',
+  'Muhasabah & laporan',
+  description: 'Ajakan melihat laporan ibadah harian (malam) dan mingguan',
+  importance: Importance.defaultImportance,
+);
+
+const _ayatChannel = AndroidNotificationChannel(
+  'ayat_harian',
+  'Ayat harian',
+  description: 'Satu ayat Al-Qur\'an setiap hari',
+  importance: Importance.defaultImportance,
+);
+
+const _waktuChannel = AndroidNotificationChannel(
+  'waktu_penting',
+  'Waktu penting',
+  description: 'Awal sepertiga malam terakhir (waktu tahajud)',
   importance: Importance.defaultImportance,
 );
 
@@ -91,6 +117,9 @@ class AdzanNotifications {
     await android?.createNotificationChannel(_adzanChannel);
     await android?.createNotificationChannel(_reminderChannel);
     await android?.createNotificationChannel(_fastChannel);
+    await android?.createNotificationChannel(_muhasabahChannel);
+    await android?.createNotificationChannel(_ayatChannel);
+    await android?.createNotificationChannel(_waktuChannel);
     _ready = true;
 
     // dibuka dari notifikasi saat aplikasi tertutup
@@ -138,21 +167,34 @@ class AdzanNotifications {
     return granted;
   }
 
+  /// Ada pengingat yang aktif? (bila tidak, cukup membatalkan semuanya)
+  static bool anyActive(AppSettingsController s) =>
+      s.adzan ||
+      s.fastReminder ||
+      s.fridayReminder ||
+      s.muhasabah ||
+      s.weeklyReport ||
+      s.ayatNotif ||
+      s.tahajudNotif;
+
   /// Jadwalkan ulang semua notifikasi [adzanDays] hari ke depan sesuai
-  /// pengaturan & lokasi: adzan (bila aktif) dan pengingat puasa Tarwiyah /
-  /// Arafah (bila aktif; tanggalnya dari [anchors] kalender hijriah).
+  /// pengaturan & lokasi. Setiap jenis punya fungsinya sendiri; yang baru
+  /// cukup menambah satu fungsi + satu rentang id di [NotifId].
+  ///
+  /// [summary] = ringkasan ibadah hari ini untuk teks muhasabah (null =
+  /// teks generik); [ayat] = notifikasi ayat harian yang sudah disusun.
   Future<void> reschedule({
     required AppSettingsController settings,
     required double latitude,
     required double longitude,
     required String placeName,
     HijriAnchors? anchors,
+    DaySummary? summary,
+    List<DayNotice> ayat = const [],
   }) async {
     if (!supported || !_ready) return;
     await _plugin.cancelAll();
-    if (!settings.adzan && !settings.fastReminder && !settings.fridayReminder) {
-      return;
-    }
+    if (!anyActive(settings)) return;
 
     final zone = calc.timezoneFromLongitude(longitude);
     final location = tz.getLocation(tzIds[zone]!);
@@ -179,8 +221,58 @@ class AdzanNotifications {
     if (settings.fridayReminder) {
       await _scheduleFridayReminders(today, location, now, mode);
     }
-    if (!settings.adzan) return;
+    if (settings.muhasabah) {
+      await _scheduleMuhasabah(
+        today,
+        location,
+        now,
+        mode,
+        settings.muhasabahMinutes,
+        summary,
+      );
+    }
+    if (settings.weeklyReport) {
+      await _scheduleWeeklyReport(
+        today,
+        location,
+        now,
+        mode,
+        settings.weeklyReportMinutes,
+      );
+    }
+    if (settings.ayatNotif) {
+      await _scheduleAyat(location, now, mode, settings.ayatMinutes, ayat);
+    }
+    if (settings.tahajudNotif) {
+      await _scheduleTahajud(today, location, now, mode, latitude, longitude);
+    }
+    if (settings.adzan) {
+      await _scheduleAdzan(
+        settings,
+        latitude,
+        longitude,
+        placeName,
+        zone,
+        location,
+        now,
+        today,
+        mode,
+      );
+    }
+  }
 
+  /// Notifikasi adzan & pengingat sebelum adzan.
+  Future<void> _scheduleAdzan(
+    AppSettingsController settings,
+    double latitude,
+    double longitude,
+    String placeName,
+    calc.TimezoneCode zone,
+    tz.Location location,
+    DateTime now,
+    DateTime today,
+    AndroidScheduleMode mode,
+  ) async {
     for (var day = 0; day < adzanDays; day++) {
       final date = today.add(Duration(days: day));
       final times = calc.calculatePrayerTimes(
@@ -207,7 +299,7 @@ class AdzanNotifications {
             gender: settings.gender,
           );
           await _plugin.zonedSchedule(
-            id: day * 16 + i,
+            id: NotifId.adzan(day, i),
             title: m.title,
             body: m.body,
             scheduledDate: tz.TZDateTime.from(at, location),
@@ -248,7 +340,7 @@ class AdzanNotifications {
             gender: settings.gender,
           );
           await _plugin.zonedSchedule(
-            id: day * 16 + 8 + i,
+            id: NotifId.adzanReminder(day, i),
             title: m.title,
             body: m.body,
             scheduledDate: tz.TZDateTime.from(remindAt, location),
@@ -301,7 +393,7 @@ class AdzanNotifications {
         dailySeed(dateKey(date), 9),
       );
       await _plugin.zonedSchedule(
-        id: 900 + day,
+        id: NotifId.fast(day),
         title: 'Besok ${fast.label} 🌙',
         body: body,
         scheduledDate: at,
@@ -340,7 +432,7 @@ class AdzanNotifications {
       if (!at.isAfter(now)) continue;
       final body = pickMessage(fridayDay(), dailySeed(dateKey(date), 5));
       await _plugin.zonedSchedule(
-        id: 950 + day,
+        id: NotifId.friday(day),
         title: 'Hari Jumat · Al-Kahfi & sholawat 🌙',
         body: body,
         scheduledDate: at,
@@ -358,6 +450,170 @@ class AdzanNotifications {
     }
   }
 
+  /// Detail notifikasi senyap berteks panjang (bisa dibuka penuh).
+  NotificationDetails _plain(
+    AndroidNotificationChannel channel,
+    String title,
+    String body,
+  ) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      channel.id,
+      channel.name,
+      channelDescription: channel.description,
+      color: const Color(0xFFB45309),
+      styleInformation: BigTextStyleInformation(body, contentTitle: title),
+    ),
+  );
+
+  tz.TZDateTime _at(tz.Location l, DateTime date, int minutes) => tz.TZDateTime(
+    l,
+    date.year,
+    date.month,
+    date.day,
+    minutes ~/ 60,
+    minutes % 60,
+  );
+
+  /// Muhasabah malam tiap hari pada [minutes]: ketuk = laporan harian
+  /// tanggal itu. Hanya hari ini yang bisa memuat angka ([summary]); hari
+  /// lain bertuliskan generik karena angkanya belum ada.
+  Future<void> _scheduleMuhasabah(
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+    int minutes,
+    DaySummary? summary,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      final at = _at(location, date, minutes);
+      if (!at.isAfter(now)) continue;
+      final key = dateKey(date);
+      final m = muhasabahMessage(summary?.date == key ? summary : null);
+      await _plugin.zonedSchedule(
+        id: NotifId.muhasabah(date),
+        title: m.title,
+        body: m.body,
+        scheduledDate: at,
+        notificationDetails: _plain(_muhasabahChannel, m.title, m.body),
+        androidScheduleMode: mode,
+        payload: '${NotifPayload.reportDay}$key',
+      );
+    }
+  }
+
+  /// Perbarui HANYA notifikasi muhasabah hari ini (tanpa menyentuh yang
+  /// lain) - dipanggil setiap catatan ibadah berubah supaya angkanya benar.
+  Future<void> refreshMuhasabah({
+    required AppSettingsController settings,
+    required double longitude,
+    required DaySummary? summary,
+  }) async {
+    if (!supported || !_ready || !settings.muhasabah) return;
+    final zone = calc.timezoneFromLongitude(longitude);
+    await _refreshMuhasabahToday(
+      _plugin,
+      location: tz.getLocation(tzIds[zone]!),
+      today: calc.todayInZone(zone),
+      minutes: settings.muhasabahMinutes,
+      summary: summary,
+    );
+  }
+
+  /// Laporan mingguan tiap Minggu pada [minutes]: ketuk = laporan pekan itu.
+  Future<void> _scheduleWeeklyReport(
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+    int minutes,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      if (date.weekday != DateTime.sunday) continue;
+      final at = _at(location, date, minutes);
+      if (!at.isAfter(now)) continue;
+      final m = weeklyReportMessage;
+      await _plugin.zonedSchedule(
+        id: NotifId.weekly(date),
+        title: m.title,
+        body: m.body,
+        scheduledDate: at,
+        notificationDetails: _plain(_muhasabahChannel, m.title, m.body),
+        androidScheduleMode: mode,
+        payload: '${NotifPayload.reportWeek}${dateKey(date)}',
+      );
+    }
+  }
+
+  /// Ayat harian: isinya tetap per tanggal ([notices] disusun pemanggil dari
+  /// teks Al-Qur'an), jadi tidak pernah basi.
+  Future<void> _scheduleAyat(
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+    int minutes,
+    List<DayNotice> notices,
+  ) async {
+    for (final n in notices) {
+      final at = _at(location, n.date, minutes);
+      if (!at.isAfter(now)) continue;
+      await _plugin.zonedSchedule(
+        id: NotifId.ayat(n.date),
+        title: n.title,
+        body: n.body,
+        scheduledDate: at,
+        notificationDetails: _plain(_ayatChannel, n.title, n.body),
+        androidScheduleMode: mode,
+        payload: n.payload,
+      );
+    }
+  }
+
+  /// Awal sepertiga malam terakhir (waktu tahajud) tiap malam: malam =
+  /// Maghrib hari itu sampai Subuh esok harinya.
+  Future<void> _scheduleTahajud(
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+    double latitude,
+    double longitude,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      final t0 = calc.calculatePrayerTimes(
+        latitude: latitude,
+        longitude: longitude,
+        date: date,
+      );
+      final t1 = calc.calculatePrayerTimes(
+        latitude: latitude,
+        longitude: longitude,
+        date: date.add(const Duration(days: 1)),
+      );
+      final third = lastThirdOfNight(
+        t0.times[PrayerKey.maghrib]!,
+        t1.times[PrayerKey.fajr]!,
+      );
+      if (!third.start.isAfter(now)) continue;
+      const title = 'Sepertiga malam terakhir 🌙';
+      const body =
+          'Waktu yang mustajab untuk berdoa. Tahajud dua rakaat, lalu '
+          'perbanyak istighfar sampai Subuh.';
+      await _plugin.zonedSchedule(
+        id: NotifId.tahajud(date),
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(third.start, location),
+        notificationDetails: _plain(_waktuChannel, title, body),
+        androidScheduleMode: mode,
+        payload: NotifPayload.prayerTimes,
+      );
+    }
+  }
+
   /// "Tunda": adzan layar penuh [payload] muncul lagi [minutes] menit lagi.
   Future<void> snooze(
     String payload, {
@@ -368,7 +624,7 @@ class AdzanNotifications {
     if (!supported || !_ready) return;
     final at = tz.TZDateTime.now(tz.UTC).add(Duration(minutes: minutes));
     await _plugin.zonedSchedule(
-      id: 990,
+      id: NotifId.snooze,
       title: title,
       body: body,
       scheduledDate: at,
@@ -415,7 +671,7 @@ class AdzanNotifications {
       gender: settings.gender,
     );
     await _plugin.show(
-      id: 999,
+      id: NotifId.test,
       title: m.title,
       body: m.body,
       notificationDetails: NotificationDetails(
@@ -430,6 +686,93 @@ class AdzanNotifications {
         ),
       ),
     );
+  }
+}
+
+/// Jadwalkan ulang notifikasi muhasabah HARI INI saja (id berbasis tanggal,
+/// jadi menimpa yang lama tanpa menggandakan). Dipakai aplikasi & isolate
+/// latar.
+Future<void> _refreshMuhasabahToday(
+  FlutterLocalNotificationsPlugin plugin, {
+  required tz.Location location,
+  required DateTime today,
+  required int minutes,
+  required DaySummary? summary,
+}) async {
+  final at = tz.TZDateTime(
+    location,
+    today.year,
+    today.month,
+    today.day,
+    minutes ~/ 60,
+    minutes % 60,
+  );
+  final id = NotifId.muhasabah(today);
+  if (!at.isAfter(DateTime.now())) {
+    await plugin.cancel(id: id);
+    return;
+  }
+  final android = plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+  final exact = await android?.canScheduleExactNotifications() ?? false;
+  final m = muhasabahMessage(summary);
+  await plugin.zonedSchedule(
+    id: id,
+    title: m.title,
+    body: m.body,
+    scheduledDate: at,
+    notificationDetails: NotificationDetails(
+      android: AndroidNotificationDetails(
+        _muhasabahChannel.id,
+        _muhasabahChannel.name,
+        channelDescription: _muhasabahChannel.description,
+        color: const Color(0xFFB45309),
+        styleInformation: BigTextStyleInformation(
+          m.body,
+          contentTitle: m.title,
+        ),
+      ),
+    ),
+    androidScheduleMode: exact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle,
+    payload: '${NotifPayload.reportDay}${dateKey(today)}',
+  );
+}
+
+/// Dari isolate latar (centang lewat widget/notifikasi saat aplikasi
+/// tertutup): perbarui teks muhasabah hari ini dengan angka terbaru. Zona
+/// waktu & hari diambil dari data widget; pengaturan dari SharedPreferences.
+Future<void> refreshMuhasabahInBackground(Map<String, Object?> payload) async {
+  if (!AdzanNotifications.supported) return;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool(AppSettings.muhasabahKey) ?? true)) return;
+    final zoneId = payload['tzId'] as String?;
+    if (zoneId == null) return;
+    tzdata.initializeTimeZones();
+    final location = tz.getLocation(zoneId);
+    final now = tz.TZDateTime.now(location);
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@drawable/widget_ic_crescent'),
+      ),
+    );
+    await _refreshMuhasabahToday(
+      plugin,
+      location: location,
+      today: today,
+      minutes:
+          prefs.getInt(AppSettings.muhasabahMinutesKey) ??
+          defaultMuhasabahMinutes,
+      summary: DaySummary.fromPayload(payload, dateKey(today)),
+    );
+  } catch (e) {
+    debugPrint('muhasabah latar: $e');
   }
 }
 

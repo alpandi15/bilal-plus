@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/sholat_dalil.dart';
 import '../arabic_font.dart';
+import '../../services/waktu_penting.dart';
 import '../hadith_ref_text.dart';
 
 const _stone = Color(0xFF44403C);
@@ -9,6 +10,7 @@ const _muted = Color(0xFF78716C);
 const _red = Color(0xFFB91C1C);
 const _blue = Color(0xFF1D4ED8);
 const _teal = Color(0xFF0F766E);
+const _amberDeep = Color(0xFFB45309);
 
 const _names = {
   'subuh': 'Subuh',
@@ -110,6 +112,154 @@ Future<void> showJumatSheet(BuildContext context) => _show(
     const _Disclaimer(),
   ],
 );
+
+/// Waktu ibadah hari ini: sepertiga malam terakhir, Dhuha, dan waktu
+/// terlarang untuk sholat sunnah mutlak - dengan dalilnya.
+Future<void> showWaktuPentingSheet(
+  BuildContext context, {
+  required WaktuPenting waktu,
+  required DateTime now,
+}) {
+  final current = waktu.current(now);
+  return _show(
+    context,
+    icon: Icons.schedule_rounded,
+    accent: _teal,
+    title: 'Waktu penting',
+    subtitle:
+        'Dihitung dari jadwal sholat di lokasimu. Yang sedang berlangsung '
+        'ditandai.',
+    children: [
+      const _Heading('Sepertiga malam terakhir', color: _teal),
+      _SpanCard(
+        span: waktu.thirdNight,
+        waktu: waktu,
+        now: now,
+        active: current?.key == 'third',
+        hint:
+            'Malam dibagi tiga dari Maghrib sampai Subuh; sepertiga '
+            'terakhirnya waktu terbaik untuk tahajud, doa & istighfar.',
+        color: _teal,
+      ),
+      for (final d in dalilSepertigaMalam) _DalilCard(d, accent: _teal),
+      const _Heading('Waktu Dhuha', color: _amberDeep),
+      _SpanCard(
+        span: waktu.dhuha,
+        waktu: waktu,
+        now: now,
+        active: current?.key == 'dhuha',
+        hint:
+            'Mulai ±15 menit setelah matahari terbit sampai sebelum '
+            'istiwa\' (±10 menit sebelum Dzuhur). Minimal dua rakaat.',
+        color: _amberDeep,
+      ),
+      for (final d in dalilDhuha) _DalilCard(d, accent: _amberDeep),
+      const _Heading('Waktu terlarang untuk sholat sunnah', color: _red),
+      for (final f in waktu.forbidden)
+        _SpanCard(
+          span: f,
+          waktu: waktu,
+          now: now,
+          active: current?.key == f.key,
+          color: _red,
+        ),
+      for (final d in dalilWaktuTerlarang) _DalilCard(d, accent: _red),
+      _Steps(catatanWaktuTerlarang),
+      const _Disclaimer(),
+    ],
+  );
+}
+
+/// Satu rentang waktu: nama, jam, dan penanda "sedang berlangsung".
+class _SpanCard extends StatelessWidget {
+  const _SpanCard({
+    required this.span,
+    required this.waktu,
+    required this.now,
+    required this.active,
+    required this.color,
+    this.hint,
+  });
+
+  final TimeSpan span;
+  final WaktuPenting waktu;
+  final DateTime now;
+  final bool active;
+  final Color color;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final past = !active && now.isAfter(span.end);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: active ? color.withValues(alpha: 0.08) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: active ? color : const Color(0xFFF1E4CF),
+          width: active ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  span.label,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: _stone,
+                  ),
+                ),
+              ),
+              if (active)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: const Text(
+                    'Sekarang',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${waktu.hm(span.start)} - ${waktu.hm(span.end)}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: past ? _muted : color,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          if (hint != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              hint!,
+              style: const TextStyle(fontSize: 12, height: 1.45, color: _muted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 Future<void> _show(
   BuildContext context, {

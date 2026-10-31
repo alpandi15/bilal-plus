@@ -11,4 +11,5 @@
     <string name="quran_widget_description">Progress khatam Al-Qur\'an, posisi terakhir, dan target baca hari ini.</string>
     <string name="semangat_widget_description">Pesan semangat sholat yang santai sesuai waktu sekarang, plus checklist lima waktu.</string>
     <string name="hafalan_widget_description">Ayat berikutnya yang belum hafal, besar &amp; jelas dengan font mushaf. Tutup ayat untuk menguji hafalan, tandai hafal langsung dari layar utama.</string>
+    <string name="ayat_widget_description">Satu ayat Al-Qur\'an setiap hari, besar &amp; jelas dengan font mushaf pilihanmu, lengkap dengan terjemahannya.</string>
 </resources>

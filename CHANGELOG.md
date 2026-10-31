@@ -4,6 +4,29 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.16.0 (build 27) · 31 Oktober 2026
+
+**Muhasabah malam & laporan mingguan**
+- Notifikasi **muhasabah** tiap malam (bawaan pukul 21.00) berisi ringkasan
+  hari ini - berapa persen tuntas, berapa ibadah tersisa - dan membuka
+  laporan harian. Tetap berbunyi saat semua ibadah sudah tuntas, dengan
+  ucapan syukur. Teksnya ikut diperbarui saat kamu mencentang ibadah,
+  termasuk dari widget.
+- Notifikasi **laporan mingguan** tiap Minggu (bawaan pukul 20.00).
+- Semua pengingat dikumpulkan di Pengaturan -> **Pengingat**, jamnya bisa
+  diatur dan masing-masing bisa dimatikan.
+
+**Waktu penting**
+- Tombol **"Waktu penting"** di kartu jadwal sholat: sepertiga malam
+  terakhir, waktu Dhuha, dan waktu terlarang untuk sholat sunnah mutlak,
+  lengkap dengan dalilnya. Yang sedang berlangsung ditandai.
+- Pengingat **sepertiga malam** (tahajud) opsional.
+
+**Ayat harian**
+- Kartu **"Ayat hari ini"** di Beranda dengan font Al-Qur'an pilihanmu;
+  ketuk untuk membacanya di mushaf, atau salin ayatnya.
+- Widget baru **Ayat Harian** dan notifikasi ayat pagi (opsional).
+
 ## 1.15.0 (build 26) · 31 Oktober 2026
 
 **Laporan ibadah: harian, mingguan & bulanan**
