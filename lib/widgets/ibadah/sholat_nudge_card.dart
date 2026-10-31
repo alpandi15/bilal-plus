@@ -11,12 +11,14 @@ import '../../services/hijri_config_scope.dart';
 import '../../services/ibadah_day.dart';
 import '../../services/ibadah_report.dart';
 import '../../services/prayer_calculator.dart' as calc;
+import '../../services/puasa_sunnah.dart';
 import '../../services/sholat_motivation.dart';
 import '../../services/sholat_time.dart';
 import '../../services/user_location_scope.dart';
 import '../../utils/date_key.dart';
 import '../../pages/quran/quran_reader_page.dart';
 import '../entrance_fade.dart';
+import 'sholat_dalil_sheet.dart';
 
 /// Pesan penyemangat sholat di awal waktu.
 class SholatNudge {
@@ -27,6 +29,7 @@ class SholatNudge {
     this.item,
     this.icon,
     this.openSurah,
+    this.puasa,
   });
 
   final String title;
@@ -43,6 +46,9 @@ class SholatNudge {
 
   /// Tombol "Baca" yang membuka surah ini (mis. 18 = Al-Kahfi).
   final int? openSurah;
+
+  /// Tombol "Dalil" yang membuka lembar puasa sunnah ini.
+  final PuasaSunnah? puasa;
 }
 
 /// Amalan Jumat: Kamis sesudah Maghrib (malam Jumat) sampai Jumat Maghrib,
@@ -122,6 +128,56 @@ SholatNudge? fastNudge({
   }
   return null;
 }
+
+/// Pengingat puasa sunnah (Senin/Kamis, Ayyamul Bidh, Asyura, Syawal) yang
+/// DIAKTIFKAN pengguna di Pengaturan: pada harinya sampai Maghrib bila belum
+/// dicatat, atau sore/malam sebelumnya (mulai 15.00). Tarwiyah/Arafah
+/// ditangani [fastNudge]. Null bila bukan waktunya.
+SholatNudge? puasaSunnahNudge({
+  required String today,
+  required HijriAnchors anchors,
+  required Set<PuasaSunnah> enabled,
+  required DateTime now,
+  required DateTime maghribToday,
+  required IbadahItem? fastItem,
+  required bool fastDone,
+  required bool excusedToday,
+}) {
+  if (enabled.isEmpty) return null;
+  final date = parseDateKey(today);
+  List<PuasaSunnah> on(DateTime d) => [
+    for (final f in puasaSunnahOn(ibadahDay(dateKey(d), anchors)))
+      if (enabled.contains(f)) f,
+  ];
+  final todayFasts = on(date);
+  if (todayFasts.isNotEmpty &&
+      fastItem != null &&
+      !fastDone &&
+      !excusedToday &&
+      now.isBefore(maghribToday)) {
+    return SholatNudge(
+      title: 'Hari ini puasa sunnah: ${_names(todayFasts)}',
+      message: 'Bila kamu berpuasa hari ini, jangan lupa dicatat.',
+      tone: SholatStatus.onTime,
+      item: fastItem,
+      icon: Icons.nightlight_round,
+      puasa: todayFasts.first,
+    );
+  }
+  final tomorrowFasts = on(date.add(const Duration(days: 1)));
+  if (tomorrowFasts.isNotEmpty && now.hour >= 15 && !excusedToday) {
+    return SholatNudge(
+      title: 'Besok puasa sunnah: ${_names(tomorrowFasts)}',
+      message: 'Niatkan malam ini dan siapkan sahur - bila berkenan.',
+      tone: SholatStatus.onTime,
+      icon: Icons.nightlight_round,
+      puasa: tomorrowFasts.first,
+    );
+  }
+  return null;
+}
+
+String _names(List<PuasaSunnah> f) => f.map((e) => e.label).join(' & ');
 
 /// Pengingat sholat yang sedang berjalan tapi belum dicatat (>= 10 menit
 /// sesudah adzan) - atau, bila tidak ada, penyemangat sesudah sholat terakhir
@@ -386,10 +442,31 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
               fastItem != null && (todayLogs[fastItem.id]?.value ?? 0) > 0,
           excusedToday: data.excused.contains(today),
         );
-        if (fast != null) {
+        // puasa sunnah lain (Senin/Kamis dll.) hanya bila saklarnya aktif
+        final sunnah = fast == null && settings != null
+            ? puasaSunnahNudge(
+                today: today,
+                anchors: anchors,
+                enabled: settings.puasaSunnah,
+                now: DateTime.now(),
+                maghribToday: calc
+                    .calculatePrayerTimes(
+                      latitude: location.lat,
+                      longitude: location.long,
+                    )
+                    .times[PrayerKey.maghrib]!,
+                fastItem: fastItem,
+                fastDone:
+                    fastItem != null &&
+                    (todayLogs[fastItem.id]?.value ?? 0) > 0,
+                excusedToday: data.excused.contains(today),
+              )
+            : null;
+        final fastCard = fast ?? sunnah;
+        if (fastCard != null) {
           nudges.insert(
             nudges.isNotEmpty && nudges.first.item != null ? 1 : 0,
-            fast,
+            fastCard,
           );
         }
         // amalan Jumat: sesudah pengingat sholat & puasa
@@ -504,6 +581,12 @@ class _NudgeCard extends StatelessWidget {
                 ),
               ),
               child: const Text('Baca'),
+            )
+          else if (nudge.puasa case final puasa?)
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: accent),
+              onPressed: () => showPuasaSunnahSheet(context, focus: puasa),
+              child: const Text('Dalil'),
             ),
         ],
       ),

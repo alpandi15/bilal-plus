@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/sholat_dalil.dart';
 import '../arabic_font.dart';
+import '../../services/puasa_sunnah.dart';
 import '../../services/waktu_penting.dart';
 import '../hadith_ref_text.dart';
 
@@ -70,6 +71,40 @@ Future<void> showSholatWarningSheet(BuildContext context, {String? prayerKey}) {
     ],
   );
 }
+
+/// Penjelasan hutang sholat: tanpa menghakimi jumlahnya, dengan pintu taubat.
+Future<void> showHutangSholatSheet(BuildContext context) => _show(
+  context,
+  icon: Icons.history_toggle_off_rounded,
+  accent: _blue,
+  title: 'Tentang hutang sholat',
+  subtitle:
+      'Daftar ini hanya alat bantumu mencicil - aplikasi tidak menghitung '
+      'atau menghakimi berapa seharusnya.',
+  children: [
+    const _Steps([
+      'Isi sendiri sesuai perkiraanmu; boleh dikira-kira, lalu dikoreksi '
+          'kapan saja.',
+      '"Bayar 1" mencatat satu sholat yang kamu qadha - biasanya sesudah '
+          'sholat wajib atau di waktu senggang.',
+      'Sholat yang tidak tercatat di checklist belum tentu terlewat; '
+          'karena itu aplikasi hanya menawarkannya, kamu yang memilih.',
+    ]),
+    const _Heading('Pintu taubat selalu terbuka', color: _blue),
+    const _Steps([
+      'Bertaubat sungguh-sungguh: menyesal, beristighfar, dan bertekad '
+          'tidak mengulanginya.',
+      'Segera tunaikan sholat yang tertinggal - sedikit demi sedikit lebih '
+          'baik daripada menunda.',
+    ]),
+    const _Note(
+      'Tertidur atau lupa (tanpa disengaja) tidak berdosa - kaffaratnya '
+      'menunaikan sholat itu begitu ingat:',
+    ),
+    for (final d in pintuTaubat) _DalilCard(d, accent: _blue),
+    const _Disclaimer(),
+  ],
+);
 
 /// Panduan qashar & jamak saat safar.
 Future<void> showQasharGuideSheet(BuildContext context) => _show(
@@ -165,6 +200,41 @@ Future<void> showWaktuPentingSheet(
         ),
       for (final d in dalilWaktuTerlarang) _DalilCard(d, accent: _red),
       _Steps(catatanWaktuTerlarang),
+      const _Disclaimer(),
+    ],
+  );
+}
+
+/// Puasa sunnah (Senin-Kamis, Ayyamul Bidh, Asyura, Syawal) beserta dalilnya
+/// dan hari-hari yang dilarang berpuasa. [focus] ditampilkan paling atas.
+Future<void> showPuasaSunnahSheet(BuildContext context, {PuasaSunnah? focus}) {
+  final order = [
+    ?focus,
+    for (final p in PuasaSunnah.values)
+      if (p != focus && !(focus == PuasaSunnah.kamis && p == PuasaSunnah.senin))
+        p,
+  ];
+  return _show(
+    context,
+    icon: Icons.nightlight_round,
+    accent: _teal,
+    title: 'Puasa sunnah',
+    subtitle:
+        'Sunnah, bukan wajib - kerjakan semampunya. Tanggal hijriah '
+        'mengikuti kalender di aplikasi.',
+    children: [
+      for (final p in order) ...[
+        _Heading(p.title, color: _teal),
+        for (final d in p.dalil) _DalilCard(d, accent: _teal),
+      ],
+      const _Heading('Hari yang dilarang berpuasa', color: _red),
+      for (final d in dalilPuasaTerlarang) _DalilCard(d, accent: _red),
+      const _Steps([
+        'Aplikasi otomatis menyembunyikan puasa sunnah pada Iedul Fithri, '
+            'Iedul Adha, dan hari tasyrik (11-13 Dzulhijjah).',
+        'Puasa sunnah tidak dianjurkan saat Ramadan - fokus pada puasa '
+            'wajib.',
+      ]),
       const _Disclaimer(),
     ],
   );

@@ -199,6 +199,31 @@ class HafalanAyahs extends Table {
   Set<Column> get primaryKey => {ayah};
 }
 
+/// Buku besar hutang sholat (qadha): tiap baris menambah ([count] > 0) atau
+/// membayar ([count] < 0) hutang satu waktu sholat. Sisa hutang = jumlah
+/// [count] per [prayer]. Hanya diisi atas pilihan pengguna - tidak pernah
+/// otomatis dari catatan harian.
+@DataClassName('SholatQadhaEntry')
+class SholatQadhaEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Kunci sholat wajib: subuh / dzuhur / ashar / maghrib / isya.
+  TextColumn get prayer => text()();
+
+  /// Positif = hutang bertambah, negatif = dibayar.
+  IntColumn get count => integer()();
+
+  /// Asal penambahan: 'manual' (diisi sendiri), 'catatan' (dipilih dari
+  /// sholat yang belum tercatat pada [date]), 'bayar' (pembayaran).
+  TextColumn get source => text()();
+
+  /// Hari yang dimaksud (kunci tanggal): hari sholat yang terlewat untuk
+  /// 'catatan', hari pembayaran untuk 'bayar'; null untuk 'manual'.
+  TextColumn get date => text().nullable()();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
 @DriftDatabase(
   tables: [
     IbadahItems,
@@ -209,6 +234,7 @@ class HafalanAyahs extends Table {
     QuranLogs,
     QuranNotes,
     HafalanAyahs,
+    SholatQadhaEntries,
   ],
   daos: [QuranDao, IbadahDao],
 )
@@ -226,7 +252,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -289,6 +315,14 @@ class AppDatabase extends _$AppDatabase {
         if (!cols.contains('jumat')) {
           await m.addColumn(ibadahLogs, ibadahLogs.jumat);
         }
+      }
+      if (from < 10) {
+        // v10: hutang sholat (qadha) - dicek dulu seperti v6
+        final tables = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'sholat_qadha_entries'",
+        ).get();
+        if (tables.isEmpty) await m.createTable(sholatQadhaEntries);
       }
     },
     beforeOpen: (details) async {
@@ -558,7 +592,14 @@ class IbadahDaySummary {
 }
 
 @DriftAccessor(
-  tables: [IbadahItems, IbadahLogs, DayStatuses, QuranLogs, RamadanRecaps],
+  tables: [
+    IbadahItems,
+    IbadahLogs,
+    DayStatuses,
+    QuranLogs,
+    RamadanRecaps,
+    SholatQadhaEntries,
+  ],
 )
 class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
   IbadahDao(super.db);
@@ -649,6 +690,78 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     );
     return QadhaStatus(owed: owed, paid: (await paid.getSingle()).read('n'));
   }
+
+  /// Buku besar hutang sholat, terbaru dulu.
+  Stream<List<SholatQadhaEntry>> watchSholatQadha() =>
+      (select(sholatQadhaEntries)..orderBy([
+            (e) => OrderingTerm.desc(e.createdAt),
+            (e) => OrderingTerm.desc(e.id),
+          ]))
+          .watch();
+
+  Future<List<SholatQadhaEntry>> sholatQadhaEntriesAll() =>
+      select(sholatQadhaEntries).get();
+
+  /// Sisa hutang per waktu sholat (tanpa nilai negatif).
+  Future<Map<String, int>> sholatQadhaRemaining() async {
+    final rows = await customSelect(
+      'SELECT prayer, SUM(count) AS n FROM sholat_qadha_entries '
+      'GROUP BY prayer',
+    ).get();
+    return {
+      for (final r in rows)
+        r.read<String>('prayer'): r.read<int>('n').clamp(0, 1 << 30),
+    };
+  }
+
+  /// Tambah hutang [count] sholat [prayer].
+  Future<void> addSholatQadha(
+    String prayer,
+    int count, {
+    String source = 'manual',
+    String? date,
+    String? note,
+  }) async {
+    if (count <= 0) return;
+    await into(sholatQadhaEntries).insert(
+      SholatQadhaEntriesCompanion.insert(
+        prayer: prayer,
+        count: count,
+        source: source,
+        date: Value(date),
+        note: Value(note),
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  /// Bayar [count] sholat [prayer] pada [date] - tidak melebihi sisa hutang.
+  /// Mengembalikan jumlah yang benar-benar dibayar.
+  Future<int> paySholatQadha(
+    String prayer,
+    int count, {
+    required String date,
+  }) => transaction(() async {
+    final left = (await sholatQadhaRemaining())[prayer] ?? 0;
+    final pay = count.clamp(0, left);
+    if (pay == 0) return 0;
+    await into(sholatQadhaEntries).insert(
+      SholatQadhaEntriesCompanion.insert(
+        prayer: prayer,
+        count: -pay,
+        source: 'bayar',
+        date: Value(date),
+        createdAt: DateTime.now(),
+      ),
+    );
+    return pay;
+  });
+
+  Future<void> deleteSholatQadha(int id) =>
+      (delete(sholatQadhaEntries)..where((e) => e.id.equals(id))).go();
+
+  Stream<void> watchSholatQadhaChanges() =>
+      watchTables(attachedDatabase, {sholatQadhaEntries});
 
   Stream<List<RamadanRecap>> watchRecaps() => (select(
     ramadanRecaps,

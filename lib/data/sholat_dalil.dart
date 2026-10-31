@@ -434,3 +434,69 @@ const catatanWaktuTerlarang = [
       'menit setelah terbit & ±10 menit sebelum Dzuhur) - bukan batas '
       'mutlak. Tanyakan ustadz untuk rincian.',
 ];
+
+/// Dalil puasa sunnah hijriah/pekanan (lihat `services/puasa_sunnah.dart`).
+/// Nomor hadits mengikuti kitab hadits di aplikasi; teks sudah dicocokkan
+/// dengan terjemahan di kitab itu.
+const dalilPuasaSenin = [
+  Dalil(
+    text:
+        'Rasulullah ditanya tentang puasa hari Senin, beliau menjawab: "Di '
+        'hari itulah aku dilahirkan, dan pada hari itu pula wahyu diturunkan '
+        'atasku."',
+    source: 'HR. Muslim no. 1978',
+  ),
+  Dalil(
+    text:
+        '"Pada hari Senin dan Kamis semua amalan dinaikkan kepada Allah, maka '
+        'aku lebih suka amalanku dinaikkan ketika aku sedang berpuasa."',
+    source: 'HR. Tirmidzi no. 678',
+  ),
+];
+
+const dalilPuasaAyyamulBidh = [
+  Dalil(
+    text:
+        '"Wahai Abu Dzar, jika engkau ingin berpuasa tiga hari pada tiap '
+        'bulan, maka berpuasalah pada tanggal ke-13, 14 dan 15."',
+    source: 'HR. Tirmidzi no. 692',
+  ),
+];
+
+const dalilPuasaAsyura = [
+  Dalil(
+    text:
+        'Ditanya tentang puasa hari Asyura, beliau menjawab: "Ia akan '
+        'menghapus dosa-dosa sepanjang tahun yang telah berlalu."',
+    source: 'HR. Muslim no. 1977',
+  ),
+  Dalil(
+    text:
+        '"Pada tahun depan insya Allah, kita akan berpuasa pada hari ke '
+        'sembilan (Muharram)."',
+    source: 'HR. Muslim no. 1916',
+  ),
+];
+
+const dalilPuasaSyawal = [
+  Dalil(
+    text:
+        '"Siapa yang berpuasa Ramadhan kemudian diiringinya dengan puasa '
+        'enam hari di bulan Syawwal, maka yang demikian itu seolah-olah '
+        'berpuasa sepanjang masa."',
+    source: 'HR. Muslim no. 1984',
+  ),
+];
+
+const dalilPuasaTerlarang = [
+  Dalil(
+    text:
+        'Rasulullah melarang berpuasa pada dua hari, yaitu hari Iedul Adha '
+        'dan Iedul Fithr.',
+    source: 'HR. Muslim no. 1921',
+  ),
+  Dalil(
+    text: '"Hari-hari Tasyriq adalah hari makan-makan dan minum."',
+    source: 'HR. Muslim no. 1926',
+  ),
+];

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../services/adzan_notifications.dart';
 import '../services/app_settings.dart';
+import '../services/puasa_sunnah.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/sholat_time.dart';
 import '../services/system_channel.dart';
 import '../services/update_checker.dart';
 import '../services/user_location_scope.dart';
+import '../widgets/ibadah/sholat_dalil_sheet.dart';
 import '../widgets/arabic_font.dart';
 import '../widgets/hijri_settings_sheet.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
@@ -635,6 +637,33 @@ class _FastReminderGroup extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: _muted),
           ),
         ),
+        for (final p in PuasaSunnah.values) ...[
+          const Divider(height: 1, color: _line),
+          SwitchListTile.adaptive(
+            activeTrackColor: _amber,
+            value: settings.puasaSunnah.contains(p),
+            onChanged: (on) async {
+              if (on) await AdzanNotifications.instance.requestPermissions();
+              await settings.setPuasaSunnah(p, on);
+            },
+            title: Text(
+              p.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: _stone,
+              ),
+            ),
+            subtitle: Text(
+              _puasaHint[p]!,
+              style: const TextStyle(fontSize: 12, color: _muted),
+            ),
+            secondary: IconButton(
+              tooltip: 'Dalil',
+              onPressed: () => showPuasaSunnahSheet(context, focus: p),
+              icon: const Icon(Icons.menu_book_rounded, color: _amber),
+            ),
+          ),
+        ],
         const Divider(height: 1, color: _line),
         SwitchListTile.adaptive(
           activeTrackColor: _amber,
@@ -708,6 +737,16 @@ class _FastReminderGroup extends StatelessWidget {
     );
   }
 }
+
+const _puasaHint = {
+  PuasaSunnah.senin:
+      'Notifikasi pukul 20.00 malam Ahad. Hari Raya & tasyrik '
+      'dilewati otomatis.',
+  PuasaSunnah.kamis: 'Notifikasi pukul 20.00 malam Rabu.',
+  PuasaSunnah.ayyamulBidh: 'Malam sebelum tanggal 13, 14 & 15 hijriah.',
+  PuasaSunnah.asyura: 'Malam sebelum 9 & 10 Muharram.',
+  PuasaSunnah.syawal: 'Malam sebelum hari-hari Syawal sesudah Iedul Fithri.',
+};
 
 String _hm(int minutes) =>
     '${(minutes ~/ 60).toString().padLeft(2, '0')}:'

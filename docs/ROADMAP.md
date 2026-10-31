@@ -180,42 +180,48 @@ kedua font.
 ## M2 - Kebiasaan & kewajiban (#3, #4) → usulan 1.17.0
 
 ### #3 Pengingat sunnah berdasarkan kalender hijriah
-- [ ] Generalisasi pola Tarwiyah-Arafah yang sudah ada menjadi **daftar
+- [x] Generalisasi pola Tarwiyah-Arafah yang sudah ada menjadi **daftar
       amalan sunnah hijriah**: puasa **Senin-Kamis**, **Ayyamul Bidh**
       (13-15 tiap bulan hijriah), **Tasu'a-Asyura** (9-10 Muharram),
       **Syawal 6 hari**, plus yang sudah ada.
-- [ ] Muncul di checklist harinya (item bergantung hari/tanggal hijriah),
+- [x] Muncul di checklist harinya (item bergantung hari/tanggal hijriah),
       kartu pengingat, dan notifikasi malam sebelumnya (bawaan mati kecuali
       yang sudah aktif; **satu saklar per amalan**).
-- [ ] Tidak menggandakan checklist "Puasa sunnah" yang sudah ada: itemnya
+- [x] Tidak menggandakan checklist "Puasa sunnah" yang sudah ada: itemnya
       dipetakan, bukan diganti.
-- [ ] **Dalil per amalan** diverifikasi ke kitab (Muslim: Senin-Kamis,
+- [x] **Dalil per amalan** diverifikasi ke kitab (Muslim: Senin-Kamis,
       Syawal, Asyura; Tirmidzi/Nasa'i: Ayyamul Bidh).
 
-**Keputusan:** apakah Senin-Kamis ikut tampil pada hari **Hari Raya &
-tasyrik** (puasa dilarang) - harus disembunyikan (dalil larangan
-diverifikasi).
+**Keputusan (diputuskan):** Senin-Kamis/Ayyamul Bidh **disembunyikan** pada
+Hari Raya & tasyrik (dalil larangan: Muslim 1921 & 1926, diverifikasi).
+Dibuat: `services/puasa_sunnah.dart` (satu saklar per amalan, bawaan mati),
+kartu Beranda hanya untuk amalan yang diaktifkan, lembar dalil. Catatan:
+Syawal diingatkan malam sebelum tiap hari Syawal sesudah 1 Syawal.
 
 **Selesai bila:** tanggal-tanggal jatuh benar pada beberapa tahun hijriah
 (uji lintas tahun & perubahan metode), tidak muncul pada hari terlarang.
 
 ### #4 Hutang sholat (qadha) yang terlacak
-- [ ] Tabel baru **`sholat_qadha`** (skema **v10**): jumlah per waktu
+- [x] Tabel baru **`sholat_qadha`** (skema **v10**): jumlah per waktu
       sholat yang masih harus diqadha + riwayat pembayaran; diisi manual
       (mis. 100 Subuh) atau **dari catatan**: sholat berstatus *Terlewat*
       / *Qadha tanpa uzur* menambah hutang (pilihan, bukan otomatis).
-- [ ] Kartu & halaman "Hutang sholat" (sisa, progres, perkiraan lunas pada
+- [x] Kartu & halaman "Hutang sholat" (sisa, progres, perkiraan lunas pada
       kecepatan sekarang) - polanya mengikuti `QadhaStatus` puasa.
-- [ ] Tombol **"Bayar 1"** (catat qadha) dan pilihan "bayar bersamaan
+- [x] Tombol **"Bayar 1"** (catat qadha) dan pilihan "bayar bersamaan
       sholat wajib" (qadha setelah fardhu).
-- [ ] Masuk ke **cadangan** (skema `backup_service`), ke laporan (angka
+- [x] Masuk ke **cadangan** (skema `backup_service`), ke laporan (angka
       hutang), dan ke rekomendasi.
-- [ ] Penjelasan singkat + dalil taubat & qadha (sudah ada di
+- [x] Penjelasan singkat + dalil taubat & qadha (sudah ada di
       `sholat_dalil.dart`); **tidak memvonis** jumlah hutang.
 
-**Keputusan:** hutang otomatis bertambah dari "Terlewat", atau hanya dari
-yang dipilih pengguna (saya sarankan pilihan, agar tidak menghitung
-kelalaian mencatat sebagai hutang).
+**Keputusan (diputuskan):** hutang hanya dari pilihan pengguna. Dibuat:
+tabel `sholat_qadha_entries` (buku besar: tambah/bayar, bukan jumlah
+tunggal), halaman Hutang Sholat (menu "Lainnya"), "Dari catatan" menawarkan
+sholat belum tercatat 60 hari terakhir untuk DIPILIH, saran mencicil di
+laporan harian. Belum: pilihan "bayar bersamaan sholat wajib" dari
+checklist (hanya tombol Bayar 1 di halaman) dan angka hutang di laporan
+mingguan/bulanan.
 
 **Selesai bila:** migrasi v9→v10 teruji (pola `pragma_table_info`),
 cadangan lama tetap terbaca, hutang bertambah/berkurang konsisten dengan
@@ -371,7 +377,7 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 |---|---|---|---|
 | M0 Fondasi | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
 | M1 Paket cepat | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
-| M2 Kebiasaan & kewajiban | belum | - | - |
+| M2 Kebiasaan & kewajiban | selesai (belum dirilis) | 1.17.0 | 2026-11-01 |
 | M3 Hafalan lanjutan | belum | - | - |
 | M4 Keamanan data | belum | - | - |
 | M5 Cari & hitung | belum | - | - |

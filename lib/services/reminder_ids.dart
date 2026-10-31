@@ -53,6 +53,7 @@ abstract final class NotifPayload {
   static const reportWeek = 'laporan-minggu|'; // laporan-minggu|YYYY-MM-DD
   static const ayat = 'ayat|'; // ayat|SURAH:AYAT
   static const prayerTimes = 'waktu-penting'; // sepertiga malam dll.
+  static const ibadah = 'ibadah'; // membuka tab Ibadah
 
   /// "ayat|18:10" -> (18, 10); null bila bukan payload ayat yang sah.
   static (int, int)? parseAyat(String? payload) {

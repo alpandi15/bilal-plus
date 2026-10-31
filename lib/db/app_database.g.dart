@@ -3475,6 +3475,452 @@ class HafalanAyahsCompanion extends UpdateCompanion<HafalanAyah> {
   }
 }
 
+class $SholatQadhaEntriesTable extends SholatQadhaEntries
+    with TableInfo<$SholatQadhaEntriesTable, SholatQadhaEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SholatQadhaEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _prayerMeta = const VerificationMeta('prayer');
+  @override
+  late final GeneratedColumn<String> prayer = GeneratedColumn<String>(
+    'prayer',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    prayer,
+    count,
+    source,
+    date,
+    note,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sholat_qadha_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SholatQadhaEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('prayer')) {
+      context.handle(
+        _prayerMeta,
+        prayer.isAcceptableOrUnknown(data['prayer']!, _prayerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_prayerMeta);
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_countMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SholatQadhaEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SholatQadhaEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      prayer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prayer'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SholatQadhaEntriesTable createAlias(String alias) {
+    return $SholatQadhaEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class SholatQadhaEntry extends DataClass
+    implements Insertable<SholatQadhaEntry> {
+  final int id;
+
+  /// Kunci sholat wajib: subuh / dzuhur / ashar / maghrib / isya.
+  final String prayer;
+
+  /// Positif = hutang bertambah, negatif = dibayar.
+  final int count;
+
+  /// Asal penambahan: 'manual' (diisi sendiri), 'catatan' (dipilih dari
+  /// sholat yang belum tercatat pada [date]), 'bayar' (pembayaran).
+  final String source;
+
+  /// Hari yang dimaksud (kunci tanggal): hari sholat yang terlewat untuk
+  /// 'catatan', hari pembayaran untuk 'bayar'; null untuk 'manual'.
+  final String? date;
+  final String? note;
+  final DateTime createdAt;
+  const SholatQadhaEntry({
+    required this.id,
+    required this.prayer,
+    required this.count,
+    required this.source,
+    this.date,
+    this.note,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['prayer'] = Variable<String>(prayer);
+    map['count'] = Variable<int>(count);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || date != null) {
+      map['date'] = Variable<String>(date);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SholatQadhaEntriesCompanion toCompanion(bool nullToAbsent) {
+    return SholatQadhaEntriesCompanion(
+      id: Value(id),
+      prayer: Value(prayer),
+      count: Value(count),
+      source: Value(source),
+      date: date == null && nullToAbsent ? const Value.absent() : Value(date),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SholatQadhaEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SholatQadhaEntry(
+      id: serializer.fromJson<int>(json['id']),
+      prayer: serializer.fromJson<String>(json['prayer']),
+      count: serializer.fromJson<int>(json['count']),
+      source: serializer.fromJson<String>(json['source']),
+      date: serializer.fromJson<String?>(json['date']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'prayer': serializer.toJson<String>(prayer),
+      'count': serializer.toJson<int>(count),
+      'source': serializer.toJson<String>(source),
+      'date': serializer.toJson<String?>(date),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SholatQadhaEntry copyWith({
+    int? id,
+    String? prayer,
+    int? count,
+    String? source,
+    Value<String?> date = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    DateTime? createdAt,
+  }) => SholatQadhaEntry(
+    id: id ?? this.id,
+    prayer: prayer ?? this.prayer,
+    count: count ?? this.count,
+    source: source ?? this.source,
+    date: date.present ? date.value : this.date,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SholatQadhaEntry copyWithCompanion(SholatQadhaEntriesCompanion data) {
+    return SholatQadhaEntry(
+      id: data.id.present ? data.id.value : this.id,
+      prayer: data.prayer.present ? data.prayer.value : this.prayer,
+      count: data.count.present ? data.count.value : this.count,
+      source: data.source.present ? data.source.value : this.source,
+      date: data.date.present ? data.date.value : this.date,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SholatQadhaEntry(')
+          ..write('id: $id, ')
+          ..write('prayer: $prayer, ')
+          ..write('count: $count, ')
+          ..write('source: $source, ')
+          ..write('date: $date, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, prayer, count, source, date, note, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SholatQadhaEntry &&
+          other.id == this.id &&
+          other.prayer == this.prayer &&
+          other.count == this.count &&
+          other.source == this.source &&
+          other.date == this.date &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt);
+}
+
+class SholatQadhaEntriesCompanion extends UpdateCompanion<SholatQadhaEntry> {
+  final Value<int> id;
+  final Value<String> prayer;
+  final Value<int> count;
+  final Value<String> source;
+  final Value<String?> date;
+  final Value<String?> note;
+  final Value<DateTime> createdAt;
+  const SholatQadhaEntriesCompanion({
+    this.id = const Value.absent(),
+    this.prayer = const Value.absent(),
+    this.count = const Value.absent(),
+    this.source = const Value.absent(),
+    this.date = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  SholatQadhaEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String prayer,
+    required int count,
+    required String source,
+    this.date = const Value.absent(),
+    this.note = const Value.absent(),
+    required DateTime createdAt,
+  }) : prayer = Value(prayer),
+       count = Value(count),
+       source = Value(source),
+       createdAt = Value(createdAt);
+  static Insertable<SholatQadhaEntry> custom({
+    Expression<int>? id,
+    Expression<String>? prayer,
+    Expression<int>? count,
+    Expression<String>? source,
+    Expression<String>? date,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (prayer != null) 'prayer': prayer,
+      if (count != null) 'count': count,
+      if (source != null) 'source': source,
+      if (date != null) 'date': date,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  SholatQadhaEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? prayer,
+    Value<int>? count,
+    Value<String>? source,
+    Value<String?>? date,
+    Value<String?>? note,
+    Value<DateTime>? createdAt,
+  }) {
+    return SholatQadhaEntriesCompanion(
+      id: id ?? this.id,
+      prayer: prayer ?? this.prayer,
+      count: count ?? this.count,
+      source: source ?? this.source,
+      date: date ?? this.date,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (prayer.present) {
+      map['prayer'] = Variable<String>(prayer.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SholatQadhaEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('prayer: $prayer, ')
+          ..write('count: $count, ')
+          ..write('source: $source, ')
+          ..write('date: $date, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3486,6 +3932,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuranLogsTable quranLogs = $QuranLogsTable(this);
   late final $QuranNotesTable quranNotes = $QuranNotesTable(this);
   late final $HafalanAyahsTable hafalanAyahs = $HafalanAyahsTable(this);
+  late final $SholatQadhaEntriesTable sholatQadhaEntries =
+      $SholatQadhaEntriesTable(this);
   late final QuranDao quranDao = QuranDao(this as AppDatabase);
   late final IbadahDao ibadahDao = IbadahDao(this as AppDatabase);
   @override
@@ -3501,6 +3949,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     quranLogs,
     quranNotes,
     hafalanAyahs,
+    sholatQadhaEntries,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5754,6 +6203,251 @@ typedef $$HafalanAyahsTableProcessedTableManager =
       HafalanAyah,
       PrefetchHooks Function()
     >;
+typedef $$SholatQadhaEntriesTableCreateCompanionBuilder =
+    SholatQadhaEntriesCompanion Function({
+      Value<int> id,
+      required String prayer,
+      required int count,
+      required String source,
+      Value<String?> date,
+      Value<String?> note,
+      required DateTime createdAt,
+    });
+typedef $$SholatQadhaEntriesTableUpdateCompanionBuilder =
+    SholatQadhaEntriesCompanion Function({
+      Value<int> id,
+      Value<String> prayer,
+      Value<int> count,
+      Value<String> source,
+      Value<String?> date,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+    });
+
+class $$SholatQadhaEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $SholatQadhaEntriesTable> {
+  $$SholatQadhaEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prayer => $composableBuilder(
+    column: $table.prayer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SholatQadhaEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SholatQadhaEntriesTable> {
+  $$SholatQadhaEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prayer => $composableBuilder(
+    column: $table.prayer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SholatQadhaEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SholatQadhaEntriesTable> {
+  $$SholatQadhaEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get prayer =>
+      $composableBuilder(column: $table.prayer, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SholatQadhaEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SholatQadhaEntriesTable,
+          SholatQadhaEntry,
+          $$SholatQadhaEntriesTableFilterComposer,
+          $$SholatQadhaEntriesTableOrderingComposer,
+          $$SholatQadhaEntriesTableAnnotationComposer,
+          $$SholatQadhaEntriesTableCreateCompanionBuilder,
+          $$SholatQadhaEntriesTableUpdateCompanionBuilder,
+          (
+            SholatQadhaEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $SholatQadhaEntriesTable,
+              SholatQadhaEntry
+            >,
+          ),
+          SholatQadhaEntry,
+          PrefetchHooks Function()
+        > {
+  $$SholatQadhaEntriesTableTableManager(
+    _$AppDatabase db,
+    $SholatQadhaEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SholatQadhaEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SholatQadhaEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SholatQadhaEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> prayer = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> date = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => SholatQadhaEntriesCompanion(
+                id: id,
+                prayer: prayer,
+                count: count,
+                source: source,
+                date: date,
+                note: note,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String prayer,
+                required int count,
+                required String source,
+                Value<String?> date = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                required DateTime createdAt,
+              }) => SholatQadhaEntriesCompanion.insert(
+                id: id,
+                prayer: prayer,
+                count: count,
+                source: source,
+                date: date,
+                note: note,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SholatQadhaEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SholatQadhaEntriesTable,
+      SholatQadhaEntry,
+      $$SholatQadhaEntriesTableFilterComposer,
+      $$SholatQadhaEntriesTableOrderingComposer,
+      $$SholatQadhaEntriesTableAnnotationComposer,
+      $$SholatQadhaEntriesTableCreateCompanionBuilder,
+      $$SholatQadhaEntriesTableUpdateCompanionBuilder,
+      (
+        SholatQadhaEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $SholatQadhaEntriesTable,
+          SholatQadhaEntry
+        >,
+      ),
+      SholatQadhaEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5774,6 +6468,8 @@ class $AppDatabaseManager {
       $$QuranNotesTableTableManager(_db, _db.quranNotes);
   $$HafalanAyahsTableTableManager get hafalanAyahs =>
       $$HafalanAyahsTableTableManager(_db, _db.hafalanAyahs);
+  $$SholatQadhaEntriesTableTableManager get sholatQadhaEntries =>
+      $$SholatQadhaEntriesTableTableManager(_db, _db.sholatQadhaEntries);
 }
 
 mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
@@ -5804,6 +6500,8 @@ mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {
   $QuranCyclesTable get quranCycles => attachedDatabase.quranCycles;
   $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
   $RamadanRecapsTable get ramadanRecaps => attachedDatabase.ramadanRecaps;
+  $SholatQadhaEntriesTable get sholatQadhaEntries =>
+      attachedDatabase.sholatQadhaEntries;
   IbadahDaoManager get managers => IbadahDaoManager(this);
 }
 
@@ -5822,4 +6520,9 @@ class IbadahDaoManager {
       $$QuranLogsTableTableManager(_db.attachedDatabase, _db.quranLogs);
   $$RamadanRecapsTableTableManager get ramadanRecaps =>
       $$RamadanRecapsTableTableManager(_db.attachedDatabase, _db.ramadanRecaps);
+  $$SholatQadhaEntriesTableTableManager get sholatQadhaEntries =>
+      $$SholatQadhaEntriesTableTableManager(
+        _db.attachedDatabase,
+        _db.sholatQadhaEntries,
+      );
 }

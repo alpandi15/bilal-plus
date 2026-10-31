@@ -282,6 +282,10 @@ DailyReport buildDailyReport(
   required double soloWeight,
   required bool male,
   DateTime? now,
+
+  /// Sisa hutang sholat (qadha) yang dicatat pengguna; > 0 memunculkan saran
+  /// mencicil di laporan hari ini.
+  int sholatDebtLeft = 0,
 }) {
   final clock = now ?? DateTime.now();
   final isToday = date == today;
@@ -823,6 +827,19 @@ DailyReport buildDailyReport(
         );
       }
     }
+  }
+
+  if (isToday && !excused && sholatDebtLeft > 0 && tips.length < 4) {
+    tips.add(
+      Insight(
+        InsightKind.tip,
+        InsightIcon.qadha,
+        'Cicil hutang sholatmu',
+        'Masih ada $sholatDebtLeft sholat yang ingin kamu qadha. Satu hari '
+            'ini cukup bayar satu - sedikit demi sedikit, lalu lunas.',
+        ref: 'HR. Muslim no. 1103',
+      ),
+    );
   }
 
   if (!hasData && !excused) {

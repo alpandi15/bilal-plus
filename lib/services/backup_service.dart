@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
+import 'hutang_sholat.dart';
 import 'quran_index.dart';
 
 /// Versi format berkas cadangan. Naikkan bila bentuknya berubah dan
@@ -88,6 +89,7 @@ class BackupService {
     final qlogs = await db.select(db.quranLogs).get();
     final notes = await db.select(db.quranNotes).get();
     final hafalan = await db.select(db.hafalanAyahs).get();
+    final qadha = await db.select(db.sholatQadhaEntries).get();
 
     return {
       'app': _appId,
@@ -169,6 +171,17 @@ class BackupService {
       'hafalan': [
         for (final h in hafalan) {'ayah': h.ayah, 'at': _iso(h.memorizedAt)},
       ],
+      'sholatQadha': [
+        for (final e in qadha)
+          {
+            'prayer': e.prayer,
+            'count': e.count,
+            'source': e.source,
+            'date': e.date,
+            'note': e.note,
+            'createdAt': _iso(e.createdAt),
+          },
+      ],
       'quranNotes': [
         for (final n in notes)
           {
@@ -242,6 +255,7 @@ class BackupService {
       if (replace) {
         await db.delete(db.quranNotes).go();
         await db.delete(db.hafalanAyahs).go();
+        await db.delete(db.sholatQadhaEntries).go();
         await db.delete(db.quranLogs).go();
         await db.delete(db.quranCycles).go();
         await db.delete(db.ibadahLogs).go();
@@ -382,6 +396,36 @@ class BackupService {
                 memorizedAt: _date(h['at']),
               ),
               mode: InsertMode.insertOrIgnore,
+            );
+      }
+
+      // hutang sholat: baris yang sama persis tidak ditambahkan dua kali
+      // (berkas lama tanpa hutang sholat dilewati)
+      final have = {
+        for (final e in await db.select(db.sholatQadhaEntries).get())
+          '${e.prayer}|${e.count}|${e.source}|${e.date}|${e.note}|'
+              '${_iso(e.createdAt)}',
+      };
+      for (final e in _list(data, 'sholatQadha')) {
+        final prayer = e['prayer'] as String;
+        final count = e['count'] as int;
+        if (!hutangPrayers.contains(prayer) || count == 0) continue;
+        final createdAt = _date(e['createdAt']);
+        final sig =
+            '$prayer|$count|${e['source']}|${e['date']}|${e['note']}|'
+            '${_iso(createdAt)}';
+        if (!have.add(sig)) continue;
+        await db
+            .into(db.sholatQadhaEntries)
+            .insert(
+              SholatQadhaEntriesCompanion.insert(
+                prayer: prayer,
+                count: count,
+                source: e['source'] as String,
+                date: Value(e['date'] as String?),
+                note: Value(e['note'] as String?),
+                createdAt: createdAt,
+              ),
             );
       }
 

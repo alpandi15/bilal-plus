@@ -14,6 +14,7 @@ import 'hijri_calendar.dart';
 import 'ibadah_day.dart';
 import 'muhasabah.dart';
 import 'prayer_calculator.dart' as calc;
+import 'puasa_sunnah.dart';
 import 'reminder_ids.dart';
 import 'sholat_motivation.dart';
 import 'sholat_time.dart';
@@ -171,6 +172,7 @@ class AdzanNotifications {
   static bool anyActive(AppSettingsController s) =>
       s.adzan ||
       s.fastReminder ||
+      s.puasaSunnah.isNotEmpty ||
       s.fridayReminder ||
       s.muhasabah ||
       s.weeklyReport ||
@@ -212,6 +214,16 @@ class AdzanNotifications {
     if (settings.fastReminder) {
       await _scheduleFastReminders(
         anchors ?? HijriAnchors.none,
+        today,
+        location,
+        now,
+        mode,
+      );
+    }
+    if (settings.puasaSunnah.isNotEmpty) {
+      await _schedulePuasaSunnah(
+        anchors ?? HijriAnchors.none,
+        settings.puasaSunnah,
         today,
         location,
         now,
@@ -362,6 +374,41 @@ class AdzanNotifications {
           );
         }
       }
+    }
+  }
+
+  /// Pukul [fastReminderHour] malam sebelum hari puasa sunnah yang
+  /// diaktifkan ([enabled]); satu notifikasi per hari walau ada beberapa
+  /// alasan (mis. Senin yang juga Ayyamul Bidh). Hari terlarang & Ramadan
+  /// sudah disaring oleh [puasaSunnahOn].
+  Future<void> _schedulePuasaSunnah(
+    HijriAnchors anchors,
+    Set<PuasaSunnah> enabled,
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      final tomorrow = date.add(const Duration(days: 1));
+      final fasts = [
+        for (final f in puasaSunnahOn(ibadahDay(dateKey(tomorrow), anchors)))
+          if (enabled.contains(f)) f,
+      ];
+      final msg = puasaSunnahMessage(fasts);
+      if (msg == null) continue;
+      final at = _at(location, date, fastReminderHour * 60);
+      if (!at.isAfter(now)) continue;
+      await _plugin.zonedSchedule(
+        id: NotifId.sunnah(tomorrow),
+        title: msg.title,
+        body: msg.body,
+        scheduledDate: at,
+        notificationDetails: _plain(_fastChannel, msg.title, msg.body),
+        androidScheduleMode: mode,
+        payload: NotifPayload.ibadah,
+      );
     }
   }
 

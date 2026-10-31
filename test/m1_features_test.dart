@@ -47,10 +47,7 @@ void main() {
     });
 
     test('berhalangan: nada ringan, tanpa persen', () {
-      expect(
-        muhasabahMessage(_s(excused: true)).body,
-        isNot(contains('%')),
-      );
+      expect(muhasabahMessage(_s(excused: true)).body, isNot(contains('%')));
     });
   });
 

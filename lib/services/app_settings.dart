@@ -2,6 +2,7 @@ import '../widgets/arabic_font.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'puasa_sunnah.dart';
 import 'sholat_guide.dart';
 import 'sholat_time.dart';
 
@@ -27,6 +28,7 @@ class AppSettings {
   static const ayatNotifKey = 'ayat_notif';
   static const ayatMinutesKey = 'ayat_minutes';
   static const tahajudNotifKey = 'tahajud_notif';
+  static const puasaSunnahKey = 'puasa_sunnah_notif';
   static const hapticKey = 'tasbih_haptic';
   static const showLatinKey = 'dzikir_show_latin';
   static const showArtiKey = 'dzikir_show_arti';
@@ -79,6 +81,7 @@ class AppSettingsController extends ChangeNotifier {
   bool _ayatNotif = false;
   int _ayatMinutes = defaultAyatMinutes;
   bool _tahajudNotif = false;
+  Set<PuasaSunnah> _puasaSunnah = const {};
   bool _haptic = true;
   bool _showLatin = true;
   bool _showArti = true;
@@ -197,6 +200,9 @@ class AppSettingsController extends ChangeNotifier {
   /// Notifikasi awal sepertiga malam terakhir (bawaan mati).
   bool get tahajudNotif => _tahajudNotif;
 
+  /// Puasa sunnah yang diingatkan malam sebelumnya (bawaan: semuanya mati).
+  Set<PuasaSunnah> get puasaSunnah => _puasaSunnah;
+
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
@@ -243,6 +249,9 @@ class AppSettingsController extends ChangeNotifier {
       _ayatMinutes =
           prefs.getInt(AppSettings.ayatMinutesKey) ?? defaultAyatMinutes;
       _tahajudNotif = prefs.getBool(AppSettings.tahajudNotifKey) ?? false;
+      _puasaSunnah = parsePuasaSunnah(
+        prefs.getStringList(AppSettings.puasaSunnahKey),
+      );
       _haptic = prefs.getBool(AppSettings.hapticKey) ?? true;
       _showLatin = prefs.getBool(AppSettings.showLatinKey) ?? true;
       _showArti = prefs.getBool(AppSettings.showArtiKey) ?? true;
@@ -417,6 +426,16 @@ class AppSettingsController extends ChangeNotifier {
     await _save((p) => p.setInt(AppSettings.ayatMinutesKey, v));
   }
 
+  Future<void> setPuasaSunnah(PuasaSunnah p, bool on) async {
+    _puasaSunnah = {..._puasaSunnah.where((e) => e != p), if (on) p};
+    notifyListeners();
+    await _save(
+      (x) => x.setStringList(AppSettings.puasaSunnahKey, [
+        for (final e in _puasaSunnah) e.name,
+      ]),
+    );
+  }
+
   Future<void> setTahajudNotif(bool v) async {
     _tahajudNotif = v;
     notifyListeners();
@@ -540,3 +559,10 @@ class AppSettingsScope extends InheritedNotifier<AppSettingsController> {
   static AppSettingsController? read(BuildContext context) =>
       context.getInheritedWidgetOfExactType<AppSettingsScope>()?.notifier;
 }
+
+/// Pengaturan puasa sunnah tersimpan sebagai daftar nama; nama yang tidak
+/// dikenal diabaikan.
+Set<PuasaSunnah> parsePuasaSunnah(List<String>? names) => {
+  for (final p in PuasaSunnah.values)
+    if (names?.contains(p.name) ?? false) p,
+};

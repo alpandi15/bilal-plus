@@ -376,4 +376,35 @@ void main() {
       expect(has(r.tips, 'Belum ada catatan'), isTrue);
     });
   });
+
+  test(
+    'hutang sholat: saran mencicil hanya hari ini & bila ada hutang',
+    () async {
+      Future<DailyReport> report(String date, int debt) async =>
+          buildDailyReport(
+            await db.ibadahDao.loadRange('2026-09-20', date),
+            date: date,
+            today: '2026-09-21',
+            anchors: HijriAnchors.none,
+            latitude: _lat,
+            longitude: _long,
+            onTimeMinutes: 15,
+            soloWeight: 1,
+            male: true,
+            sholatDebtLeft: debt,
+          );
+      expect(
+        has((await report('2026-09-21', 12)).tips, 'Cicil hutang'),
+        isTrue,
+      );
+      expect(
+        has((await report('2026-09-21', 0)).tips, 'Cicil hutang'),
+        isFalse,
+      );
+      expect(
+        has((await report('2026-09-20', 12)).tips, 'Cicil hutang'),
+        isFalse,
+      );
+    },
+  );
 }

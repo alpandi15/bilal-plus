@@ -57,6 +57,7 @@ class _IbadahDailyReportPageState extends State<IbadahDailyReportPage> {
     );
     final from = dateKey(parseDateKey(date).subtract(const Duration(days: 7)));
     final data = await db.ibadahDao.loadRange(from, date);
+    final debt = await db.ibadahDao.sholatQadhaRemaining();
     return buildDailyReport(
       data,
       date: date,
@@ -67,6 +68,7 @@ class _IbadahDailyReportPageState extends State<IbadahDailyReportPage> {
       onTimeMinutes: settings?.onTimeMinutes ?? defaultOnTimeMinutes,
       soloWeight: settings?.effectiveSoloWeight ?? 1,
       male: settings?.gender == Gender.male,
+      sholatDebtLeft: debt.values.fold(0, (a, b) => a + b),
     );
   }
 

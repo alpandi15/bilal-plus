@@ -4,6 +4,27 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.17.0 (build 28) · 1 November 2026
+
+**Pengingat puasa sunnah**
+- Pilih sendiri puasa sunnah yang ingin diingatkan di Pengaturan ->
+  Pengingat: **Senin**, **Kamis**, **Ayyamul Bidh** (13-15 hijriah),
+  **Tasu'a & Asyura**, dan **enam hari Syawal**. Semuanya mati secara bawaan.
+- Notifikasi pukul 20.00 malam sebelumnya, plus kartu di Beranda pada
+  harinya. Tiap amalan punya dalilnya (tombol Dalil).
+- Tidak muncul di Idul Fitri, Idul Adha, dan hari tasyrik karena puasa
+  dilarang pada hari-hari itu.
+
+**Hutang sholat**
+- Halaman baru **Hutang Sholat** (menu Lainnya) untuk mencicil qadha:
+  sisa per waktu, tombol "Bayar 1", progres, dan riwayat yang bisa
+  dibatalkan.
+- Hutang hanya bertambah atas pilihanmu: isi sendiri (satu waktu atau semua
+  waktu sekaligus), atau pilih dari sholat yang belum tercatat 60 hari
+  terakhir lewat "Dari catatan".
+- Ikut tersimpan di Cadangan Data. Laporan harian hari ini memberi saran
+  mencicil bila masih ada hutang.
+
 ## 1.16.0 (build 27) · 31 Oktober 2026
 
 **Muhasabah malam & laporan mingguan**

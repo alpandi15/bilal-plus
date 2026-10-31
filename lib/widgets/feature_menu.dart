@@ -7,6 +7,7 @@ import '../pages/doa_page.dart';
 import '../pages/dzikir_page.dart';
 import '../pages/hadits_page.dart';
 import '../pages/hijri_calendar_page.dart';
+import '../pages/hutang_sholat_page.dart';
 import '../pages/kitab_yasin_page.dart';
 import '../pages/quran/hafalan_page.dart';
 import '../pages/qibla_page.dart';
@@ -39,6 +40,7 @@ final featureGroups = <(String, List<FeatureMenu>)>[
       _hafalan,
       _dzikir,
       _usaiSholat,
+      _hutangSholat,
       _asmaulHusna,
       _silsilah,
       _tasbih,
@@ -71,6 +73,12 @@ final _hafalan = FeatureMenu('Hafalan', Icons.psychology_rounded, const [
   Color(0xFFA3E635),
   Color(0xFF047857),
 ], () => const HafalanPage());
+final _hutangSholat = FeatureMenu(
+  'Hutang Sholat',
+  Icons.history_toggle_off_rounded,
+  const [Color(0xFFFBBF24), Color(0xFFB45309)],
+  () => const HutangSholatPage(),
+);
 final _usaiSholat = FeatureMenu(
   'Usai Sholat',
   Icons.mosque_rounded,
