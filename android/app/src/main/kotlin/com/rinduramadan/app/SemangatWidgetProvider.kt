@@ -110,7 +110,9 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 val o = arr.getJSONObject(i)
                 Prayer(
                     id = o.getInt("id"),
-                    name = o.getString("name"),
+                    name = WidgetNames.sholat(
+                        o.getString("name"), o.optLong("end", 0L), o.optBoolean("done", false),
+                    ),
                     at = o.optLong("at", 0L),
                     end = o.optLong("end", 0L),
                     time = o.optString("time", ""),

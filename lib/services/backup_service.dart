@@ -123,6 +123,7 @@ class BackupService {
             if (l.qadhaReason != null) 'qadhaReason': l.qadhaReason,
             if (l.qashar != null) 'qashar': l.qashar,
             if (l.jamak != null) 'jamak': l.jamak,
+            if (l.jumat != null) 'jumat': l.jumat,
           },
       ],
       'dayStatuses': [
@@ -317,6 +318,7 @@ class BackupService {
                 qadhaReason: Value(l['qadhaReason'] as String?),
                 qashar: Value(l['qashar'] as bool?),
                 jamak: Value(l['jamak'] as bool?),
+                jumat: Value(l['jumat'] as bool?),
               ),
             );
         ibadahCount++;

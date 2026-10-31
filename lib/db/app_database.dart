@@ -107,6 +107,10 @@ class IbadahLogs extends Table {
   /// Maghrib-Isya) - dikerjakan di waktu pasangannya bukan qadha.
   BoolColumn get jamak => boolean().nullable()();
 
+  /// Sholat Dzuhur di hari Jumat (laki-laki): true = sholat Jumat, false =
+  /// Dzuhur (musafir / uzur). null = bukan hari Jumat / catatan lama.
+  BoolColumn get jumat => boolean().nullable()();
+
   @override
   Set<Column> get primaryKey => {date, itemId};
 }
@@ -222,7 +226,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -275,6 +279,15 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!cols.contains('jamak')) {
           await m.addColumn(ibadahLogs, ibadahLogs.jamak);
+        }
+      }
+      if (from < 9) {
+        // v9: sholat Jumat atau Dzuhur di hari Jumat
+        final cols = await customSelect(
+          "SELECT name FROM pragma_table_info('ibadah_logs')",
+        ).map((r) => r.read<String>('name')).get();
+        if (!cols.contains('jumat')) {
+          await m.addColumn(ibadahLogs, ibadahLogs.jumat);
         }
       }
     },
@@ -740,6 +753,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     Value<String?> qadhaReason = const Value.absent(),
     Value<bool?> qashar = const Value.absent(),
     Value<bool?> jamak = const Value.absent(),
+    Value<bool?> jumat = const Value.absent(),
   }) async {
     if (value <= 0) {
       await (delete(
@@ -759,6 +773,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
         qadhaReason: qadhaReason,
         qashar: qashar,
         jamak: jamak,
+        jumat: jumat,
       ),
     );
   }

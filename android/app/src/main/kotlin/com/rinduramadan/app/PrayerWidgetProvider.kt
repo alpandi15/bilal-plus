@@ -221,14 +221,22 @@ class PrayerWidgetProvider : HomeWidgetProvider() {
             views.setTextViewText(R.id.widget_date, state.dateLabel)
             views.setTextViewText(R.id.widget_hijri, if (state.hijriLabel.isEmpty()) "" else "(${state.hijriLabel})")
 
-            views.setTextViewText(R.id.widget_next_label, "MENUJU ${PRAYER_LABELS[state.next.key]!!.uppercase()}")
+            views.setTextViewText(R.id.widget_next_label, "MENUJU ${state.labelOf(state.next.key).uppercase()}")
+            // Jumat (laki-laki): pengingat menyegerakan diri ke masjid
+            // (HR. Bukhari 877) menggantikan judul kartu sampai Ashar
+            if (state.jumatReminder) {
+                views.setTextViewText(R.id.widget_title, "JUMAT · SEGERA KE MASJID")
+                views.setTextViewTextSize(R.id.widget_title, TypedValue.COMPLEX_UNIT_SP, 8f)
+                views.setFloat(R.id.widget_title, "setLetterSpacing", 0.06f)
+                views.setInt(R.id.widget_title, "setMaxLines", 1)
+            }
             // Chronometer memakai jam elapsedRealtime, bukan jam dinding
             val base = SystemClock.elapsedRealtime() + (state.next.at - state.now)
             views.setChronometerCountDown(R.id.widget_countdown, true)
             views.setChronometer(R.id.widget_countdown, base, null, true)
 
             for (k in PRAYER_KEYS) {
-                views.setTextViewText(cellLabelId(k), PRAYER_LABELS[k]!!.uppercase())
+                views.setTextViewText(cellLabelId(k), state.labelOf(k).uppercase())
                 views.setTextViewText(cellTimeId(k), state.today.labels[k] ?: "--:--")
                 styleCell(
                     views, k,

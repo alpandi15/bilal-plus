@@ -88,6 +88,29 @@ Future<void> showQasharGuideSheet(BuildContext context) => _show(
   ],
 );
 
+/// Sholat Jumat: segera ke masjid, siapa yang wajib, Jumat vs Dzuhur
+/// (musafir / uzur), dan peringatan meninggalkannya.
+Future<void> showJumatSheet(BuildContext context) => _show(
+  context,
+  icon: Icons.mosque_rounded,
+  accent: _teal,
+  title: 'Sholat Jumat',
+  subtitle:
+      'Hari Jumat adalah sebaik-baik hari. Segerakan diri ke masjid - makin '
+      'awal, makin besar pahalanya.',
+  children: [
+    const _Heading('Segerakan ke masjid', color: _teal),
+    for (final d in segeraKeMasjid) _DalilCard(d, accent: _teal),
+    for (final b in panduanJumat) ...[
+      _Heading(b.title, color: _teal),
+      _Steps(b.points),
+    ],
+    const _Heading('Peringatan meninggalkan Jumat', color: _red),
+    for (final d in peringatanJumat) _DalilCard(d, accent: _red),
+    const _Disclaimer(),
+  ],
+);
+
 Future<void> _show(
   BuildContext context, {
   required IconData icon,

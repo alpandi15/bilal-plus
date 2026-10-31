@@ -784,6 +784,18 @@ class $IbadahLogsTable extends IbadahLogs
       'CHECK ("jamak" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _jumatMeta = const VerificationMeta('jumat');
+  @override
+  late final GeneratedColumn<bool> jumat = GeneratedColumn<bool>(
+    'jumat',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("jumat" IN (0, 1))',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     date,
@@ -797,6 +809,7 @@ class $IbadahLogsTable extends IbadahLogs
     qadhaReason,
     qashar,
     jamak,
+    jumat,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -887,6 +900,12 @@ class $IbadahLogsTable extends IbadahLogs
         jamak.isAcceptableOrUnknown(data['jamak']!, _jamakMeta),
       );
     }
+    if (data.containsKey('jumat')) {
+      context.handle(
+        _jumatMeta,
+        jumat.isAcceptableOrUnknown(data['jumat']!, _jumatMeta),
+      );
+    }
     return context;
   }
 
@@ -940,6 +959,10 @@ class $IbadahLogsTable extends IbadahLogs
         DriftSqlType.bool,
         data['${effectivePrefix}jamak'],
       ),
+      jumat: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}jumat'],
+      ),
     );
   }
 
@@ -980,6 +1003,10 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
   /// Sholat wajib saat safar: dijamak dengan pasangannya (Dzuhur-Ashar,
   /// Maghrib-Isya) - dikerjakan di waktu pasangannya bukan qadha.
   final bool? jamak;
+
+  /// Sholat Dzuhur di hari Jumat (laki-laki): true = sholat Jumat, false =
+  /// Dzuhur (musafir / uzur). null = bukan hari Jumat / catatan lama.
+  final bool? jumat;
   const IbadahLog({
     required this.date,
     required this.itemId,
@@ -992,6 +1019,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     this.qadhaReason,
     this.qashar,
     this.jamak,
+    this.jumat,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1021,6 +1049,9 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     if (!nullToAbsent || jamak != null) {
       map['jamak'] = Variable<bool>(jamak);
     }
+    if (!nullToAbsent || jumat != null) {
+      map['jumat'] = Variable<bool>(jumat);
+    }
     return map;
   }
 
@@ -1049,6 +1080,9 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       jamak: jamak == null && nullToAbsent
           ? const Value.absent()
           : Value(jamak),
+      jumat: jumat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(jumat),
     );
   }
 
@@ -1069,6 +1103,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       qadhaReason: serializer.fromJson<String?>(json['qadhaReason']),
       qashar: serializer.fromJson<bool?>(json['qashar']),
       jamak: serializer.fromJson<bool?>(json['jamak']),
+      jumat: serializer.fromJson<bool?>(json['jumat']),
     );
   }
   @override
@@ -1086,6 +1121,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
       'qadhaReason': serializer.toJson<String?>(qadhaReason),
       'qashar': serializer.toJson<bool?>(qashar),
       'jamak': serializer.toJson<bool?>(jamak),
+      'jumat': serializer.toJson<bool?>(jumat),
     };
   }
 
@@ -1101,6 +1137,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     Value<String?> qadhaReason = const Value.absent(),
     Value<bool?> qashar = const Value.absent(),
     Value<bool?> jamak = const Value.absent(),
+    Value<bool?> jumat = const Value.absent(),
   }) => IbadahLog(
     date: date ?? this.date,
     itemId: itemId ?? this.itemId,
@@ -1113,6 +1150,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     qadhaReason: qadhaReason.present ? qadhaReason.value : this.qadhaReason,
     qashar: qashar.present ? qashar.value : this.qashar,
     jamak: jamak.present ? jamak.value : this.jamak,
+    jumat: jumat.present ? jumat.value : this.jumat,
   );
   IbadahLog copyWithCompanion(IbadahLogsCompanion data) {
     return IbadahLog(
@@ -1129,6 +1167,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
           : this.qadhaReason,
       qashar: data.qashar.present ? data.qashar.value : this.qashar,
       jamak: data.jamak.present ? data.jamak.value : this.jamak,
+      jumat: data.jumat.present ? data.jumat.value : this.jumat,
     );
   }
 
@@ -1145,7 +1184,8 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
           ..write('jamaah: $jamaah, ')
           ..write('qadhaReason: $qadhaReason, ')
           ..write('qashar: $qashar, ')
-          ..write('jamak: $jamak')
+          ..write('jamak: $jamak, ')
+          ..write('jumat: $jumat')
           ..write(')'))
         .toString();
   }
@@ -1163,6 +1203,7 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
     qadhaReason,
     qashar,
     jamak,
+    jumat,
   );
   @override
   bool operator ==(Object other) =>
@@ -1178,7 +1219,8 @@ class IbadahLog extends DataClass implements Insertable<IbadahLog> {
           other.jamaah == this.jamaah &&
           other.qadhaReason == this.qadhaReason &&
           other.qashar == this.qashar &&
-          other.jamak == this.jamak);
+          other.jamak == this.jamak &&
+          other.jumat == this.jumat);
 }
 
 class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
@@ -1193,6 +1235,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
   final Value<String?> qadhaReason;
   final Value<bool?> qashar;
   final Value<bool?> jamak;
+  final Value<bool?> jumat;
   final Value<int> rowid;
   const IbadahLogsCompanion({
     this.date = const Value.absent(),
@@ -1206,6 +1249,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     this.qadhaReason = const Value.absent(),
     this.qashar = const Value.absent(),
     this.jamak = const Value.absent(),
+    this.jumat = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   IbadahLogsCompanion.insert({
@@ -1220,6 +1264,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     this.qadhaReason = const Value.absent(),
     this.qashar = const Value.absent(),
     this.jamak = const Value.absent(),
+    this.jumat = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
        itemId = Value(itemId),
@@ -1237,6 +1282,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     Expression<String>? qadhaReason,
     Expression<bool>? qashar,
     Expression<bool>? jamak,
+    Expression<bool>? jumat,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1251,6 +1297,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
       if (qadhaReason != null) 'qadha_reason': qadhaReason,
       if (qashar != null) 'qashar': qashar,
       if (jamak != null) 'jamak': jamak,
+      if (jumat != null) 'jumat': jumat,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1267,6 +1314,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     Value<String?>? qadhaReason,
     Value<bool?>? qashar,
     Value<bool?>? jamak,
+    Value<bool?>? jumat,
     Value<int>? rowid,
   }) {
     return IbadahLogsCompanion(
@@ -1281,6 +1329,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
       qadhaReason: qadhaReason ?? this.qadhaReason,
       qashar: qashar ?? this.qashar,
       jamak: jamak ?? this.jamak,
+      jumat: jumat ?? this.jumat,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1321,6 +1370,9 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
     if (jamak.present) {
       map['jamak'] = Variable<bool>(jamak.value);
     }
+    if (jumat.present) {
+      map['jumat'] = Variable<bool>(jumat.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1341,6 +1393,7 @@ class IbadahLogsCompanion extends UpdateCompanion<IbadahLog> {
           ..write('qadhaReason: $qadhaReason, ')
           ..write('qashar: $qashar, ')
           ..write('jamak: $jamak, ')
+          ..write('jumat: $jumat, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3892,6 +3945,7 @@ typedef $$IbadahLogsTableCreateCompanionBuilder =
       Value<String?> qadhaReason,
       Value<bool?> qashar,
       Value<bool?> jamak,
+      Value<bool?> jumat,
       Value<int> rowid,
     });
 typedef $$IbadahLogsTableUpdateCompanionBuilder =
@@ -3907,6 +3961,7 @@ typedef $$IbadahLogsTableUpdateCompanionBuilder =
       Value<String?> qadhaReason,
       Value<bool?> qashar,
       Value<bool?> jamak,
+      Value<bool?> jumat,
       Value<int> rowid,
     });
 
@@ -3993,6 +4048,11 @@ class $$IbadahLogsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get jumat => $composableBuilder(
+    column: $table.jumat,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$IbadahItemsTableFilterComposer get itemId {
     final $$IbadahItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -4076,6 +4136,11 @@ class $$IbadahLogsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get jumat => $composableBuilder(
+    column: $table.jumat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$IbadahItemsTableOrderingComposer get itemId {
     final $$IbadahItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4141,6 +4206,9 @@ class $$IbadahLogsTableAnnotationComposer
   GeneratedColumn<bool> get jamak =>
       $composableBuilder(column: $table.jamak, builder: (column) => column);
 
+  GeneratedColumn<bool> get jumat =>
+      $composableBuilder(column: $table.jumat, builder: (column) => column);
+
   $$IbadahItemsTableAnnotationComposer get itemId {
     final $$IbadahItemsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -4204,6 +4272,7 @@ class $$IbadahLogsTableTableManager
                 Value<String?> qadhaReason = const Value.absent(),
                 Value<bool?> qashar = const Value.absent(),
                 Value<bool?> jamak = const Value.absent(),
+                Value<bool?> jumat = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IbadahLogsCompanion(
                 date: date,
@@ -4217,6 +4286,7 @@ class $$IbadahLogsTableTableManager
                 qadhaReason: qadhaReason,
                 qashar: qashar,
                 jamak: jamak,
+                jumat: jumat,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4232,6 +4302,7 @@ class $$IbadahLogsTableTableManager
                 Value<String?> qadhaReason = const Value.absent(),
                 Value<bool?> qashar = const Value.absent(),
                 Value<bool?> jamak = const Value.absent(),
+                Value<bool?> jumat = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => IbadahLogsCompanion.insert(
                 date: date,
@@ -4245,6 +4316,7 @@ class $$IbadahLogsTableTableManager
                 qadhaReason: qadhaReason,
                 qashar: qashar,
                 jamak: jamak,
+                jumat: jumat,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

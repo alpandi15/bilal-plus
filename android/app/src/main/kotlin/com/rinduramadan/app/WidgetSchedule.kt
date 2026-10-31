@@ -43,6 +43,8 @@ class DaySchedule(
     /** Kembang api malam: dini hari (sebelum Subuh) & sesudah Maghrib. */
     val fireworks: Boolean = false,
     val fireworksAfterMaghrib: Boolean = false,
+    /** Hari Jumat & pengguna laki-laki: Dzuhur disebut Jumat (dihitung Flutter). */
+    val jumat: Boolean = false,
 )
 
 /** Data yang dititipkan Flutter (`home_widget_service_io.dart`, kunci `schedule_json`). */
@@ -73,6 +75,7 @@ class WidgetData(
                             seasonAfterMaghrib = d.optString("seasonAfterMaghrib", "normal"),
                             fireworks = d.optBoolean("fireworks", false),
                             fireworksAfterMaghrib = d.optBoolean("fireworksAfterMaghrib", false),
+                            jumat = d.optBoolean("jumat", false),
                         ),
                     )
                 }
@@ -109,6 +112,15 @@ class WidgetState(val data: WidgetData, val now: Long) {
         .let { if (it >= 0) it else data.days.indexOfLast { d -> d.date < todayKey }.coerceAtLeast(0) }
     val today: DaySchedule = data.days[todayIndex]
     val stale: Boolean = today.date != todayKey
+
+    /** Hari ini Jumat (laki-laki): Dzuhur disebut Jumat. */
+    val jumat: Boolean = today.jumat && !stale
+
+    /** Nama waktu sholat di kartu hari ini. */
+    fun labelOf(key: String): String = if (jumat && key == "dhuhr") "Jumat" else PRAYER_LABELS[key]!!
+
+    /** Pengingat "segera ke masjid": Jumat sampai waktunya habis (masuk Ashar). */
+    val jumatReminder: Boolean = jumat && now < today.times["asr"]!!
 
     val hour: Int = cal.get(Calendar.HOUR_OF_DAY)
     val quiet: Boolean = hour >= 22 || hour < 4

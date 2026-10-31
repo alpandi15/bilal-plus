@@ -126,7 +126,9 @@ class IbadahWidgetProvider : HomeWidgetProvider() {
                 val o = arr.getJSONObject(i)
                 Entry(
                     id = o.getInt("id"),
-                    name = o.getString("name"),
+                    name = WidgetNames.sholat(
+                        o.getString("name"), o.optLong("end", 0L), o.optBoolean("done", false),
+                    ),
                     kind = o.optString("kind", "check"),
                     value = o.optInt("value", 0),
                     target = o.optInt("target", 1),

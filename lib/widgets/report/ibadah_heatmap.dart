@@ -92,10 +92,14 @@ class ContributionCalendar extends StatelessWidget {
     required this.days,
     this.cell = 14,
     this.gap = 3,
+    this.onDayTap,
   });
 
   /// Hari berurutan (lihat [IbadahReport.days]).
   final List<DayScore> days;
+
+  /// Ketuk kotak berisi catatan -> mis. buka laporan hari itu.
+  final ValueChanged<DayScore>? onDayTap;
   final double cell;
   final double gap;
 
@@ -154,18 +158,24 @@ class ContributionCalendar extends StatelessWidget {
                   null => SizedBox.square(dimension: cell),
                   final s => Tooltip(
                     message: _tooltip(s),
-                    child: Container(
-                      width: cell,
-                      height: cell,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: heatColor(s),
-                        borderRadius: BorderRadius.circular(3),
-                        border: Border.all(
-                          color: s.hasData ? _line : const Color(0x00000000),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onDayTap == null || !s.hasData
+                          ? null
+                          : () => onDayTap!(s),
+                      child: Container(
+                        width: cell,
+                        height: cell,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: heatColor(s),
+                          borderRadius: BorderRadius.circular(3),
+                          border: Border.all(
+                            color: s.hasData ? _line : const Color(0x00000000),
+                          ),
                         ),
+                        child: Stack(children: [?qadhaBand(s)]),
                       ),
-                      child: Stack(children: [?qadhaBand(s)]),
                     ),
                   ),
                 },
@@ -216,7 +226,11 @@ class MonthHeatmap extends StatelessWidget {
     required this.month,
     required this.today,
     required this.days,
+    this.onDayTap,
   });
+
+  /// Ketuk hari berisi catatan -> mis. buka laporan hari itu.
+  final ValueChanged<DayScore>? onDayTap;
 
   /// Tanggal 1 bulan yang ditampilkan.
   final DateTime month;
@@ -243,6 +257,9 @@ class MonthHeatmap extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         GridView.count(
+          // tanpa padding eksplisit GridView menambah inset status bar
+          // (MediaQuery) - tampak seperti baris kosong di atas tanggal 1
+          padding: EdgeInsets.zero,
           crossAxisCount: 7,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -293,7 +310,17 @@ class MonthHeatmap extends StatelessWidget {
         ],
       ),
     );
-    return s == null ? cell : Tooltip(message: _tooltip(s), child: cell);
+    if (s == null) return cell;
+    return Tooltip(
+      message: _tooltip(s),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onDayTap == null || !s.hasData || future
+            ? null
+            : () => onDayTap!(s),
+        child: cell,
+      ),
+    );
   }
 }
 

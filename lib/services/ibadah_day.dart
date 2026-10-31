@@ -206,3 +206,26 @@ IbadahProgress ibadahProgress(
   }
   return IbadahProgress(done, total, score);
 }
+
+/// Hari Jumat bagi laki-laki: kewajiban Dzuhur diganti sholat Jumat.
+bool isJumatFor({required bool male, required String date}) =>
+    male && parseDateKey(date).weekday == DateTime.friday;
+
+/// Item sholat wajib untuk ditampilkan: di hari Jumat, Dzuhur laki-laki
+/// bernama "Jumat" - kecuali catatannya memilih Dzuhur (musafir / uzur).
+/// Kuncinya tetap 'dzuhur'; hanya namanya yang berganti.
+List<IbadahItem> jumatAware(
+  List<IbadahItem> items, {
+  required bool male,
+  required String date,
+  Map<int, IbadahLog> logs = const {},
+}) {
+  if (!isJumatFor(male: male, date: date)) return items;
+  return [
+    for (final i in items)
+      if (i.key == 'dzuhur' && logs[i.id]?.jumat != false)
+        i.copyWith(name: 'Jumat')
+      else
+        i,
+  ];
+}

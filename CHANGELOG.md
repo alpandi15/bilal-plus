@@ -4,6 +4,28 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.15.0 (build 26) · 31 Oktober 2026
+
+**Laporan ibadah: harian, mingguan & bulanan**
+- Laporan lengkap dengan kartu skor beranimasi, sholat lima waktu, rincian
+  ibadah, lalu tiga bagian: **yang sudah baik**, **perlu ditingkatkan**, dan
+  **rekomendasi** - lengkap dengan rujukan hadits yang bisa diketuk.
+  Dihitung di perangkat dari catatanmu (bukan AI online, tanpa kirim data).
+- Buka dari tab Ibadah ("Lihat laporan hari ini"), dari kotak mana pun di
+  Kalender Ibadah, atau dari kartu Laporan mingguan / bulanan di tab Laporan.
+- Bisa diunduh sebagai **gambar (PNG)** atau **PDF** lewat lembar bagikan.
+
+**Sholat Jumat**
+- Hari Jumat, sholat laki-laki tampil sebagai "Jumat" (checklist, kartu &
+  widget jadwal, widget Ibadah/Semangat, adzan layar penuh), dengan pilihan
+  Dzuhur untuk musafir/uzur. Jumat yang terlewat dicatat sebagai Dzuhur.
+- Kartu & widget jadwal sholat mengingatkan menyegerakan diri ke masjid
+  (HR. Bukhari 877), plus lembar dalil & panduan Jumat.
+
+**Perbaikan**
+- Kalender bulanan: tidak ada lagi baris kosong di atas tanggal 1.
+- Teks "% di masjid" dan "% berjama'ah" di Laporan tidak lagi terpotong.
+
 ## 1.14.3 (build 25) · 26 Oktober 2026
 
 - Lembar catat sholat: isi yang panjang bisa digulir, tombol "Simpan" dan

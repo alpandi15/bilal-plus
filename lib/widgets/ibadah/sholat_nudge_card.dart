@@ -341,10 +341,15 @@ class _SholatNudgeCardsState extends State<SholatNudgeCards> {
         );
         final todayLogs = data.logs[today] ?? const {};
         final nudges = sholatNudges(
-          sholatItems: [
-            for (final i in data.items)
-              if (i.groupKey == sholatWajibGroup) i,
-          ],
+          sholatItems: jumatAware(
+            [
+              for (final i in data.items)
+                if (i.groupKey == sholatWajibGroup) i,
+            ],
+            male: settings?.gender == Gender.male,
+            date: today,
+            logs: todayLogs,
+          ),
           todayValues: {
             for (final e in todayLogs.entries) e.key: e.value.value,
           },

@@ -75,6 +75,7 @@ Future<void> syncPrayerHomeWidget({
   required double longitude,
   required String locationName,
   HijriAnchors? hijriAnchors,
+  bool male = false,
 }) async {
   final anchors = hijriAnchors ?? HijriAnchors.none;
   try {
@@ -95,6 +96,8 @@ Future<void> syncPrayerHomeWidget({
         for (final key in cardPrayers)
           key.name: s.times[key]!.millisecondsSinceEpoch,
         'labels': {for (final key in cardPrayers) key.name: s.labels[key]!},
+        // Jumat (laki-laki): Dzuhur disebut Jumat + pengingat ke masjid
+        'jumat': male && date.weekday == DateTime.friday,
         // tanggal hijriah hari ini dan sesudah Maghrib (hari hijriah
         // berganti saat Maghrib - sama dengan kartu di aplikasi)
         'hijri': anchors.fromGregorian(date).format(),

@@ -38,8 +38,13 @@ class SholatLogSave extends SholatLogResult {
     this.safar = false,
     this.qashar = false,
     this.jamak = false,
+    this.jumat,
   });
   final DateTime prayedAt;
+
+  /// Hari Jumat (laki-laki): true = sholat Jumat, false = Dzuhur. null =
+  /// bukan hari Jumat.
+  final bool? jumat;
   final String place;
   final bool jamaah;
 
@@ -74,6 +79,8 @@ Future<SholatLogResult?> showSholatLogSheet(
   bool safar = false,
   bool qashar = false,
   bool jamak = false,
+  bool jumatDay = false,
+  bool? jumat,
 }) => showModalBottomSheet<SholatLogResult>(
   context: context,
   showDragHandle: true,
@@ -95,6 +102,8 @@ Future<SholatLogResult?> showSholatLogSheet(
     safar: safar,
     qashar: qashar,
     jamak: jamak,
+    jumatDay: jumatDay,
+    jumat: jumat,
   ),
 );
 
@@ -115,8 +124,13 @@ class _SholatLogSheet extends StatefulWidget {
     required this.safar,
     required this.qashar,
     required this.jamak,
+    required this.jumatDay,
+    required this.jumat,
   });
 
+  /// Dzuhur di hari Jumat bagi laki-laki: pilih sholat Jumat atau Dzuhur.
+  final bool jumatDay;
+  final bool? jumat;
   final String? qadhaReason;
   final bool safar, qashar, jamak;
   final String name, itemKey, place;
@@ -141,6 +155,19 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
   late bool _safar = widget.safar && _canSafar;
   late bool _qashar = widget.qashar;
   late bool _jamak = widget.jamak;
+
+  // bawaan: sholat Jumat - kecuali sedang safar (musafir sholat Dzuhur)
+  late bool _jumat = widget.jumat ?? !widget.safar;
+
+  /// Waktu Jumat sudah habis: Jumat tidak bisa diqadha, jadi dicatat sebagai
+  /// Dzuhur.
+  bool get _pastWindow => !_at.isBefore(widget.window.end);
+
+  bool get _isJumat => widget.jumatDay && _jumat && !_pastWindow;
+
+  /// Nama sholat sesuai pilihan (Jumat / Dzuhur) di hari Jumat.
+  String get _name =>
+      widget.jumatDay ? (_isJumat ? 'Jumat' : 'Dzuhur') : widget.name;
 
   bool get _canQashar => qasharPrayers.contains(widget.itemKey);
   bool get _canJamak => jamakPair.containsKey(widget.itemKey);
@@ -172,7 +199,7 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: h, minute: m),
-      helpText: 'Sholat ${widget.name} jam',
+      helpText: 'Sholat $_name jam',
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
         child: child!,
@@ -207,7 +234,8 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final jamak = _safar && _canJamak && _jamak;
+    // sholat Jumat tidak diqashar & tidak dijamak (2 rakaat berjama'ah)
+    final jamak = !_isJumat && _safar && _canJamak && _jamak;
     final status = sholatStatus(
       _at,
       widget.window,
@@ -233,9 +261,9 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
             ? 'Tepat saat adzan. Masyaa Allah!'
             : '$late menit setelah adzan. Masyaa Allah!',
       SholatStatus.late =>
-        '$late menit setelah adzan - masih dalam waktu ${widget.name}.',
+        '$late menit setelah adzan - masih dalam waktu $_name.',
       SholatStatus.qadha =>
-        'Waktu ${widget.name} berakhir ${_hm(widget.window.end)}. '
+        'Waktu $_name berakhir ${_hm(widget.window.end)}. '
             'Dicatat sebagai qadha - pilih alasannya di bawah.',
       SholatStatus.uzur => 'Diqadha karena uzur - tidak berdosa, nilai penuh.',
       SholatStatus.jamak =>
@@ -257,7 +285,7 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Sholat ${widget.name}',
+                    'Sholat $_name',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -344,7 +372,15 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                   ),
                   const SizedBox(height: 6),
                   Text(detail, style: TextStyle(fontSize: 12, color: color)),
-                  if (_canSafar) ...[
+                  if (widget.jumatDay) ...[
+                    const SizedBox(height: 14),
+                    _JumatChoice(
+                      jumat: _isJumat,
+                      pastWindow: _pastWindow,
+                      onChanged: (v) => setState(() => _jumat = v),
+                    ),
+                  ],
+                  if (_canSafar && !_isJumat) ...[
                     const SizedBox(height: 14),
                     _SafarCard(
                       on: _safar,
@@ -367,12 +403,15 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                       onChanged: (r) => setState(() => _reason = r),
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  JamaahChoice(
-                    jamaah: _jamaah,
-                    soloWeight: widget.soloWeight,
-                    onChanged: (v) => setState(() => _jamaah = v),
-                  ),
+                  // sholat Jumat selalu berjama'ah - tak perlu ditanya
+                  if (!_isJumat) ...[
+                    const SizedBox(height: 16),
+                    JamaahChoice(
+                      jamaah: _jamaah,
+                      soloWeight: widget.soloWeight,
+                      onChanged: (v) => setState(() => _jamaah = v),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   const Text(
                     'DI MANA',
@@ -441,11 +480,13 @@ class _SholatLogSheetState extends State<_SholatLogSheet> {
                             SholatLogSave(
                               _at,
                               _place,
-                              _jamaah,
+                              _isJumat ? true : _jamaah,
                               qadhaReason: needsReason ? _reason : null,
-                              safar: _safar,
-                              qashar: _safar && _canQashar && _qashar,
+                              safar: !_isJumat && _safar,
+                              qashar:
+                                  !_isJumat && _safar && _canQashar && _qashar,
                               jamak: jamak,
+                              jumat: widget.jumatDay ? _isJumat : null,
                             ),
                           ),
                     child: Text(
@@ -851,3 +892,156 @@ Future<void> showSholatStatusInfo(BuildContext context) =>
         ),
       ),
     );
+
+/// Hari Jumat (laki-laki): sholat Jumat atau Dzuhur (musafir / uzur).
+class _JumatChoice extends StatelessWidget {
+  const _JumatChoice({
+    required this.jumat,
+    required this.pastWindow,
+    required this.onChanged,
+  });
+
+  final bool jumat, pastWindow;
+  final ValueChanged<bool> onChanged;
+
+  static const _teal = Color(0xFF0F766E);
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'SHOLAT HARI JUMAT',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: Color(0xCCB45309),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => showJumatSheet(context),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.help_outline_rounded, size: 14, color: _teal),
+                SizedBox(width: 3),
+                Text(
+                  'Jumat atau Dzuhur?',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _teal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: _JumatOption(
+              icon: Icons.mosque_rounded,
+              label: 'Sholat Jumat',
+              detail: '2 rakaat, berjama\'ah',
+              selected: jumat,
+              enabled: !pastWindow,
+              onTap: () => onChanged(true),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _JumatOption(
+              icon: Icons.luggage_rounded,
+              label: 'Dzuhur',
+              detail: 'Musafir / uzur',
+              selected: !jumat,
+              enabled: true,
+              onTap: () => onChanged(false),
+            ),
+          ),
+        ],
+      ),
+      if (pastWindow)
+        const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Text(
+            'Waktu Jumat sudah habis - Jumat tidak bisa diqadha, jadi dicatat '
+            'sebagai Dzuhur.',
+            style: TextStyle(fontSize: 11.5, color: _muted),
+          ),
+        ),
+    ],
+  );
+}
+
+class _JumatOption extends StatelessWidget {
+  const _JumatOption({
+    required this.icon,
+    required this.label,
+    required this.detail,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label, detail;
+  final bool selected, enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Opacity(
+    opacity: enabled ? 1 : 0.45,
+    child: Material(
+      color: selected ? _JumatChoice._teal : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: enabled ? onTap : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: selected ? _JumatChoice._teal : _line),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: selected ? Colors.white : _JumatChoice._teal),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: selected ? Colors.white : _stone,
+                      ),
+                    ),
+                    Text(
+                      detail,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: selected ? Colors.white70 : _muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}

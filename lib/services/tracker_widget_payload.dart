@@ -63,6 +63,7 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
   int onTimeMinutes = defaultOnTimeMinutes,
   double soloWeight = 1,
   bool lastJamaah = false,
+  bool male = false,
 }) async {
   final tz = calc.timezoneFromLongitude(longitude);
   return {
@@ -84,6 +85,7 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
           onTimeMinutes: onTimeMinutes,
           soloWeight: soloWeight,
           lastJamaah: lastJamaah,
+          male: male,
         ),
     ],
   };
@@ -99,6 +101,7 @@ Future<Map<String, Object?>> ibadahWidgetDay(
   int onTimeMinutes = defaultOnTimeMinutes,
   double soloWeight = 1,
   bool lastJamaah = false,
+  bool male = false,
 }) async {
   final data = await db.ibadahDao.loadDay(
     date,
@@ -108,11 +111,17 @@ Future<Map<String, Object?>> ibadahWidgetDay(
     summariesTo: date,
   );
   final day = ibadahDay(date, anchors);
-  final items = visibleItems(
-    data.items,
-    day,
-    data.values,
-    qadhaRemaining: data.qadhaRemaining,
+  // hari Jumat (laki-laki): Dzuhur bernama "Jumat" di widget
+  final items = jumatAware(
+    visibleItems(
+      data.items,
+      day,
+      data.values,
+      qadhaRemaining: data.qadhaRemaining,
+    ),
+    male: male,
+    date: date,
+    logs: data.logs,
   );
   final schedule = calc.calculatePrayerTimes(
     latitude: latitude,

@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 import '../models/prayer_models.dart';
 import '../pages/hijri_calendar_page.dart';
 import '../pages/imsakiyah_page.dart';
+import '../services/app_settings.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/home_widget_service.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
+import 'ibadah/sholat_dalil_sheet.dart';
 import 'location_picker.dart';
 import 'sky/seasonal_ornaments.dart';
 import 'sky_atmosphere.dart';
@@ -109,6 +111,17 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
       maghribToday: schedule.times[PrayerKey.maghrib]!,
     );
     final hijriLabel = '(${hijri.format()})';
+
+    // hari Jumat (laki-laki): Dzuhur disebut Jumat, plus pengingat
+    // menyegerakan diri ke masjid sampai waktunya habis (masuk Ashar)
+    final settings = AppSettingsScope.maybeOf(context);
+    final jumatDay =
+        settings?.gender == Gender.male &&
+        schedule.date.weekday == DateTime.friday;
+    String labelOf(PrayerKey k) =>
+        jumatDay && k == PrayerKey.dhuhr ? 'Jumat' : prayerLabels[k]!;
+    final jumatReminder =
+        jumatDay && now.isBefore(schedule.times[PrayerKey.asr]!);
     // Ramadan / Idulfitri: lampion, ketupat, kembang api di atas langit
     final season = skySeasonOf(hijri);
 
@@ -116,7 +129,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
     // (jadi jadwalnya), atau jangkar hijriah berubah, dijadwalkan sesudah
     // frame ini supaya tidak memicu efek samping langsung di tengah build().
     final syncKey =
-        '${userLocation.id}-${userLocation.lat}-${userLocation.long}-${schedule.date}-${anchors.fingerprint}';
+        '${userLocation.id}-${userLocation.lat}-${userLocation.long}-${schedule.date}-${anchors.fingerprint}-${settings?.gender?.name}';
     if (syncKey != _lastSyncedKey) {
       _lastSyncedKey = syncKey;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -125,6 +138,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
           longitude: userLocation.long,
           locationName: userLocation.name,
           hijriAnchors: anchors,
+          male: settings?.gender == Gender.male,
         );
       });
     }
@@ -407,7 +421,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                'Menuju ${prayerLabels[next.key]}',
+                                'Menuju ${labelOf(next.key)}',
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
@@ -448,6 +462,12 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                       ),
                     ),
 
+                    if (jumatReminder)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _JumatNote(night: night, accent: style.accent),
+                      ),
+
                     // --------------------------- enam waktu sholat ---------------------------
                     Row(
                       children: [
@@ -456,7 +476,7 @@ class _PrayerTimesCardState extends State<PrayerTimesCard> {
                             const SizedBox(width: 4),
                           Expanded(
                             child: _PrayerCell(
-                              label: prayerLabels[key]!,
+                              label: labelOf(key),
                               time: schedule.labels[key]!,
                               isNext: key == next.key && !next.isTomorrow,
                               isActive: key == active,
@@ -631,4 +651,66 @@ class _PrayerCell extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Pengingat hari Jumat: segerakan ke masjid (HR. Bukhari 877). Ketuk untuk
+/// dalil lengkap, siapa yang wajib, dan Jumat vs Dzuhur bagi musafir.
+class _JumatNote extends StatelessWidget {
+  const _JumatNote({required this.night, required this.accent});
+  final bool night;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: night
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.white.withValues(alpha: 0.65),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => showJumatSheet(context),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 7, 8, 7),
+        child: Row(
+          children: [
+            Icon(Icons.mosque_rounded, size: 18, color: accent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Jumat berkah - segerakan ke masjid',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: night ? Colors.white : const Color(0xFF1C1917),
+                    ),
+                  ),
+                  Text(
+                    'Datang paling awal seperti berkurban unta · '
+                    'HR. Bukhari 877',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      height: 1.3,
+                      color: night
+                          ? const Color(0xCCC7D2FE)
+                          : const Color(0xFF57534E),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: night ? const Color(0xB3C7D2FE) : const Color(0xFF78716C),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

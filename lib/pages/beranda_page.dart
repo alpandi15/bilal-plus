@@ -199,10 +199,16 @@ class _TodayIbadahState extends State<_TodayIbadah> {
           streak = ibadahStreak(data.summaries, today);
         }
         final day = ibadahDay(today, anchors);
-        final sholat = [
-          for (final i in data?.items ?? const <IbadahItem>[])
-            if (i.groupKey == sholatWajibGroup) i,
-        ];
+        // hari Jumat (laki-laki): Dzuhur tampil sebagai "Jumat"
+        final sholat = jumatAware(
+          [
+            for (final i in data?.items ?? const <IbadahItem>[])
+              if (i.groupKey == sholatWajibGroup) i,
+          ],
+          male: AppSettingsScope.maybeOf(context)?.gender == Gender.male,
+          date: today,
+          logs: data?.logs ?? const {},
+        );
         return _IbadahCard(
           onTap: widget.onTap,
           progress: progress,

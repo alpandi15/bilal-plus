@@ -175,6 +175,7 @@ class TrackerWidgetSync {
         onTimeMinutes: settings.onTimeMinutes,
         soloWeight: settings.effectiveSoloWeight,
         lastJamaah: settings.lastJamaah,
+        male: settings.gender == Gender.male,
       );
       final quran = await quranWidgetPayload(
         db,
@@ -244,6 +245,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
     String? place;
     bool? jamaah;
     var qashar = false;
+    var jumat = const Value<bool?>.absent();
     if (value > 0) {
       final prefs = await SharedPreferences.getInstance();
       final tracking = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
@@ -253,9 +255,16 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       if (row?.groupKey == sholatWajibGroup) {
         jamaah = prefs.getBool(AppSettings.lastJamaahKey) ?? false;
         // sedang safar (sholat terakhir dicatat safar): diqashar
-        qashar =
-            (prefs.getBool(AppSettings.lastSafarKey) ?? false) &&
-            qasharPrayers.contains(row!.key);
+        final safar = prefs.getBool(AppSettings.lastSafarKey) ?? false;
+        qashar = safar && qasharPrayers.contains(row!.key);
+        // Dzuhur di hari Jumat (laki-laki): sholat Jumat, kecuali sedang
+        // safar (musafir sholat Dzuhur)
+        if (row!.key == 'dzuhur' &&
+            prefs.getString(AppSettings.genderKey) == Gender.male.name &&
+            parseDateKey(date).weekday == DateTime.friday) {
+          jumat = Value(!safar);
+          if (!safar) jamaah = true;
+        }
         if (tracking) {
           prayedAt = DateTime.now();
           place = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
@@ -270,6 +279,7 @@ Future<void> trackerWidgetCallback(Uri? uri) async {
       place: place,
       jamaah: jamaah,
       qashar: qashar ? const Value(true) : const Value.absent(),
+      jumat: jumat,
     );
     final raw = await HomeWidget.getWidgetData<String>(_ibadahKey);
     if (raw != null) {

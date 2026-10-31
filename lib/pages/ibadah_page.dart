@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../db/app_database.dart';
 import '../db/app_database_scope.dart';
 import '../models/prayer_models.dart';
+import 'ibadah_daily_report_page.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
@@ -320,6 +321,10 @@ class _DayView extends StatelessWidget {
           ? log.qashar ?? false
           : settings.lastSafar && qasharPrayers.contains(item.key),
       jamak: log?.jamak ?? false,
+      jumatDay:
+          item.key == 'dzuhur' &&
+          isJumatFor(male: settings.gender == Gender.male, date: data.date),
+      jumat: value > 0 ? log?.jumat : null,
     );
     switch (result) {
       case SholatLogSave(prayedAt: final at, place: final where, :final jamaah):
@@ -333,6 +338,7 @@ class _DayView extends StatelessWidget {
           qadhaReason: Value(result.qadhaReason),
           qashar: Value(result.qashar ? true : null),
           jamak: Value(result.jamak ? true : null),
+          jumat: Value(result.jumat),
         );
         await settings.setLastPlace(where);
         await settings.setLastJamaah(jamaah);
@@ -361,10 +367,16 @@ class _DayView extends StatelessWidget {
       data.values,
       qadhaRemaining: data.qadhaRemaining,
     );
-    final sholat = [
-      for (final i in items)
-        if (i.groupKey == sholatWajibGroup) i,
-    ];
+    // hari Jumat (laki-laki): Dzuhur tampil sebagai "Jumat"
+    final sholat = jumatAware(
+      [
+        for (final i in items)
+          if (i.groupKey == sholatWajibGroup) i,
+      ],
+      male: settings?.gender == Gender.male,
+      date: data.date,
+      logs: data.logs,
+    );
     final rawatib = [
       for (final i in items)
         if (i.groupKey == rawatibGroup) i,
@@ -425,6 +437,11 @@ class _DayView extends StatelessWidget {
                 streak: ibadahStreak(data.summaries, today),
                 excused: data.excused,
                 onExcused: (v) => dao.setExcused(data.date, v),
+                onReport: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => IbadahDailyReportPage(date: data.date),
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
               if (sholat.isNotEmpty) ...[
@@ -755,8 +772,10 @@ class _SummaryCard extends StatelessWidget {
     required this.streak,
     required this.excused,
     required this.onExcused,
+    required this.onReport,
   });
 
+  final VoidCallback onReport;
   final String date, today;
   final IbadahDay day;
   final IbadahProgress progress;
@@ -869,6 +888,28 @@ class _SummaryCard extends StatelessWidget {
             subtitle: const Text(
               'Sholat & puasa tidak dihitung, streak tetap terjaga',
               style: TextStyle(fontSize: 11, color: _muted),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFF1DB),
+                foregroundColor: const Color(0xFF92400E),
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: onReport,
+              icon: const Icon(Icons.insights_rounded, size: 19),
+              label: Text(
+                date == today
+                    ? 'Lihat laporan hari ini'
+                    : 'Lihat laporan hari ini',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
           ),
         ],

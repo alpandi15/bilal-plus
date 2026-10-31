@@ -12,6 +12,10 @@ import '../utils/date_key.dart';
 import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/ibadah/sholat_log_sheet.dart';
 import '../widgets/report/ibadah_heatmap.dart';
+import '../widgets/report/reveal.dart';
+import 'ibadah_daily_report_page.dart';
+import 'ibadah_monthly_report_page.dart';
+import 'ibadah_weekly_report_page.dart';
 import '../widgets/sub_header.dart';
 
 const _amber = Color(0xFFB45309);
@@ -168,6 +172,8 @@ class _ReportBody extends StatelessWidget {
                 showSelectedIcon: false,
                 onSelectionChanged: (v) => onRange(v.first),
               ),
+              const SizedBox(height: 12),
+              const _ReportEntry(),
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -197,7 +203,7 @@ class _ReportBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Reveal(
+                    Reveal(
                       delay: 150,
                       duration: 1100,
                       builder: (context, t) => ShaderMask(
@@ -206,11 +212,28 @@ class _ReportBody extends StatelessWidget {
                           colors: const [Colors.white, Colors.transparent],
                           stops: [t, (t + 0.15).clamp(0.0, 1.0)],
                         ).createShader(r.inflate(r.width * 0.15)),
-                        child: ContributionCalendar(days: report.days),
+                        child: ContributionCalendar(
+                          days: report.days,
+                          // ketuk kotak -> laporan harian tanggal itu
+                          onDayTap: (d) => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  IbadahDailyReportPage(date: d.date),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
                     const HeatLegend(),
+                    if (!noData)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Ketuk sebuah kotak untuk laporan harian hari itu.',
+                          style: TextStyle(fontSize: 11, color: _muted),
+                        ),
+                      ),
                     if (noData)
                       const Padding(
                         padding: EdgeInsets.only(top: 10),
@@ -225,21 +248,21 @@ class _ReportBody extends StatelessWidget {
               ),
               if (!noData) ...[
                 const SizedBox(height: 14),
-                _Entrance(
+                Entrance(
                   delay: 200,
                   child: _WeekdayCard(weekday: report.weekday),
                 ),
               ],
               if (showSholat && !noData) ...[
                 const SizedBox(height: 14),
-                _Entrance(
+                Entrance(
                   delay: 320,
                   child: _SholatQualityCard(stats: report.sholat),
                 ),
               ],
               if (report.items.isNotEmpty && !noData) ...[
                 const SizedBox(height: 14),
-                _Entrance(delay: 440, child: _ItemsCard(items: report.items)),
+                Entrance(delay: 440, child: _ItemsCard(items: report.items)),
               ],
             ],
           ),
@@ -302,7 +325,7 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: _Reveal(
+    child: Reveal(
       delay: delay,
       duration: 900,
       builder: (context, t) => _tile((value * t).round(), t),
@@ -443,7 +466,7 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Reveal(
+    return Reveal(
       delay: 250 + index * 70,
       duration: 800,
       curve: Curves.easeOutBack,
@@ -544,7 +567,7 @@ class _SholatQualityCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _Reveal(
+                Reveal(
                   delay: 300,
                   duration: 1000,
                   // jamak saat safar sah di waktu pasangannya - ikut
@@ -679,10 +702,12 @@ class _SholatQualityCard extends StatelessWidget {
               children: [
                 Icon(sholatPlaceIcon['masjid'], size: 16, color: _amber),
                 const SizedBox(width: 6),
-                Text(
-                  '${(masjid * 100 / placed).round()}% di masjid '
-                  '($masjid dari $placed sholat)',
-                  style: const TextStyle(fontSize: 12, color: _stone),
+                Expanded(
+                  child: Text(
+                    '${(masjid * 100 / placed).round()}% di masjid '
+                    '($masjid dari $placed sholat)',
+                    style: const TextStyle(fontSize: 12, color: _stone),
+                  ),
                 ),
               ],
             ),
@@ -693,10 +718,12 @@ class _SholatQualityCard extends StatelessWidget {
               children: [
                 Icon(jamaahIcon(true), size: 16, color: _amber),
                 const SizedBox(width: 6),
-                Text(
-                  "${(jamaah * 100 / withJamaah).round()}% berjama'ah "
-                  '($jamaah dari $withJamaah sholat)',
-                  style: const TextStyle(fontSize: 12, color: _stone),
+                Expanded(
+                  child: Text(
+                    "${(jamaah * 100 / withJamaah).round()}% berjama'ah "
+                    '($jamaah dari $withJamaah sholat)',
+                    style: const TextStyle(fontSize: 12, color: _stone),
+                  ),
                 ),
               ],
             ),
@@ -724,7 +751,7 @@ class _Stacked extends StatelessWidget {
   final int delay;
 
   @override
-  Widget build(BuildContext context) => _Reveal(
+  Widget build(BuildContext context) => Reveal(
     delay: delay,
     duration: 900,
     builder: (context, t) => ClipRRect(
@@ -809,7 +836,7 @@ class _ItemsCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 5),
-                _Reveal(
+                Reveal(
                   delay: 350 + i * 70,
                   duration: 900,
                   builder: (context, t) => ClipRRect(
@@ -836,47 +863,121 @@ class _ItemsCard extends StatelessWidget {
   );
 }
 
-/// Animasi masuk 0 → 1 sekali saat pertama dibangun, setelah jeda [delay]
-/// (ms). Diputar ulang bila widget dibuat ulang (mis. ganti rentang).
-class _Reveal extends StatelessWidget {
-  const _Reveal({
-    required this.builder,
-    this.delay = 0,
-    this.duration = 800,
-    this.curve = Curves.easeOutCubic,
-  });
-
-  final Widget Function(BuildContext context, double t) builder;
-  final int delay, duration;
-  final Curve curve;
+/// Pintu ke laporan mingguan & bulanan (analisis lengkap + unduh gambar/PDF).
+class _ReportEntry extends StatelessWidget {
+  const _ReportEntry();
 
   @override
-  Widget build(BuildContext context) {
-    final total = delay + duration;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: total),
-      builder: (context, v, _) {
-        final t = ((v * total - delay) / duration).clamp(0.0, 1.0);
-        return builder(context, curve.transform(t));
-      },
-    );
-  }
+  Widget build(BuildContext context) => Entrance(
+    child: Row(
+      children: [
+        Expanded(
+          child: _EntryCard(
+            icon: Icons.view_week_rounded,
+            title: 'Laporan mingguan',
+            subtitle: 'Senin-Minggu, pekan ini',
+            colors: const [Color(0xFFB45309), Color(0xFF78350F)],
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const IbadahWeeklyReportPage(),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _EntryCard(
+            icon: Icons.insights_rounded,
+            title: 'Laporan bulanan',
+            subtitle: 'Sebulan penuh',
+            colors: const [Color(0xFF00503C), Color(0xFF0C3A33)],
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const IbadahMonthlyReportPage(),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
-/// Kartu muncul: memudar & naik sedikit.
-class _Entrance extends StatelessWidget {
-  const _Entrance({required this.child, this.delay = 0});
-  final Widget child;
-  final int delay;
+class _EntryCard extends StatelessWidget {
+  const _EntryCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.colors,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title, subtitle;
+  final List<Color> colors;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => _Reveal(
-    delay: delay,
-    duration: 600,
-    builder: (context, t) => Opacity(
-      opacity: t,
-      child: Transform.translate(offset: Offset(0, 24 * (1 - t)), child: child),
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Ink(
+        padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colors.first.withValues(alpha: 0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0x26F2D38A),
+                  ),
+                  child: Icon(icon, size: 20, color: const Color(0xFFF2D38A)),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFF2D38A),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 11.5, color: Color(0xCCFFFFFF)),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }

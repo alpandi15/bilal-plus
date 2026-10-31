@@ -286,3 +286,87 @@ const panduanQashar = [
         'ditanyakan kepada ustadz.',
   ]),
 ];
+
+/* -------------------------------------------------------------------------- */
+/*  Sholat Jumat                                                               */
+/* -------------------------------------------------------------------------- */
+
+/// Dalil menyegerakan diri ke masjid di hari Jumat. Teks hadits sudah
+/// dicocokkan dengan matan di kitab aplikasi (Bukhari 877, Muslim 1403 &
+/// 1410); ayat dari Al-Qur'an aplikasi.
+const segeraKeMasjid = [
+  Dalil(
+    text:
+        '"Pada hari Jum\'at para malaikat hadir di pintu masjid, mencatat siapa '
+        'yang datang paling awal dan seterusnya. Yang paling awal datang '
+        'seperti orang yang berkurban seekor unta, kemudian seekor sapi, '
+        'kemudian seekor kambing, kemudian seekor ayam, kemudian sebutir '
+        'telur. Apabila imam sudah keluar, para malaikat menutup buku catatan '
+        'mereka dan mendengarkan dzikir (khutbah)."',
+    source: 'HR. Bukhari no. 877',
+  ),
+  Dalil(
+    text:
+        '"Barangsiapa mandi seperti mandi janabah pada hari Jum\'at, lalu pergi '
+        'ke masjid pada waktu pertama, pahalanya seperti berkurban seekor '
+        'unta ... (dan seterusnya sampai sebutir telur)."',
+    source: 'HR. Muslim no. 1403',
+  ),
+  Dalil(
+    arabic:
+        'يٰٓاَيُّهَا الَّذِيْنَ اٰمَنُوْٓا اِذَا نُوْدِيَ لِلصَّلٰوةِ مِنْ يَّوْمِ '
+        'الْجُمُعَةِ فَاسْعَوْا اِلٰى ذِكْرِ اللّٰهِ وَذَرُوا الْبَيْعَ',
+    text:
+        'Wahai orang-orang yang beriman! Apabila telah diseru untuk '
+        'melaksanakan salat pada hari Jum\'at, maka segeralah kamu mengingat '
+        'Allah dan tinggalkanlah jual beli.',
+    source: 'QS. Al-Jumu\'ah: 9',
+  ),
+  Dalil(
+    text: '"Sebaik-baik hari adalah hari Jum\'at."',
+    source: 'HR. Muslim no. 1410',
+  ),
+];
+
+/// Ancaman meninggalkan Jumat tanpa uzur.
+const peringatanJumat = [
+  Dalil(
+    text:
+        '"Hendaklah orang yang suka meninggalkan shalat Jum\'at menghentikan '
+        'perbuatannya, ataukah mereka ingin Allah membutakan hati mereka, '
+        'lalu mereka benar-benar menjadi orang yang lalai."',
+    source: 'HR. Muslim no. 1432',
+  ),
+  Dalil(
+    text:
+        '"Barangsiapa meninggalkan Jum\'at tiga kali karena meremehkannya, '
+        'Allah menutup pintu hatinya."',
+    source: 'HR. Abu Daud no. 888',
+  ),
+];
+
+/// Panduan sholat Jumat vs Dzuhur (jumhur ulama; tanyakan ustadz untuk
+/// keadaan khusus).
+const panduanJumat = [
+  PanduanBagian('Siapa yang sholat Jumat?', [
+    'Laki-laki muslim, baligh, berakal, dan mukim (tidak sedang safar).',
+    'Perempuan tidak wajib Jumat - ia sholat Dzuhur (boleh ikut Jumat, dan '
+        'sah).',
+    'Musafir tidak wajib Jumat menurut jumhur ulama - ia sholat Dzuhur, '
+        'boleh diqashar (2 rakaat) & dijamak dengan Ashar. Bila ia ikut Jumat '
+        'di masjid, sholatnya Jumat.',
+    'Orang sakit atau yang punya uzur syar\'i lain sholat Dzuhur.',
+  ]),
+  PanduanBagian('Jumat tidak bisa diqadha', [
+    'Sholat Jumat hanya sah pada waktunya (Dzuhur sampai Ashar) dan '
+        'berjama\'ah dengan khutbah. Bila terlewat, kerjakan Dzuhur 4 rakaat.',
+    'Di aplikasi, Jumat yang dicatat setelah waktunya otomatis dicatat '
+        'sebagai Dzuhur.',
+  ]),
+  PanduanBagian('Adab Jumat', [
+    'Mandi, memakai pakaian terbaik & wewangian, bersiwak.',
+    'Berangkat lebih awal - makin awal makin besar pahalanya (hadits di atas).',
+    'Membaca Al-Kahfi, memperbanyak sholawat & doa (checklist Ibadah punya '
+        'itemnya).',
+  ]),
+];

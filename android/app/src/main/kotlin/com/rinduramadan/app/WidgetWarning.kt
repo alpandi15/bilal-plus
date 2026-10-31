@@ -43,3 +43,14 @@ object WidgetWarning {
         "Segera qadha & taubat ⚠️",
     )
 }
+
+/**
+ * Nama sholat di widget. Hari Jumat (laki-laki) Dzuhur bernama "Jumat" (lihat
+ * `jumatAware` di ibadah_day.dart); Jumat yang waktunya habis & belum
+ * dikerjakan tidak bisa diqadha - sisanya Dzuhur 4 rakaat, jadi kembali
+ * disebut "Dzuhur".
+ */
+object WidgetNames {
+    fun sholat(name: String, end: Long, done: Boolean, now: Long = System.currentTimeMillis()): String =
+        if (name == "Jumat" && end in 1 until now && !done) "Dzuhur" else name
+}

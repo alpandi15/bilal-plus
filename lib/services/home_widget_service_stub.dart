@@ -5,4 +5,5 @@ Future<void> syncPrayerHomeWidget({
   required double longitude,
   required String locationName,
   Object? hijriAnchors,
+  bool male = false,
 }) async {}

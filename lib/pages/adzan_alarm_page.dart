@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/adzan_messages.dart';
 import '../services/adzan_notifications.dart';
 import '../services/app_settings.dart';
+import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/sholat_time.dart';
 import '../services/system_channel.dart';
@@ -40,6 +41,14 @@ class _AdzanAlarmPageState extends State<AdzanAlarmPage> {
   String get _date => _parts.isNotEmpty ? _parts[0] : '';
   String get _key => _parts.length > 1 ? _parts[1] : 'dzuhur';
 
+  /// Hari Jumat (laki-laki): Dzuhur disebut Jumat.
+  String _name(Gender? gender) =>
+      _key == 'dzuhur' &&
+          _date.isNotEmpty &&
+          isJumatFor(male: gender == Gender.male, date: _date)
+      ? 'Jumat'
+      : _names[_key]!;
+
   @override
   void dispose() {
     // aplikasi tidak lagi tampil di atas layar kunci
@@ -55,7 +64,10 @@ class _AdzanAlarmPageState extends State<AdzanAlarmPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Sholat ${_names[_key]} tercatat. Barakallahu fik!'),
+        content: Text(
+          'Sholat ${_name(AppSettingsScope.maybeOf(context)?.gender)} '
+          'tercatat. Barakallahu fik!',
+        ),
       ),
     );
     _close();
@@ -145,7 +157,7 @@ class _AdzanAlarmPageState extends State<AdzanAlarmPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Waktu ${_names[_key]}',
+                  'Waktu ${_name(gender)}',
                   style: const TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
