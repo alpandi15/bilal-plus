@@ -343,17 +343,26 @@ ke kitab; haul sengaja tanpa hadits karena riwayatnya diperselisihkan).
 
 ## M6 - Lencana & pencapaian (#7) → usulan 1.20.0
 
-- [ ] Kumpulan lencana lokal: streak **7/30/100** hari, **Subuh tepat waktu
+- [x] Kumpulan lencana lokal: streak **7/30/100** hari, **Subuh tepat waktu
       30 hari**, **khatam**, **hafalan 1 juz**, **Jumat penuh sebulan**.
-- [ ] Dihitung dari catatan yang ada (tanpa tabel baru; cukup tanggal
+- [x] Dihitung dari catatan yang ada (tanpa tabel baru; cukup tanggal
       pertama diraih, disimpan agar tidak hilang).
-- [ ] Halaman "Pencapaian" + animasi saat meraih; **bisa dibagikan sebagai
+- [x] Halaman "Pencapaian" + animasi saat meraih; **bisa dibagikan sebagai
       gambar** (opsional, mati bawaan).
-- [ ] **Hati-hati niat:** teks dan tampilan tidak menyuruh pamer; berbagi
+- [x] **Hati-hati niat:** teks dan tampilan tidak menyuruh pamer; berbagi
       adalah pilihan; tidak ada papan peringkat atau perbandingan antar
       pengguna.
 
-**Keputusan:** daftar lencana final (saya usulkan 12-15) & namanya.
+**Keputusan (diputuskan):** 12 lencana - Langkah Pertama, Pekan Terjaga (7),
+Sebulan Istiqamah (30), Seratus Hari (100), Penjaga Fajar (Subuh awal waktu
+30 hari), Pecinta Jama'ah (30 sholat), Jumat Penuh (semua Jumat sebulan;
+hanya laki-laki), Rutin Tilawah (30 hari), Khatam, Sejuz Hafalan, Ramadan
+Penuh, Pelunas Hutang. Dibuat: `services/badges.dart` (logika murni +
+`loadBadgeData`; tanggal diraih disimpan di pengaturan agar tidak hilang,
+tanpa tabel baru), `pages/achievements_page.dart` (menu Lainnya →
+Pencapaian; perayaan sekali; berbagi sebagai gambar hanya lewat tombol di
+rincian lencana). Penjaga Fajar butuh pencatatan jam sholat. Tanpa peringkat
+atau perbandingan; teks mengingatkan niat. Diverifikasi di emulator.
 
 ---
 
@@ -412,5 +421,5 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 | M3 Hafalan lanjutan | selesai (belum dirilis) | - | 2026-11-01 |
 | M4 Keamanan data | selesai (belum dirilis) | - | 2026-11-01 |
 | M5 Cari & hitung | selesai (belum dirilis) | - | 2026-11-01 |
-| M6 Lencana | belum | - | - |
+| M6 Lencana | selesai (belum dirilis) | - | 2026-11-01 |
 | M7 Mode gelap | belum | - | - |

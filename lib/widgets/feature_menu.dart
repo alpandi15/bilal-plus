@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pages/achievements_page.dart';
 import '../pages/asmaul_husna_page.dart';
 import '../pages/backup_page.dart';
 import '../pages/bilal_tarawih_page.dart';
@@ -53,7 +54,7 @@ final featureGroups = <(String, List<FeatureMenu>)>[
     ],
   ),
   ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat, _zakatMal]),
-  ('ALAT', [_cari, _kalender, _widgets, _backup, _settings]),
+  ('ALAT', [_cari, _pencapaian, _kalender, _widgets, _backup, _settings]),
 ];
 
 /// Tujuh menu yang langsung tampil di Beranda (menu kedelapan "Lainnya").
@@ -79,6 +80,12 @@ final _zakatMal = FeatureMenu('Zakat Mal', Icons.savings_rounded, const [
   Color(0xFF34D399),
   Color(0xFF047857),
 ], () => const ZakatMalPage());
+final _pencapaian = FeatureMenu(
+  'Pencapaian',
+  Icons.emoji_events_rounded,
+  const [Color(0xFFFBBF24), Color(0xFFD97706)],
+  () => const AchievementsPage(),
+);
 final _cari = FeatureMenu('Cari', Icons.search_rounded, const [
   Color(0xFF60A5FA),
   Color(0xFF1D4ED8),
