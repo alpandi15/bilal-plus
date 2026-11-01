@@ -500,3 +500,54 @@ const dalilPuasaTerlarang = [
     source: 'HR. Muslim no. 1926',
   ),
 ];
+
+/// Dalil zakat mal. Ayat dari teks Al-Qur'an aplikasi; hadits dicocokkan
+/// dengan kitab di aplikasi.
+const dalilZakatMal = [
+  Dalil(
+    arabic:
+        'خُذْ مِنْ اَمْوَالِهِمْ صَدَقَةً تُطَهِّرُهُمْ وَتُزَكِّيْهِمْ بِهَا وَصَلِّ '
+        'عَلَيْهِمْۗ اِنَّ صَلٰوتَكَ سَكَنٌ لَّهُمْۗ وَاللّٰهُ سَمِيْعٌ عَلِيْمٌ',
+    text:
+        'Ambillah zakat dari harta mereka, guna membersihkan dan menyucikan '
+        'mereka, dan berdoalah untuk mereka. Sesungguhnya doamu itu '
+        '(menumbuhkan) ketenteraman jiwa bagi mereka. Allah Maha Mendengar, '
+        'Maha Mengetahui.',
+    source: 'QS. At-Taubah: 103',
+  ),
+];
+
+const dalilNisabZakat = [
+  Dalil(
+    text:
+        '"Tidak wajib dizakati ... emas perak yang kurang dari lima uqiyah '
+        '(lima uqiyah sama dengan dua ratus dirham)."',
+    source: 'HR. Muslim no. 1626',
+  ),
+  Dalil(
+    text:
+        'Tentang zakat perak, setiap dua ratus dirham zakatnya seperempat '
+        'puluhnya (dua setengah persen). Jika hanya seratus sembilan puluh '
+        'dirham, maka tidak ada zakatnya, kecuali jika pemiliknya '
+        'menghendakinya.',
+    source: "HR. Nasa'i no. 2404",
+  ),
+];
+
+const dalilPenerimaZakat = [
+  Dalil(
+    arabic:
+        '۞ اِنَّمَا الصَّدَقٰتُ لِلْفُقَرَاۤءِ وَالْمَسٰكِيْنِ وَالْعَامِلِيْنَ '
+        'عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوْبُهُمْ وَفِى الرِّقَابِ وَالْغَارِمِيْنَ '
+        'وَفِيْ سَبِيْلِ اللّٰهِ وَابْنِ السَّبِيْلِۗ فَرِيْضَةً مِّنَ اللّٰهِ ۗوَاللّٰهُ '
+        'عَلِيْمٌ حَكِيْمٌ',
+    text:
+        'Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang '
+        'miskin, amil zakat, yang dilunakkan hatinya (mualaf), untuk '
+        '(memerdekakan) hamba sahaya, untuk (membebaskan) orang yang '
+        'berutang, untuk jalan Allah dan untuk orang yang sedang dalam '
+        'perjalanan, sebagai kewajiban dari Allah. Allah Maha Mengetahui, '
+        'Mahabijaksana.',
+    source: 'QS. At-Taubah: 60',
+  ),
+];

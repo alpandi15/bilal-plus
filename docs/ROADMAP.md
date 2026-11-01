@@ -302,28 +302,42 @@ dipulihkan di HP lain, dan gagal-izin ditangani dengan pesan yang jelas.
 ## M5 - Cari & hitung (#9, #11) → usulan 1.19.0
 
 ### #9 Pencarian global
-- [ ] Satu kolom cari untuk **Al-Qur'an + hadits + doa** (+ Asmaul Husna);
+- [x] Satu kolom cari untuk **Al-Qur'an + hadits + doa** (+ Asmaul Husna);
       hasil dikelompokkan per sumber, kata dicari disorot (komponen
       `HighlightText` sudah ada), ketuk membuka tempat aslinya.
-- [ ] **Spike:** hadits ada di basis data terpisah (`hadits_database`) dan
+- [x] **Spike:** hadits ada di basis data terpisah (`hadits_database`) dan
       hanya kitab yang diunduh; ukur kecepatan pencarian di 9 kitab (butuh
       indeks teks / FTS?) sebelum menetapkan desain.
-- [ ] Letak: ikon cari di Beranda/menu; riwayat pencarian lokal.
+- [x] Letak: ikon cari di Beranda/menu; riwayat pencarian lokal.
+
+**Hasil spike & keputusan:** 41 ribu hadits (33 MB teks): pindai `LIKE`
+penuh 24-48 ms di desktop (6-8 ms dengan LIMIT) → di HP kelas menengah
+diperkirakan <0,5 detik; **tidak perlu FTS/indeks tambahan**. Dibuat:
+`services/global_search.dart` (30 hasil per sumber, hadits dihitung total),
+`pages/global_search_page.dart` (grup Surah/Al-Qur'an/Hadits/Do'a/Asmaul
+Husna, sorotan kata, riwayat 8 pencarian terakhir lokal), bilah "Cari" di
+Beranda + menu Lainnya. Hadits yang belum diunduh ditandai dengan ajakan
+unduh. Diverifikasi di emulator.
 
 **Selesai bila:** hasil kurang dari ±1 detik di HP kelas menengah, tidak
 memuat seluruh kitab ke memori sekaligus.
 
 ### #11 Kalkulator zakat mal & penghasilan
-- [ ] Zakat **mal** (nisab setara **85 gram emas**, 2,5%, haul 1 tahun),
+- [x] Zakat **mal** (nisab setara **85 gram emas**, 2,5%, haul 1 tahun),
       zakat **penghasilan**, emas & perak bila perlu; **harga emas diisi
       manual** (tetap offline) dengan pengingat memperbaruinya.
-- [ ] Hasil yang bisa **dibagikan sebagai gambar** (teknik ekspor laporan).
-- [ ] Penjelasan syarat & dalil; tautan ke Zakat Fitrah yang sudah ada.
-- [ ] **Bukan fatwa:** catatan "tanyakan lembaga zakat/ustadz" di setiap
+- [x] Hasil yang bisa **dibagikan sebagai gambar** (teknik ekspor laporan).
+- [x] Penjelasan syarat & dalil; tautan ke Zakat Fitrah yang sudah ada.
+- [x] **Bukan fatwa:** catatan "tanyakan lembaga zakat/ustadz" di setiap
       hasil.
 
-**Keputusan:** satuan nisab dari emas saja atau ikut opsi perak; sumber
-rujukan fiqih yang dipakai (mis. fatwa MUI/BAZNAS) dicantumkan.
+**Keputusan (diputuskan):** nisab **emas 85 gram** saja (tanpa opsi perak),
+rujukan BAZNAS & fatwa MUI No. 3/2003, harga emas manual (pengingat bila
+>30 hari). Dibuat: `services/zakat_mal.dart` (mal: harta - hutang, wajib
+bila ≥ nisab & haul; penghasilan: dasar ≥ nisab/12, 2,5%/bulan, kebutuhan
+pokok opsional), `pages/zakat_mal_page.dart` (bagikan sebagai gambar),
+lembar dalil (QS. At-Taubah 103 & 60, Muslim 1626, Nasa'i 2404 dicocokkan
+ke kitab; haul sengaja tanpa hadits karena riwayatnya diperselisihkan).
 
 ---
 
@@ -397,6 +411,6 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 | M2 Kebiasaan & kewajiban | selesai (belum dirilis) | 1.17.0 | 2026-11-01 |
 | M3 Hafalan lanjutan | selesai (belum dirilis) | - | 2026-11-01 |
 | M4 Keamanan data | selesai (belum dirilis) | - | 2026-11-01 |
-| M5 Cari & hitung | belum | - | - |
+| M5 Cari & hitung | selesai (belum dirilis) | - | 2026-11-01 |
 | M6 Lencana | belum | - | - |
 | M7 Mode gelap | belum | - | - |

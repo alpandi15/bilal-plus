@@ -12,6 +12,7 @@ import '../services/sholat_time.dart';
 import '../services/user_location_scope.dart';
 import '../utils/date_key.dart';
 import '../widgets/ayat_hari_ini_card.dart';
+import '../widgets/search_pill.dart';
 import '../widgets/feature_menu.dart';
 import '../widgets/quran/quran_goto.dart';
 import '../widgets/ibadah/sholat_nudge_card.dart';
@@ -125,6 +126,8 @@ class _BerandaPageState extends State<BerandaPage> {
                   _QuranCard(onTracker: () => shell?.goTo(HomeTab.quran)),
                   const SizedBox(height: 12),
                   const AyatHariIniCard(),
+                  const SizedBox(height: 12),
+                  const SearchPill(),
                   const SizedBox(height: 16),
                   FeatureGrid(
                     children: [

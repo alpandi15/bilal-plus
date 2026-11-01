@@ -5,6 +5,7 @@ import '../pages/backup_page.dart';
 import '../pages/bilal_tarawih_page.dart';
 import '../pages/doa_page.dart';
 import '../pages/dzikir_page.dart';
+import '../pages/global_search_page.dart';
 import '../pages/hadits_page.dart';
 import '../pages/hijri_calendar_page.dart';
 import '../pages/hutang_sholat_page.dart';
@@ -18,6 +19,7 @@ import '../pages/takbiran_page.dart';
 import '../pages/tasbih_page.dart';
 import '../pages/widgets_page.dart';
 import '../pages/zakat_fitrah_page.dart';
+import '../pages/zakat_mal_page.dart';
 import '../services/dzikir.dart';
 
 /// Satu menu fitur (grid Beranda & lembar "Lainnya").
@@ -50,8 +52,8 @@ final featureGroups = <(String, List<FeatureMenu>)>[
       _yasin,
     ],
   ),
-  ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat]),
-  ('ALAT', [_kalender, _widgets, _backup, _settings]),
+  ('RAMADAN & HARI RAYA', [_bilal, _takbiran, _zakat, _zakatMal]),
+  ('ALAT', [_cari, _kalender, _widgets, _backup, _settings]),
 ];
 
 /// Tujuh menu yang langsung tampil di Beranda (menu kedelapan "Lainnya").
@@ -73,6 +75,14 @@ final _hafalan = FeatureMenu('Hafalan', Icons.psychology_rounded, const [
   Color(0xFFA3E635),
   Color(0xFF047857),
 ], () => const HafalanPage());
+final _zakatMal = FeatureMenu('Zakat Mal', Icons.savings_rounded, const [
+  Color(0xFF34D399),
+  Color(0xFF047857),
+], () => const ZakatMalPage());
+final _cari = FeatureMenu('Cari', Icons.search_rounded, const [
+  Color(0xFF60A5FA),
+  Color(0xFF1D4ED8),
+], () => const GlobalSearchPage());
 final _hutangSholat = FeatureMenu(
   'Hutang Sholat',
   Icons.history_toggle_off_rounded,

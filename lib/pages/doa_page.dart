@@ -68,7 +68,10 @@ const _temaLabel = {'ramadan': 'Ramadan', 'umum': 'Harian', 'rajab': 'Rajab'};
 
 /// Kumpulan do'a harian & Ramadan.
 class DoaPage extends StatefulWidget {
-  const DoaPage({super.key});
+  const DoaPage({super.key, this.initialQuery = ''});
+
+  /// Kata kunci awal (mis. dari pencarian global).
+  final String initialQuery;
 
   @override
   State<DoaPage> createState() => _DoaPageState();
@@ -77,7 +80,7 @@ class DoaPage extends StatefulWidget {
 class _DoaPageState extends State<DoaPage> {
   List<Doa>? _all;
   String? _tema;
-  final _query = TextEditingController();
+  late final _query = TextEditingController(text: widget.initialQuery);
 
   @override
   void initState() {

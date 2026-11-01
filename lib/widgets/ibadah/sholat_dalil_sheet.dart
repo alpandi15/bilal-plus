@@ -12,6 +12,7 @@ const _red = Color(0xFFB91C1C);
 const _blue = Color(0xFF1D4ED8);
 const _teal = Color(0xFF0F766E);
 const _amberDeep = Color(0xFFB45309);
+const _amber2 = Color(0xFFB45309);
 
 const _names = {
   'subuh': 'Subuh',
@@ -71,6 +72,35 @@ Future<void> showSholatWarningSheet(BuildContext context, {String? prayerKey}) {
     ],
   );
 }
+
+/// Dasar zakat mal & penghasilan: perintah, nisab, tarif, haul, penerima.
+Future<void> showZakatMalSheet(BuildContext context) => _show(
+  context,
+  icon: Icons.volunteer_activism_rounded,
+  accent: _teal,
+  title: 'Dasar zakat mal',
+  subtitle:
+      'Alat bantu hitung, bukan fatwa. Untuk kasus khusus, tanyakan '
+      'lembaga zakat (mis. BAZNAS) atau ustadz yang kamu percaya.',
+  children: [
+    const _Heading('Perintah zakat', color: _teal),
+    for (final d in dalilZakatMal) _DalilCard(d, accent: _teal),
+    const _Heading('Nisab & tarif', color: _amber2),
+    for (final d in dalilNisabZakat) _DalilCard(d, accent: _amber2),
+    const _Steps([
+      'Nisab zakat mal setara 85 gram emas; tarifnya 2,5% (seperempat puluh).',
+      'Harta harus dimiliki penuh dan mencapai nisab selama satu tahun '
+          'hijriah (haul), kecuali penghasilan yang mengikuti fatwa MUI.',
+      'Zakat penghasilan (fatwa MUI No. 3 Tahun 2003): boleh dikeluarkan saat '
+          'menerima penghasilan bila mencapai nisab, atau di akhir tahun.',
+      'Hutang jatuh tempo boleh dikurangkan dari harta (pendapat yang dipakai '
+          'aplikasi ini).',
+    ]),
+    const _Heading('Penerima zakat', color: _blue),
+    for (final d in dalilPenerimaZakat) _DalilCard(d, accent: _blue),
+    const _Disclaimer(),
+  ],
+);
 
 /// Penjelasan hutang sholat: tanpa menghakimi jumlahnya, dengan pintu taubat.
 Future<void> showHutangSholatSheet(BuildContext context) => _show(
