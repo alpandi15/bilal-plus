@@ -54,6 +54,7 @@ abstract final class NotifPayload {
   static const ayat = 'ayat|'; // ayat|SURAH:AYAT
   static const prayerTimes = 'waktu-penting'; // sepertiga malam dll.
   static const ibadah = 'ibadah'; // membuka tab Ibadah
+  static const murajaah = 'murajaah'; // membuka halaman muraja'ah
 
   /// "ayat|18:10" -> (18, 10); null bila bukan payload ayat yang sah.
   static (int, int)? parseAyat(String? payload) {

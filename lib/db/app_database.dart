@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../services/murajaah.dart';
 import '../services/quran_index.dart';
 
 part 'app_database.g.dart';
@@ -199,6 +200,34 @@ class HafalanAyahs extends Table {
   Set<Column> get primaryKey => {ayah};
 }
 
+/// Jadwal muraja'ah (pengulangan hafalan berjarak) per unit: rentang ayat
+/// global [startAyah]..[endAyah] berurutan dalam satu surah. Lihat
+/// `services/murajaah.dart`.
+@DataClassName('HafalanReview')
+class HafalanReviews extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get startAyah => integer()();
+  IntColumn get endAyah => integer()();
+
+  /// Indeks tahap di `murajaahIntervals`.
+  IntColumn get stage => integer().withDefault(const Constant(0))();
+
+  /// Jatuh tempo (kunci tanggal).
+  TextColumn get dueDate => text()();
+
+  /// Terakhir diulang (kunci tanggal), null = belum pernah.
+  TextColumn get lastDate => text().nullable()();
+
+  /// Berapa kali dinilai "Lupa".
+  IntColumn get lapses => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {startAyah, endAyah},
+  ];
+}
+
 /// Buku besar hutang sholat (qadha): tiap baris menambah ([count] > 0) atau
 /// membayar ([count] < 0) hutang satu waktu sholat. Sisa hutang = jumlah
 /// [count] per [prayer]. Hanya diisi atas pilihan pengguna - tidak pernah
@@ -235,6 +264,7 @@ class SholatQadhaEntries extends Table {
     QuranNotes,
     HafalanAyahs,
     SholatQadhaEntries,
+    HafalanReviews,
   ],
   daos: [QuranDao, IbadahDao],
 )
@@ -252,7 +282,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -323,6 +353,14 @@ class AppDatabase extends _$AppDatabase {
           "AND name = 'sholat_qadha_entries'",
         ).get();
         if (tables.isEmpty) await m.createTable(sholatQadhaEntries);
+      }
+      if (from < 11) {
+        // v11: jadwal muraja'ah hafalan (dicek dulu seperti v10)
+        final tables = await customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'hafalan_reviews'",
+        ).get();
+        if (tables.isEmpty) await m.createTable(hafalanReviews);
       }
     },
     beforeOpen: (details) async {
@@ -1014,7 +1052,9 @@ class QuranProgress {
   int? get nextAyah => lastAyah >= totalAyahs ? null : lastAyah + 1;
 }
 
-@DriftAccessor(tables: [QuranCycles, QuranLogs, QuranNotes, HafalanAyahs])
+@DriftAccessor(
+  tables: [QuranCycles, QuranLogs, QuranNotes, HafalanAyahs, HafalanReviews],
+)
 class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
   QuranDao(super.db);
 
@@ -1040,6 +1080,62 @@ class QuranDao extends DatabaseAccessor<AppDatabase> with _$QuranDaoMixin {
       ], mode: InsertMode.insertOrIgnore),
     );
   });
+
+  Stream<List<HafalanReview>> watchReviews() => (select(
+    hafalanReviews,
+  )..orderBy([(r) => OrderingTerm.asc(r.startAyah)])).watch();
+
+  Future<List<HafalanReview>> reviewsAll() => select(hafalanReviews).get();
+
+  /// Selaraskan unit muraja'ah dengan hafalan sekarang ([today] = kunci
+  /// tanggal hari ini): unit yang masih utuh dibiarkan, yang rusak dihapus,
+  /// ayat hafal yang belum tercakup dijadikan unit baru. Idempoten.
+  /// Mengembalikan true bila ada yang berubah.
+  Future<bool> syncReviews(String today) => transaction(() async {
+    final memorized = {
+      for (final h in await select(hafalanAyahs).get()) h.ayah,
+    };
+    final existing = await select(hafalanReviews).get();
+    final plan = planMurajaah(memorized, {
+      for (final r in existing) r.id: (r.startAyah, r.endAyah),
+    });
+    if (plan.remove.isEmpty && plan.create.isEmpty) return false;
+    await (delete(hafalanReviews)..where((r) => r.id.isIn(plan.remove))).go();
+    final now = DateTime.now();
+    for (final (i, c) in plan.create.indexed) {
+      await into(hafalanReviews).insert(
+        HafalanReviewsCompanion.insert(
+          startAyah: c.$1,
+          endAyah: c.$2,
+          dueDate: murajaahFirstDue(today, i),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    return true;
+  });
+
+  /// Catat penilaian [grade] untuk unit [id] pada [today].
+  Future<void> gradeReview(int id, MurajaahGrade grade, String today) async {
+    final r = await (select(
+      hafalanReviews,
+    )..where((r) => r.id.equals(id))).getSingleOrNull();
+    if (r == null) return;
+    final next = murajaahGraded(
+      MurajaahState(stage: r.stage, due: r.dueDate, lapses: r.lapses),
+      grade,
+      today,
+    );
+    await (update(hafalanReviews)..where((x) => x.id.equals(id))).write(
+      HafalanReviewsCompanion(
+        stage: Value(next.stage),
+        dueDate: Value(next.due),
+        lastDate: Value(today),
+        lapses: Value(next.lapses),
+      ),
+    );
+  }
 
   Stream<List<QuranNote>> watchNotes() =>
       (select(quranNotes)..orderBy([

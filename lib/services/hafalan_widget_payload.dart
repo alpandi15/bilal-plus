@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
+import '../utils/date_key.dart';
 import '../widgets/arabic_font.dart';
 import '../widgets/quran/quran_ayah_text.dart';
 import 'quran_text.dart';
@@ -19,6 +20,10 @@ Future<Map<String, Object?>> hafalanWidgetPayload(
   Future<QuranText> Function() loadText, {
   required QuranFont font,
   DateTime? now,
+
+  /// Kunci tanggal hari ini untuk menghitung muraja'ah yang jatuh tempo
+  /// (bawaan: tanggal di jam perangkat).
+  String? today,
 }) async {
   final generatedAt = (now ?? DateTime.now()).millisecondsSinceEpoch;
   final last =
@@ -29,6 +34,12 @@ Future<Map<String, Object?>> hafalanWidgetPayload(
   if (last == null) {
     return {'generatedAt': generatedAt, 'empty': true};
   }
+  final day = today ?? dateKey(now ?? DateTime.now());
+  await db.quranDao.syncReviews(day);
+  final due = [
+    for (final r in await db.quranDao.reviewsAll())
+      if (r.dueDate.compareTo(day) <= 0) r,
+  ].length;
   final text = await loadText();
   final surah = text.surah(text.ayah(last.ayah).surah);
   final ayahs = text.ayahsOf(surah.number);
@@ -48,6 +59,7 @@ Future<Map<String, Object?>> hafalanWidgetPayload(
 
   return {
     'generatedAt': generatedAt,
+    'murajaah': due,
     'surah': surah.number,
     'name': surah.name,
     'arabicName': surah.arabic,

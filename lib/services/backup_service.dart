@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../db/app_database.dart';
 import 'hutang_sholat.dart';
+import 'murajaah.dart';
 import 'quran_index.dart';
 
 /// Versi format berkas cadangan. Naikkan bila bentuknya berubah dan
@@ -90,6 +91,7 @@ class BackupService {
     final notes = await db.select(db.quranNotes).get();
     final hafalan = await db.select(db.hafalanAyahs).get();
     final qadha = await db.select(db.sholatQadhaEntries).get();
+    final reviews = await db.select(db.hafalanReviews).get();
 
     return {
       'app': _appId,
@@ -170,6 +172,18 @@ class BackupService {
       ],
       'hafalan': [
         for (final h in hafalan) {'ayah': h.ayah, 'at': _iso(h.memorizedAt)},
+      ],
+      'hafalanReviews': [
+        for (final r in reviews)
+          {
+            'start': r.startAyah,
+            'end': r.endAyah,
+            'stage': r.stage,
+            'due': r.dueDate,
+            'last': r.lastDate,
+            'lapses': r.lapses,
+            'createdAt': _iso(r.createdAt),
+          },
       ],
       'sholatQadha': [
         for (final e in qadha)
@@ -256,6 +270,7 @@ class BackupService {
         await db.delete(db.quranNotes).go();
         await db.delete(db.hafalanAyahs).go();
         await db.delete(db.sholatQadhaEntries).go();
+        await db.delete(db.hafalanReviews).go();
         await db.delete(db.quranLogs).go();
         await db.delete(db.quranCycles).go();
         await db.delete(db.ibadahLogs).go();
@@ -397,6 +412,49 @@ class BackupService {
               ),
               mode: InsertMode.insertOrIgnore,
             );
+      }
+
+      // muraja'ah: satu jadwal per rentang (tidak ganda); yang diulang
+      // terakhir menang (berkas lama tanpa muraja'ah dilewati)
+      final haveReviews = {
+        for (final r in await db.select(db.hafalanReviews).get())
+          (r.startAyah, r.endAyah): r,
+      };
+      for (final r in _list(data, 'hafalanReviews')) {
+        final start = r['start'] as int, end = r['end'] as int;
+        if (start < 1 || end > totalAyahs || start > end) continue;
+        final stage = (r['stage'] as int).clamp(
+          0,
+          murajaahIntervals.length - 1,
+        );
+        final last = r['last'] as String?;
+        final mine = haveReviews[(start, end)];
+        if (mine == null) {
+          await db
+              .into(db.hafalanReviews)
+              .insert(
+                HafalanReviewsCompanion.insert(
+                  startAyah: start,
+                  endAyah: end,
+                  stage: Value(stage),
+                  dueDate: r['due'] as String,
+                  lastDate: Value(last),
+                  lapses: Value(r['lapses'] as int? ?? 0),
+                  createdAt: _date(r['createdAt']),
+                ),
+              );
+        } else if (last != null && last.compareTo(mine.lastDate ?? '') > 0) {
+          await (db.update(
+            db.hafalanReviews,
+          )..where((x) => x.id.equals(mine.id))).write(
+            HafalanReviewsCompanion(
+              stage: Value(stage),
+              dueDate: Value(r['due'] as String),
+              lastDate: Value(last),
+              lapses: Value(r['lapses'] as int? ?? 0),
+            ),
+          );
+        }
       }
 
       // hutang sholat: baris yang sama persis tidak ditambahkan dua kali

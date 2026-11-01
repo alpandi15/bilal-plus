@@ -177,6 +177,7 @@ class AdzanNotifications {
       s.muhasabah ||
       s.weeklyReport ||
       s.ayatNotif ||
+      s.murajaahNotif ||
       s.tahajudNotif;
 
   /// Jadwalkan ulang semua notifikasi [adzanDays] hari ke depan sesuai
@@ -193,6 +194,7 @@ class AdzanNotifications {
     HijriAnchors? anchors,
     DaySummary? summary,
     List<DayNotice> ayat = const [],
+    List<String> murajaahDue = const [],
   }) async {
     if (!supported || !_ready) return;
     await _plugin.cancelAll();
@@ -254,6 +256,16 @@ class AdzanNotifications {
     }
     if (settings.ayatNotif) {
       await _scheduleAyat(location, now, mode, settings.ayatMinutes, ayat);
+    }
+    if (settings.murajaahNotif && murajaahDue.isNotEmpty) {
+      await _scheduleMurajaah(
+        today,
+        location,
+        now,
+        mode,
+        settings.murajaahMinutes,
+        murajaahDue,
+      );
     }
     if (settings.tahajudNotif) {
       await _scheduleTahajud(today, location, now, mode, latitude, longitude);
@@ -614,6 +626,39 @@ class AdzanNotifications {
         notificationDetails: _plain(_ayatChannel, n.title, n.body),
         androidScheduleMode: mode,
         payload: n.payload,
+      );
+    }
+  }
+
+  /// Pengingat muraja'ah pada hari-hari yang ada unit jatuh tempo ([dueDates]
+  /// = jatuh tempo semua unit; belum diulang berarti tetap menumpuk). Teksnya
+  /// generik karena jumlahnya berubah begitu kamu mengulang.
+  Future<void> _scheduleMurajaah(
+    DateTime today,
+    tz.Location location,
+    DateTime now,
+    AndroidScheduleMode mode,
+    int minutes,
+    List<String> dueDates,
+  ) async {
+    for (var day = 0; day < adzanDays; day++) {
+      final date = today.add(Duration(days: day));
+      final key = dateKey(date);
+      if (!dueDates.any((d) => d.compareTo(key) <= 0)) continue;
+      final at = _at(location, date, minutes);
+      if (!at.isAfter(now)) continue;
+      const title = "Waktunya muraja'ah";
+      const body =
+          'Ada hafalan yang siap diulang hari ini. Sebentar saja - '
+          'mengulang berjarak menjaga hafalan tetap kuat.';
+      await _plugin.zonedSchedule(
+        id: NotifId.murajaah(date),
+        title: title,
+        body: body,
+        scheduledDate: at,
+        notificationDetails: _plain(_ayatChannel, title, body),
+        androidScheduleMode: mode,
+        payload: NotifPayload.murajaah,
       );
     }
   }

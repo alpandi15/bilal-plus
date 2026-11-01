@@ -715,6 +715,17 @@ class _FastReminderGroup extends StatelessWidget {
           onMinutes: settings.setAyatMinutes,
         ),
         const Divider(height: 1, color: _line),
+        _TimedReminder(
+          title: "Muraja'ah hafalan",
+          subtitle:
+              'Hanya pada hari ada hafalan yang jatuh tempo untuk diulang. '
+              "Atur jadwal di menu Hafalan -> Muraja'ah.",
+          on: settings.murajaahNotif,
+          minutes: settings.murajaahMinutes,
+          onToggle: settings.setMurajaahNotif,
+          onMinutes: settings.setMurajaahMinutes,
+        ),
+        const Divider(height: 1, color: _line),
         SwitchListTile.adaptive(
           activeTrackColor: _amber,
           value: settings.tahajudNotif,

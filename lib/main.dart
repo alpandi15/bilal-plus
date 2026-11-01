@@ -30,6 +30,7 @@ import 'pages/home_shell.dart';
 import 'pages/ibadah_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/quran/hafalan_page.dart';
+import 'pages/quran/murajaah_page.dart';
 import 'pages/quran/quran_reader_page.dart';
 import 'pages/quran_tracker_page.dart';
 import 'pages/splash_view.dart';
@@ -68,6 +69,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
 
   // drift membuka berkasnya secara malas (pada kueri pertama), jadi membuat
   // objeknya di sini tidak memperlambat awal aplikasi
+  StreamSubscription<void>? _reviewsSub;
   late final AppDatabase _db = widget.database ?? AppDatabase();
 
   // --dart-define=HIJRI_URL=... untuk mengarahkan unduhan konfigurasi ke
@@ -141,6 +143,10 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     _location.addListener(_scheduleAdzan);
     // pengingat puasa Tarwiyah/Arafah mengikuti kalender hijriah
     _hijri.addListener(_scheduleAdzan);
+    // jadwal muraja'ah berubah tiap unit dinilai: pengingat ikut disusun ulang
+    _reviewsSub = _db.quranDao.watchReviews().listen((_) {
+      if (_settings.murajaahNotif) _scheduleAdzan();
+    });
     _scheduleAdzan();
   }
 
@@ -165,7 +171,9 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
         return;
       }
     }
-    if (payload != null && payload.startsWith(adzanAlarmPrefix)) {
+    if (payload == NotifPayload.murajaah) {
+      page = const MurajaahPage();
+    } else if (payload != null && payload.startsWith(adzanAlarmPrefix)) {
       page = AdzanAlarmPage(payload: payload);
     } else if (NotifPayload.parseDate(payload, NotifPayload.reportDay)
         case final date?) {
@@ -201,6 +209,17 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
           );
         } catch (_) {}
       }
+      // muraja'ah: jatuh tempo semua unit (sesudah menyelaraskan unit)
+      var due = const <String>[];
+      if (_settings.murajaahNotif) {
+        try {
+          final today = dateKey(
+            calc.todayInZone(calc.timezoneFromLongitude(loc.long)),
+          );
+          await _db.quranDao.syncReviews(today);
+          due = [for (final r in await _db.quranDao.reviewsAll()) r.dueDate];
+        } catch (_) {}
+      }
       await AdzanNotifications.instance.reschedule(
         settings: _settings,
         latitude: loc.lat,
@@ -209,6 +228,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
         anchors: _hijri.config.anchors,
         summary: _summary,
         ayat: ayat,
+        murajaahDue: due,
       );
     });
   }
@@ -280,6 +300,7 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
     _location.dispose();
     _hijri.dispose();
     _settings.dispose();
+    _reviewsSub?.cancel();
     if (widget.database == null) _db.close();
     super.dispose();
   }

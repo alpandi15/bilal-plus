@@ -286,6 +286,10 @@ DailyReport buildDailyReport(
   /// Sisa hutang sholat (qadha) yang dicatat pengguna; > 0 memunculkan saran
   /// mencicil di laporan hari ini.
   int sholatDebtLeft = 0,
+
+  /// Unit muraja'ah hafalan yang jatuh tempo hari ini; > 0 memunculkan
+  /// saran mengulang di laporan hari ini.
+  int murajaahDue = 0,
 }) {
   final clock = now ?? DateTime.now();
   final isToday = date == today;
@@ -827,6 +831,18 @@ DailyReport buildDailyReport(
         );
       }
     }
+  }
+
+  if (isToday && murajaahDue > 0 && tips.length < 4) {
+    tips.add(
+      Insight(
+        InsightKind.tip,
+        InsightIcon.tilawah,
+        "Ulangi hafalanmu (muraja'ah)",
+        '$murajaahDue unit hafalan jatuh tempo hari ini. Mengulang berjarak '
+            'menjaga hafalan tetap kuat - sebentar saja cukup.',
+      ),
+    );
   }
 
   if (isToday && !excused && sholatDebtLeft > 0 && tips.length < 4) {

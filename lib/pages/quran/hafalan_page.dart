@@ -10,6 +10,7 @@ import '../../services/quran_text.dart';
 import '../../widgets/arabic_font.dart';
 import '../../widgets/quran/quran_ornaments.dart';
 import '../../widgets/sub_header.dart';
+import 'murajaah_page.dart';
 
 const _amber = Color(0xFFB45309);
 const _stone = Color(0xFF44403C);
@@ -122,6 +123,8 @@ class _HafalanPageState extends State<HafalanPage> {
                         ),
                         children: [
                           _Summary(ayat: hafal.length, surah: fullSurah),
+                          const SizedBox(height: 12),
+                          const MurajaahEntryCard(),
                           const SizedBox(height: 12),
                           Wrap(
                             spacing: 8,

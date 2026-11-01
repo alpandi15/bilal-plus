@@ -3921,6 +3921,513 @@ class SholatQadhaEntriesCompanion extends UpdateCompanion<SholatQadhaEntry> {
   }
 }
 
+class $HafalanReviewsTable extends HafalanReviews
+    with TableInfo<$HafalanReviewsTable, HafalanReview> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HafalanReviewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _startAyahMeta = const VerificationMeta(
+    'startAyah',
+  );
+  @override
+  late final GeneratedColumn<int> startAyah = GeneratedColumn<int>(
+    'start_ayah',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endAyahMeta = const VerificationMeta(
+    'endAyah',
+  );
+  @override
+  late final GeneratedColumn<int> endAyah = GeneratedColumn<int>(
+    'end_ayah',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stageMeta = const VerificationMeta('stage');
+  @override
+  late final GeneratedColumn<int> stage = GeneratedColumn<int>(
+    'stage',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<String> dueDate = GeneratedColumn<String>(
+    'due_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastDateMeta = const VerificationMeta(
+    'lastDate',
+  );
+  @override
+  late final GeneratedColumn<String> lastDate = GeneratedColumn<String>(
+    'last_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lapsesMeta = const VerificationMeta('lapses');
+  @override
+  late final GeneratedColumn<int> lapses = GeneratedColumn<int>(
+    'lapses',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startAyah,
+    endAyah,
+    stage,
+    dueDate,
+    lastDate,
+    lapses,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hafalan_reviews';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HafalanReview> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('start_ayah')) {
+      context.handle(
+        _startAyahMeta,
+        startAyah.isAcceptableOrUnknown(data['start_ayah']!, _startAyahMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startAyahMeta);
+    }
+    if (data.containsKey('end_ayah')) {
+      context.handle(
+        _endAyahMeta,
+        endAyah.isAcceptableOrUnknown(data['end_ayah']!, _endAyahMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endAyahMeta);
+    }
+    if (data.containsKey('stage')) {
+      context.handle(
+        _stageMeta,
+        stage.isAcceptableOrUnknown(data['stage']!, _stageMeta),
+      );
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dueDateMeta);
+    }
+    if (data.containsKey('last_date')) {
+      context.handle(
+        _lastDateMeta,
+        lastDate.isAcceptableOrUnknown(data['last_date']!, _lastDateMeta),
+      );
+    }
+    if (data.containsKey('lapses')) {
+      context.handle(
+        _lapsesMeta,
+        lapses.isAcceptableOrUnknown(data['lapses']!, _lapsesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {startAyah, endAyah},
+  ];
+  @override
+  HafalanReview map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HafalanReview(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      startAyah: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_ayah'],
+      )!,
+      endAyah: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_ayah'],
+      )!,
+      stage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stage'],
+      )!,
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}due_date'],
+      )!,
+      lastDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_date'],
+      ),
+      lapses: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lapses'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HafalanReviewsTable createAlias(String alias) {
+    return $HafalanReviewsTable(attachedDatabase, alias);
+  }
+}
+
+class HafalanReview extends DataClass implements Insertable<HafalanReview> {
+  final int id;
+  final int startAyah;
+  final int endAyah;
+
+  /// Indeks tahap di `murajaahIntervals`.
+  final int stage;
+
+  /// Jatuh tempo (kunci tanggal).
+  final String dueDate;
+
+  /// Terakhir diulang (kunci tanggal), null = belum pernah.
+  final String? lastDate;
+
+  /// Berapa kali dinilai "Lupa".
+  final int lapses;
+  final DateTime createdAt;
+  const HafalanReview({
+    required this.id,
+    required this.startAyah,
+    required this.endAyah,
+    required this.stage,
+    required this.dueDate,
+    this.lastDate,
+    required this.lapses,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['start_ayah'] = Variable<int>(startAyah);
+    map['end_ayah'] = Variable<int>(endAyah);
+    map['stage'] = Variable<int>(stage);
+    map['due_date'] = Variable<String>(dueDate);
+    if (!nullToAbsent || lastDate != null) {
+      map['last_date'] = Variable<String>(lastDate);
+    }
+    map['lapses'] = Variable<int>(lapses);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  HafalanReviewsCompanion toCompanion(bool nullToAbsent) {
+    return HafalanReviewsCompanion(
+      id: Value(id),
+      startAyah: Value(startAyah),
+      endAyah: Value(endAyah),
+      stage: Value(stage),
+      dueDate: Value(dueDate),
+      lastDate: lastDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastDate),
+      lapses: Value(lapses),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory HafalanReview.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HafalanReview(
+      id: serializer.fromJson<int>(json['id']),
+      startAyah: serializer.fromJson<int>(json['startAyah']),
+      endAyah: serializer.fromJson<int>(json['endAyah']),
+      stage: serializer.fromJson<int>(json['stage']),
+      dueDate: serializer.fromJson<String>(json['dueDate']),
+      lastDate: serializer.fromJson<String?>(json['lastDate']),
+      lapses: serializer.fromJson<int>(json['lapses']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'startAyah': serializer.toJson<int>(startAyah),
+      'endAyah': serializer.toJson<int>(endAyah),
+      'stage': serializer.toJson<int>(stage),
+      'dueDate': serializer.toJson<String>(dueDate),
+      'lastDate': serializer.toJson<String?>(lastDate),
+      'lapses': serializer.toJson<int>(lapses),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  HafalanReview copyWith({
+    int? id,
+    int? startAyah,
+    int? endAyah,
+    int? stage,
+    String? dueDate,
+    Value<String?> lastDate = const Value.absent(),
+    int? lapses,
+    DateTime? createdAt,
+  }) => HafalanReview(
+    id: id ?? this.id,
+    startAyah: startAyah ?? this.startAyah,
+    endAyah: endAyah ?? this.endAyah,
+    stage: stage ?? this.stage,
+    dueDate: dueDate ?? this.dueDate,
+    lastDate: lastDate.present ? lastDate.value : this.lastDate,
+    lapses: lapses ?? this.lapses,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  HafalanReview copyWithCompanion(HafalanReviewsCompanion data) {
+    return HafalanReview(
+      id: data.id.present ? data.id.value : this.id,
+      startAyah: data.startAyah.present ? data.startAyah.value : this.startAyah,
+      endAyah: data.endAyah.present ? data.endAyah.value : this.endAyah,
+      stage: data.stage.present ? data.stage.value : this.stage,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      lastDate: data.lastDate.present ? data.lastDate.value : this.lastDate,
+      lapses: data.lapses.present ? data.lapses.value : this.lapses,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HafalanReview(')
+          ..write('id: $id, ')
+          ..write('startAyah: $startAyah, ')
+          ..write('endAyah: $endAyah, ')
+          ..write('stage: $stage, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('lapses: $lapses, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    startAyah,
+    endAyah,
+    stage,
+    dueDate,
+    lastDate,
+    lapses,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HafalanReview &&
+          other.id == this.id &&
+          other.startAyah == this.startAyah &&
+          other.endAyah == this.endAyah &&
+          other.stage == this.stage &&
+          other.dueDate == this.dueDate &&
+          other.lastDate == this.lastDate &&
+          other.lapses == this.lapses &&
+          other.createdAt == this.createdAt);
+}
+
+class HafalanReviewsCompanion extends UpdateCompanion<HafalanReview> {
+  final Value<int> id;
+  final Value<int> startAyah;
+  final Value<int> endAyah;
+  final Value<int> stage;
+  final Value<String> dueDate;
+  final Value<String?> lastDate;
+  final Value<int> lapses;
+  final Value<DateTime> createdAt;
+  const HafalanReviewsCompanion({
+    this.id = const Value.absent(),
+    this.startAyah = const Value.absent(),
+    this.endAyah = const Value.absent(),
+    this.stage = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.lastDate = const Value.absent(),
+    this.lapses = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  HafalanReviewsCompanion.insert({
+    this.id = const Value.absent(),
+    required int startAyah,
+    required int endAyah,
+    this.stage = const Value.absent(),
+    required String dueDate,
+    this.lastDate = const Value.absent(),
+    this.lapses = const Value.absent(),
+    required DateTime createdAt,
+  }) : startAyah = Value(startAyah),
+       endAyah = Value(endAyah),
+       dueDate = Value(dueDate),
+       createdAt = Value(createdAt);
+  static Insertable<HafalanReview> custom({
+    Expression<int>? id,
+    Expression<int>? startAyah,
+    Expression<int>? endAyah,
+    Expression<int>? stage,
+    Expression<String>? dueDate,
+    Expression<String>? lastDate,
+    Expression<int>? lapses,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startAyah != null) 'start_ayah': startAyah,
+      if (endAyah != null) 'end_ayah': endAyah,
+      if (stage != null) 'stage': stage,
+      if (dueDate != null) 'due_date': dueDate,
+      if (lastDate != null) 'last_date': lastDate,
+      if (lapses != null) 'lapses': lapses,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  HafalanReviewsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? startAyah,
+    Value<int>? endAyah,
+    Value<int>? stage,
+    Value<String>? dueDate,
+    Value<String?>? lastDate,
+    Value<int>? lapses,
+    Value<DateTime>? createdAt,
+  }) {
+    return HafalanReviewsCompanion(
+      id: id ?? this.id,
+      startAyah: startAyah ?? this.startAyah,
+      endAyah: endAyah ?? this.endAyah,
+      stage: stage ?? this.stage,
+      dueDate: dueDate ?? this.dueDate,
+      lastDate: lastDate ?? this.lastDate,
+      lapses: lapses ?? this.lapses,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (startAyah.present) {
+      map['start_ayah'] = Variable<int>(startAyah.value);
+    }
+    if (endAyah.present) {
+      map['end_ayah'] = Variable<int>(endAyah.value);
+    }
+    if (stage.present) {
+      map['stage'] = Variable<int>(stage.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<String>(dueDate.value);
+    }
+    if (lastDate.present) {
+      map['last_date'] = Variable<String>(lastDate.value);
+    }
+    if (lapses.present) {
+      map['lapses'] = Variable<int>(lapses.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HafalanReviewsCompanion(')
+          ..write('id: $id, ')
+          ..write('startAyah: $startAyah, ')
+          ..write('endAyah: $endAyah, ')
+          ..write('stage: $stage, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('lapses: $lapses, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3934,6 +4441,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HafalanAyahsTable hafalanAyahs = $HafalanAyahsTable(this);
   late final $SholatQadhaEntriesTable sholatQadhaEntries =
       $SholatQadhaEntriesTable(this);
+  late final $HafalanReviewsTable hafalanReviews = $HafalanReviewsTable(this);
   late final QuranDao quranDao = QuranDao(this as AppDatabase);
   late final IbadahDao ibadahDao = IbadahDao(this as AppDatabase);
   @override
@@ -3950,6 +4458,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     quranNotes,
     hafalanAyahs,
     sholatQadhaEntries,
+    hafalanReviews,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6448,6 +6957,259 @@ typedef $$SholatQadhaEntriesTableProcessedTableManager =
       SholatQadhaEntry,
       PrefetchHooks Function()
     >;
+typedef $$HafalanReviewsTableCreateCompanionBuilder =
+    HafalanReviewsCompanion Function({
+      Value<int> id,
+      required int startAyah,
+      required int endAyah,
+      Value<int> stage,
+      required String dueDate,
+      Value<String?> lastDate,
+      Value<int> lapses,
+      required DateTime createdAt,
+    });
+typedef $$HafalanReviewsTableUpdateCompanionBuilder =
+    HafalanReviewsCompanion Function({
+      Value<int> id,
+      Value<int> startAyah,
+      Value<int> endAyah,
+      Value<int> stage,
+      Value<String> dueDate,
+      Value<String?> lastDate,
+      Value<int> lapses,
+      Value<DateTime> createdAt,
+    });
+
+class $$HafalanReviewsTableFilterComposer
+    extends Composer<_$AppDatabase, $HafalanReviewsTable> {
+  $$HafalanReviewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startAyah => $composableBuilder(
+    column: $table.startAyah,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endAyah => $composableBuilder(
+    column: $table.endAyah,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stage => $composableBuilder(
+    column: $table.stage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastDate => $composableBuilder(
+    column: $table.lastDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lapses => $composableBuilder(
+    column: $table.lapses,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HafalanReviewsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HafalanReviewsTable> {
+  $$HafalanReviewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startAyah => $composableBuilder(
+    column: $table.startAyah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endAyah => $composableBuilder(
+    column: $table.endAyah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stage => $composableBuilder(
+    column: $table.stage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastDate => $composableBuilder(
+    column: $table.lastDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lapses => $composableBuilder(
+    column: $table.lapses,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HafalanReviewsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HafalanReviewsTable> {
+  $$HafalanReviewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get startAyah =>
+      $composableBuilder(column: $table.startAyah, builder: (column) => column);
+
+  GeneratedColumn<int> get endAyah =>
+      $composableBuilder(column: $table.endAyah, builder: (column) => column);
+
+  GeneratedColumn<int> get stage =>
+      $composableBuilder(column: $table.stage, builder: (column) => column);
+
+  GeneratedColumn<String> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<String> get lastDate =>
+      $composableBuilder(column: $table.lastDate, builder: (column) => column);
+
+  GeneratedColumn<int> get lapses =>
+      $composableBuilder(column: $table.lapses, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$HafalanReviewsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HafalanReviewsTable,
+          HafalanReview,
+          $$HafalanReviewsTableFilterComposer,
+          $$HafalanReviewsTableOrderingComposer,
+          $$HafalanReviewsTableAnnotationComposer,
+          $$HafalanReviewsTableCreateCompanionBuilder,
+          $$HafalanReviewsTableUpdateCompanionBuilder,
+          (
+            HafalanReview,
+            BaseReferences<_$AppDatabase, $HafalanReviewsTable, HafalanReview>,
+          ),
+          HafalanReview,
+          PrefetchHooks Function()
+        > {
+  $$HafalanReviewsTableTableManager(
+    _$AppDatabase db,
+    $HafalanReviewsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HafalanReviewsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HafalanReviewsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HafalanReviewsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> startAyah = const Value.absent(),
+                Value<int> endAyah = const Value.absent(),
+                Value<int> stage = const Value.absent(),
+                Value<String> dueDate = const Value.absent(),
+                Value<String?> lastDate = const Value.absent(),
+                Value<int> lapses = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HafalanReviewsCompanion(
+                id: id,
+                startAyah: startAyah,
+                endAyah: endAyah,
+                stage: stage,
+                dueDate: dueDate,
+                lastDate: lastDate,
+                lapses: lapses,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int startAyah,
+                required int endAyah,
+                Value<int> stage = const Value.absent(),
+                required String dueDate,
+                Value<String?> lastDate = const Value.absent(),
+                Value<int> lapses = const Value.absent(),
+                required DateTime createdAt,
+              }) => HafalanReviewsCompanion.insert(
+                id: id,
+                startAyah: startAyah,
+                endAyah: endAyah,
+                stage: stage,
+                dueDate: dueDate,
+                lastDate: lastDate,
+                lapses: lapses,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HafalanReviewsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HafalanReviewsTable,
+      HafalanReview,
+      $$HafalanReviewsTableFilterComposer,
+      $$HafalanReviewsTableOrderingComposer,
+      $$HafalanReviewsTableAnnotationComposer,
+      $$HafalanReviewsTableCreateCompanionBuilder,
+      $$HafalanReviewsTableUpdateCompanionBuilder,
+      (
+        HafalanReview,
+        BaseReferences<_$AppDatabase, $HafalanReviewsTable, HafalanReview>,
+      ),
+      HafalanReview,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6470,6 +7232,8 @@ class $AppDatabaseManager {
       $$HafalanAyahsTableTableManager(_db, _db.hafalanAyahs);
   $$SholatQadhaEntriesTableTableManager get sholatQadhaEntries =>
       $$SholatQadhaEntriesTableTableManager(_db, _db.sholatQadhaEntries);
+  $$HafalanReviewsTableTableManager get hafalanReviews =>
+      $$HafalanReviewsTableTableManager(_db, _db.hafalanReviews);
 }
 
 mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
@@ -6477,6 +7241,7 @@ mixin _$QuranDaoMixin on DatabaseAccessor<AppDatabase> {
   $QuranLogsTable get quranLogs => attachedDatabase.quranLogs;
   $QuranNotesTable get quranNotes => attachedDatabase.quranNotes;
   $HafalanAyahsTable get hafalanAyahs => attachedDatabase.hafalanAyahs;
+  $HafalanReviewsTable get hafalanReviews => attachedDatabase.hafalanReviews;
   QuranDaoManager get managers => QuranDaoManager(this);
 }
 
@@ -6491,6 +7256,11 @@ class QuranDaoManager {
       $$QuranNotesTableTableManager(_db.attachedDatabase, _db.quranNotes);
   $$HafalanAyahsTableTableManager get hafalanAyahs =>
       $$HafalanAyahsTableTableManager(_db.attachedDatabase, _db.hafalanAyahs);
+  $$HafalanReviewsTableTableManager get hafalanReviews =>
+      $$HafalanReviewsTableTableManager(
+        _db.attachedDatabase,
+        _db.hafalanReviews,
+      );
 }
 
 mixin _$IbadahDaoMixin on DatabaseAccessor<AppDatabase> {

@@ -182,7 +182,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
                 .firstOrNull { it.optInt("i") !in skip }
             val memorized = min(total, root.optInt("memorized", 0) + skip.size)
 
-            views.setTextViewText(R.id.hw_kicker, "HAFALAN · ${name.uppercase()}")
+            views.setTextViewText(R.id.hw_kicker, kicker(name, root.optInt("murajaah", 0)))
             views.setTextViewText(R.id.hw_count, "$memorized/$total")
             views.setProgressBar(R.id.hw_progress, 1000, if (total == 0) 0 else memorized * 1000 / total, false)
 
@@ -241,6 +241,11 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             )
             return views
         }
+
+        /// Kepala widget: surah yang dihafal, ditambah jumlah muraja'ah yang
+        /// jatuh tempo hari ini bila ada.
+        internal fun kicker(name: String, due: Int): String =
+            "HAFALAN · ${name.uppercase()}" + if (due > 0) " · $due MURAJA'AH" else ""
 
         private fun empty(
             views: RemoteViews,

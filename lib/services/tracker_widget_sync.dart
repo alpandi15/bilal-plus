@@ -93,7 +93,7 @@ class TrackerWidgetSync {
         );
     // widget Hafalan disinkronkan sendiri - cepat & tidak ikut gagal bila
     // widget lain bermasalah
-    _hafalanSub = watchTables(db, {db.hafalanAyahs}).listen(
+    _hafalanSub = watchTables(db, {db.hafalanAyahs, db.hafalanReviews}).listen(
       (_) => scheduleHafalan(),
       onError: (Object e) {
         debugPrint('hafalan widget: $e');
@@ -176,7 +176,12 @@ class TrackerWidgetSync {
   Future<void> syncHafalan() async {
     if (!_supported) return;
     try {
-      await _syncHafalan(db, settings.quranFont);
+      final loc = location.location;
+      await _syncHafalan(
+        db,
+        settings.quranFont,
+        today: dateKey(calc.todayInZone(calc.timezoneFromLongitude(loc.long))),
+      );
     } catch (e) {
       debugPrint('hafalan widget: $e');
     }
@@ -187,6 +192,7 @@ class TrackerWidgetSync {
     final next = DateTime(now.year, now.month, now.day + 1, 0, 0, 5);
     _midnight = Timer(next.difference(now), () {
       schedule();
+      scheduleHafalan(); // muraja'ah jatuh tempo berganti hari
       _armMidnight();
     });
   }
@@ -228,8 +234,17 @@ class TrackerWidgetSync {
 }
 
 /// Susun ulang data widget Hafalan & muat ulang widgetnya.
-Future<void> _syncHafalan(AppDatabase db, QuranFont font) async {
-  final payload = await hafalanWidgetPayload(db, QuranText.load, font: font);
+Future<void> _syncHafalan(
+  AppDatabase db,
+  QuranFont font, {
+  String? today,
+}) async {
+  final payload = await hafalanWidgetPayload(
+    db,
+    QuranText.load,
+    font: font,
+    today: today,
+  );
   await HomeWidget.saveWidgetData<String>(_hafalanKey, jsonEncode(payload));
   await HomeWidget.updateWidget(androidName: hafalanWidgetName);
 }

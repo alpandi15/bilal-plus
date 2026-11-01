@@ -407,4 +407,26 @@ void main() {
       );
     },
   );
+
+  test(
+    "muraja'ah: saran mengulang hanya hari ini & bila ada yang jatuh tempo",
+    () async {
+      Future<DailyReport> report(String date, int due) async =>
+          buildDailyReport(
+            await db.ibadahDao.loadRange('2026-09-20', date),
+            date: date,
+            today: '2026-09-21',
+            anchors: HijriAnchors.none,
+            latitude: _lat,
+            longitude: _long,
+            onTimeMinutes: 15,
+            soloWeight: 1,
+            male: true,
+            murajaahDue: due,
+          );
+      expect(has((await report('2026-09-21', 3)).tips, "muraja'ah"), isTrue);
+      expect(has((await report('2026-09-21', 0)).tips, "muraja'ah"), isFalse);
+      expect(has((await report('2026-09-20', 3)).tips, "muraja'ah"), isFalse);
+    },
+  );
 }

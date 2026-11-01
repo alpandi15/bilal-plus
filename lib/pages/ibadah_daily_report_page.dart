@@ -58,6 +58,11 @@ class _IbadahDailyReportPageState extends State<IbadahDailyReportPage> {
     final from = dateKey(parseDateKey(date).subtract(const Duration(days: 7)));
     final data = await db.ibadahDao.loadRange(from, date);
     final debt = await db.ibadahDao.sholatQadhaRemaining();
+    await db.quranDao.syncReviews(_today);
+    final dueUnits = [
+      for (final r in await db.quranDao.reviewsAll())
+        if (r.dueDate.compareTo(_today) <= 0) r,
+    ].length;
     return buildDailyReport(
       data,
       date: date,
@@ -69,6 +74,7 @@ class _IbadahDailyReportPageState extends State<IbadahDailyReportPage> {
       soloWeight: settings?.effectiveSoloWeight ?? 1,
       male: settings?.gender == Gender.male,
       sholatDebtLeft: debt.values.fold(0, (a, b) => a + b),
+      murajaahDue: dueUnits,
     );
   }
 

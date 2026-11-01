@@ -232,21 +232,28 @@ catatan harian.
 ## M3 - Hafalan lanjutan (#2) → usulan 1.18.0
 
 ### #2 Muraja'ah (pengulangan terjadwal)
-- [ ] Tabel baru **`hafalan_reviews`** (skema **v11**, atau v10 bila M2
+- [x] Tabel baru **`hafalan_reviews`** (skema **v11**, atau v10 bila M2
       belum menaikkan): jadwal ulang per unit hafalan dengan jarak
       **1, 3, 7, 14, 30 hari** (pengulangan berjarak); hasil "lancar/ragu"
       memajukan atau menunda jadwal.
-- [ ] Halaman **"Muraja'ah hari ini"**: daftar unit yang jatuh tempo,
+- [x] Halaman **"Muraja'ah hari ini"**: daftar unit yang jatuh tempo,
       mode tutup ayat (yang sudah ada), tombol *Lancar* / *Ragu* / *Lupa*.
-- [ ] **Widget Hafalan** dan notifikasi (bawaan mati) menampilkan
+- [x] **Widget Hafalan** dan notifikasi (bawaan mati) menampilkan
       "N muraja'ah hari ini".
-- [ ] **Kuis sambung ayat:** tampil beberapa kata → pilih/ketik kelanjutan
+- [x] **Kuis sambung ayat:** tampil beberapa kata → pilih/ketik kelanjutan
       (pilihan ganda dari ayat lain sebagai pengecoh).
-- [ ] Ringkasan di laporan (muraja'ah terjaga/tertunggak).
+- [x] Ringkasan di laporan (muraja'ah terjaga/tertunggak).
 
-**Keputusan (tanyakan di awal fase):** **unit** muraja'ah = per surah,
-per rentang ayat yang berurutan, atau per ayat; saya sarankan **rentang
-berurutan** (lebih nyata untuk hafalan) dengan batas ukuran.
+**Keputusan (diputuskan):** unit = **rentang ayat berurutan** dalam satu
+surah, maks. 10 ayat (dipecah rata). Jadwal 1/3/7/14/30 hari: Lancar naik
+tahap, Ragu turun satu tahap, Lupa kembali ke awal. Unit baru dijadwalkan
+bertahap (3 per hari) agar tidak menumpuk. Menambah hafalan tidak
+mengacak jadwal unit yang masih utuh. Dibuat: tabel `hafalan_reviews`
+(skema v11), `services/murajaah.dart` & `murajaah_quiz.dart`, halaman
+Muraja'ah + sesi + kuis sambung ayat (menu Hafalan), pengingat opsional
+(mati bawaan; hanya di hari ada yang jatuh tempo), jumlah di widget
+Hafalan, saran di laporan harian, cadangan. Catatan: ringkasan di laporan
+baru berupa saran harian (belum angka mingguan/bulanan).
 
 **Selesai bila:** jadwal tertib selama berminggu-minggu (uji dengan jam
 disimulasikan), widget & halaman satu pendapat, tidak ada muraja'ah ganda
@@ -378,7 +385,7 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 | M0 Fondasi | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
 | M1 Paket cepat | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
 | M2 Kebiasaan & kewajiban | selesai (belum dirilis) | 1.17.0 | 2026-11-01 |
-| M3 Hafalan lanjutan | belum | - | - |
+| M3 Hafalan lanjutan | selesai (belum dirilis) | - | 2026-11-01 |
 | M4 Keamanan data | belum | - | - |
 | M5 Cari & hitung | belum | - | - |
 | M6 Lencana | belum | - | - |

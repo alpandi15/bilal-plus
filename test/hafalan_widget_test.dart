@@ -96,4 +96,22 @@ void main() {
     await a.cancel();
     await b.cancel();
   });
+
+  test("muraja'ah: jumlah unit jatuh tempo ikut di data widget", () async {
+    await db.quranDao.setHafal(idx(113, 1), idx(113, 5), true);
+    var p = await hafalanWidgetPayload(
+      db,
+      load,
+      font: QuranFont.lpmq,
+      today: '2026-11-01',
+    );
+    expect(p['murajaah'], 0); // unit baru jatuh tempo besok
+    p = await hafalanWidgetPayload(
+      db,
+      load,
+      font: QuranFont.lpmq,
+      today: '2026-11-02',
+    );
+    expect(p['murajaah'], 1);
+  });
 }

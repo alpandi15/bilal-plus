@@ -27,6 +27,8 @@ class AppSettings {
   static const weeklyReportMinutesKey = 'weekly_report_minutes';
   static const ayatNotifKey = 'ayat_notif';
   static const ayatMinutesKey = 'ayat_minutes';
+  static const murajaahNotifKey = 'murajaah_notif';
+  static const murajaahMinutesKey = 'murajaah_minutes';
   static const tahajudNotifKey = 'tahajud_notif';
   static const puasaSunnahKey = 'puasa_sunnah_notif';
   static const hapticKey = 'tasbih_haptic';
@@ -58,6 +60,7 @@ enum Gender { male, female }
 const defaultMuhasabahMinutes = 21 * 60;
 const defaultWeeklyReportMinutes = 20 * 60;
 const defaultAyatMinutes = 6 * 60 + 30;
+const defaultMurajaahMinutes = 17 * 60;
 
 /// Sholat wajib yang bisa diberi notifikasi adzan.
 const adzanPrayerKeys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
@@ -80,6 +83,8 @@ class AppSettingsController extends ChangeNotifier {
   int _weeklyReportMinutes = defaultWeeklyReportMinutes;
   bool _ayatNotif = false;
   int _ayatMinutes = defaultAyatMinutes;
+  bool _murajaahNotif = false;
+  int _murajaahMinutes = defaultMurajaahMinutes;
   bool _tahajudNotif = false;
   Set<PuasaSunnah> _puasaSunnah = const {};
   bool _haptic = true;
@@ -197,6 +202,10 @@ class AppSettingsController extends ChangeNotifier {
   bool get ayatNotif => _ayatNotif;
   int get ayatMinutes => _ayatMinutes;
 
+  /// Pengingat muraja'ah hafalan (bawaan mati).
+  bool get murajaahNotif => _murajaahNotif;
+  int get murajaahMinutes => _murajaahMinutes;
+
   /// Notifikasi awal sepertiga malam terakhir (bawaan mati).
   bool get tahajudNotif => _tahajudNotif;
 
@@ -248,6 +257,10 @@ class AppSettingsController extends ChangeNotifier {
       _ayatNotif = prefs.getBool(AppSettings.ayatNotifKey) ?? false;
       _ayatMinutes =
           prefs.getInt(AppSettings.ayatMinutesKey) ?? defaultAyatMinutes;
+      _murajaahNotif = prefs.getBool(AppSettings.murajaahNotifKey) ?? false;
+      _murajaahMinutes =
+          prefs.getInt(AppSettings.murajaahMinutesKey) ??
+          defaultMurajaahMinutes;
       _tahajudNotif = prefs.getBool(AppSettings.tahajudNotifKey) ?? false;
       _puasaSunnah = parsePuasaSunnah(
         prefs.getStringList(AppSettings.puasaSunnahKey),
@@ -434,6 +447,18 @@ class AppSettingsController extends ChangeNotifier {
         for (final e in _puasaSunnah) e.name,
       ]),
     );
+  }
+
+  Future<void> setMurajaahNotif(bool v) async {
+    _murajaahNotif = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.murajaahNotifKey, v));
+  }
+
+  Future<void> setMurajaahMinutes(int v) async {
+    _murajaahMinutes = v;
+    notifyListeners();
+    await _save((p) => p.setInt(AppSettings.murajaahMinutesKey, v));
   }
 
   Future<void> setTahajudNotif(bool v) async {
