@@ -62,8 +62,21 @@ class MainActivity : FlutterActivity() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         return nm.canUseFullScreenIntent()
     }
+    private val backupFolder by lazy { BackupFolder(this) }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!backupFolder.onActivityResult(requestCode, resultCode, data)) {
+            @Suppress("DEPRECATION")
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // folder cadangan otomatis (Storage Access Framework)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "bilalplus/backup_folder")
+            .setMethodCallHandler { call, result -> backupFolder.handle(call, result) }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "bilalplus/haptics")
             .setMethodCallHandler { call, result ->
                 if (call.method == "vibrate") {

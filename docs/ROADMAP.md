@@ -266,23 +266,33 @@ setelah cadangan dipulihkan.
 ### #5 Cadangan otomatis
 Cadangan sekarang hanya lewat lembar bagikan (manual).
 
-- [ ] **Spike dulu (setengah hari):** pastikan cara menyimpan yang tahan
+- [x] **Spike dulu (setengah hari):** pastikan cara menyimpan yang tahan
       di Android 11+:
       1. **Folder pilihan lewat SAF** (`file_picker` memilih folder; akses
          persisten) - pilihan utama, tanpa akun;
       2. folder khusus aplikasi + tombol "salin ke Unduhan";
       3. Google Drive **ditunda**: butuh OAuth, layanan Google, dan
          pengungkapan privasi - bertentangan dengan prinsip "tanpa akun".
-- [ ] Penjadwal **mingguan** (saat aplikasi dibuka bila sudah lewat 7 hari;
+- [x] Penjadwal **mingguan** (saat aplikasi dibuka bila sudah lewat 7 hari;
       WorkManager hanya bila terbukti perlu), simpan **5 salinan terakhir**.
-- [ ] Setelan: aktif/mati, pilih folder, "Cadangkan sekarang", waktu
+- [x] Setelan: aktif/mati, pilih folder, "Cadangkan sekarang", waktu
       cadangan terakhir (sudah ada di halaman Cadangan).
-- [ ] Pemulihan memilih salinan dari daftar.
-- [ ] **Isi cadangan bertambah** seiring fitur baru (hutang sholat,
+- [x] Pemulihan memilih salinan dari daftar.
+- [x] **Isi cadangan bertambah** seiring fitur baru (hutang sholat,
       muraja'ah) - uji impor lintas versi.
 
-**Keputusan:** SAF (usulan) vs sekadar pengingat "sudah seminggu belum
-mencadangkan".
+**Keputusan (diputuskan):** SAF. Hasil spike: `file_picker.getDirectoryPath`
+hanya mengubah folder menjadi path biasa & tidak menyimpan izin, sehingga
+tidak bisa menulis di Android 11+; dibuat jembatan Kotlin sendiri
+(`BackupFolder.kt`, kanal `bilalplus/backup_folder`: pilih folder dengan izin
+persisten, tulis/daftar/baca/hapus). `services/auto_backup.dart`: jalan saat
+aplikasi dibuka/dilanjutkan bila sudah 7 hari, nama
+`bilalplus-cadangan-YYYYMMDD-HHmmss.json`, simpan 5 salinan terakhir,
+kegagalan (izin hilang, folder penuh) jadi pesan di halaman Cadangan.
+Diverifikasi di emulator: pilih folder Documents, berkas tertulis,
+"Pulihkan dari folder" menampilkan daftar & sheet pemulihan. Catatan:
+Android melarang memilih root penyimpanan, jadi pengguna memilih subfolder
+(mis. Documents).
 
 **Selesai bila:** cadangan tersimpan sendiri tanpa dibuka manual, bisa
 dipulihkan di HP lain, dan gagal-izin ditangani dengan pesan yang jelas.
@@ -386,7 +396,7 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 | M1 Paket cepat | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
 | M2 Kebiasaan & kewajiban | selesai (belum dirilis) | 1.17.0 | 2026-11-01 |
 | M3 Hafalan lanjutan | selesai (belum dirilis) | - | 2026-11-01 |
-| M4 Keamanan data | belum | - | - |
+| M4 Keamanan data | selesai (belum dirilis) | - | 2026-11-01 |
 | M5 Cari & hitung | belum | - | - |
 | M6 Lencana | belum | - | - |
 | M7 Mode gelap | belum | - | - |

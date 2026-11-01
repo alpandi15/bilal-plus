@@ -16,6 +16,8 @@ import 'services/waktu_penting.dart';
 import 'widgets/ibadah/sholat_dalil_sheet.dart';
 import 'utils/date_key.dart';
 import 'services/app_settings.dart';
+import 'services/auto_backup.dart';
+import 'services/backup_service.dart';
 import 'services/hijri_config.dart';
 import 'services/hijri_config_scope.dart';
 import 'services/tracker_widget_sync.dart';
@@ -124,11 +126,26 @@ class _RinduRamadanAppState extends State<RinduRamadanApp> {
       _lifecycle = AppLifecycleListener(
         onHide: _widgetSync.flush,
         onPause: _widgetSync.flush,
+        onResume: _autoBackup,
       );
+      // cadangan otomatis ke folder pilihan (bila aktif & sudah seminggu);
+      // ditunda sebentar agar tidak memperlambat awal aplikasi
+      Future<void>.delayed(const Duration(seconds: 8), _autoBackup);
       registerTrackerWidgetCallback();
       _listenWidgetLaunch();
       _startAdzan();
     }
+  }
+
+  /// Cadangan otomatis mingguan; tidak melempar dan murah bila belum waktunya.
+  Future<void> _autoBackup() async {
+    if (!mounted || kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    await AutoBackup(
+      const PlatformBackupFolder(),
+      BackupService(_db),
+    ).run(settings: _hijri.exportSettings());
   }
 
   /// Notifikasi adzan: dijadwalkan ulang setiap pengaturan atau lokasi

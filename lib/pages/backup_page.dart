@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/app_database_scope.dart';
+import '../services/auto_backup.dart';
 import '../services/backup_service.dart';
 import '../services/hijri_config_scope.dart';
 import '../utils/date_key.dart';
@@ -33,11 +35,17 @@ class _BackupPageState extends State<BackupPage> {
   DateTime? _lastBackup;
   (int, int)? _counts;
   bool _busy = false;
+  AutoBackupState? _auto;
+  final _folder = const PlatformBackupFolder();
+
+  bool get _autoSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   @override
   void initState() {
     super.initState();
     _loadLast();
+    _loadAuto();
   }
 
   @override
@@ -98,13 +106,15 @@ class _BackupPageState extends State<BackupPage> {
   }
 
   Future<void> _import() async {
-    final db = AppDatabaseScope.of(context);
-    final hijri = HijriConfigScope.of(context);
-
     final picked = await FilePicker.pickFiles(withData: true);
     final bytes = picked?.files.single.bytes;
     if (bytes == null || !mounted) return;
+    await _importBytes(bytes);
+  }
 
+  Future<void> _importBytes(List<int> bytes) async {
+    final db = AppDatabaseScope.of(context);
+    final hijri = HijriConfigScope.of(context);
     final Map<String, dynamic> data;
     try {
       data = BackupService.decode(utf8.decode(bytes, allowMalformed: true));
@@ -140,6 +150,183 @@ class _BackupPageState extends State<BackupPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _loadAuto() async {
+    final s = await AutoBackup.state();
+    if (mounted) setState(() => _auto = s);
+  }
+
+  AutoBackup _autoService() =>
+      AutoBackup(_folder, BackupService(AppDatabaseScope.of(context)));
+
+  Future<void> _pickFolder() async {
+    try {
+      final picked = await _folder.pick();
+      if (picked == null || !mounted) return;
+      await _autoService().setFolder(picked.$1, picked.$2);
+      await _loadAuto();
+      _snack('Folder dipilih: ${picked.$2}');
+    } catch (e) {
+      if (mounted) _snack('Gagal memilih folder: $e');
+    }
+  }
+
+  Future<void> _autoNow() async {
+    final hijri = HijriConfigScope.of(context);
+    setState(() => _busy = true);
+    try {
+      final r = await _autoService().run(
+        force: true,
+        settings: hijri.exportSettings(),
+      );
+      await _loadAuto();
+      await _loadLast();
+      if (!mounted) return;
+      _snack(
+        r == AutoBackupResult.done
+            ? 'Cadangan tersimpan di folder.'
+            : (_auto?.error ?? 'Pilih folder cadangan dulu.'),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _restoreFromFolder() async {
+    final svc = _autoService();
+    setState(() => _busy = true);
+    List<BackupCopy> copies;
+    try {
+      copies = await svc.copies();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        _snack('Gagal membaca folder: $e');
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (copies.isEmpty) {
+      _snack('Belum ada salinan cadangan di folder ini.');
+      return;
+    }
+    final picked = await showModalBottomSheet<BackupCopy>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFFFFFAF3),
+      builder: (_) => _CopiesSheet(copies: copies),
+    );
+    if (picked == null || !mounted) return;
+    try {
+      final bytes = await _folder.read(picked.uri);
+      if (mounted) await _importBytes(bytes);
+    } catch (e) {
+      if (mounted) _snack('Gagal membaca salinan: $e');
+    }
+  }
+
+  Widget _autoCard() {
+    final a = _auto;
+    if (a == null) return const SizedBox.shrink();
+    final last = a.last;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.autorenew_rounded, color: _amber),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Cadangan otomatis',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: _stone,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            a.hasFolder
+                ? 'Folder: ${a.folder}'
+                : 'Pilih folder (mis. Documents) - aplikasi menyimpan cadangan '
+                      'sendiri tiap pekan, 5 salinan terakhir. Tetap ada '
+                      'walau aplikasi dihapus.',
+            style: const TextStyle(fontSize: 12, color: _muted, height: 1.4),
+          ),
+          if (a.error case final e?)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                e,
+                style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+              ),
+            ),
+          if (a.hasFolder) ...[
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              activeTrackColor: _amber,
+              value: a.enabled,
+              onChanged: (on) async {
+                await AutoBackup.setEnabled(on);
+                await _loadAuto();
+              },
+              title: const Text(
+                'Cadangkan tiap pekan',
+                style: TextStyle(fontWeight: FontWeight.w700, color: _stone),
+              ),
+              subtitle: Text(
+                last == null ? 'Belum pernah' : 'Terakhir: ${dateKey(last)}',
+                style: const TextStyle(fontSize: 12, color: _muted),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _amber,
+                      side: const BorderSide(color: _line),
+                    ),
+                    onPressed: _busy ? null : _autoNow,
+                    child: const Text('Cadangkan sekarang'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _amber,
+                      side: const BorderSide(color: _line),
+                    ),
+                    onPressed: _busy ? null : _restoreFromFolder,
+                    child: const Text('Pulihkan dari folder'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: _amber),
+            onPressed: _busy ? null : _pickFolder,
+            child: Text(a.hasFolder ? 'Ganti folder' : 'Pilih folder'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _lastLabel() {
@@ -274,6 +461,10 @@ class _BackupPageState extends State<BackupPage> {
                           ],
                         ),
                       ),
+                      if (_autoSupported) ...[
+                        const SizedBox(height: 14),
+                        _autoCard(),
+                      ],
                       const SizedBox(height: 14),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -293,8 +484,10 @@ class _BackupPageState extends State<BackupPage> {
                             ),
                             SizedBox(height: 6),
                             Text(
-                              '• Simpan berkas cadangan ke Google Drive atau '
-                              'kirim ke diri sendiri lewat email/WhatsApp.\n'
+                              '• Paling mudah: pilih folder di "Cadangan otomatis" - '
+                              'cadangan tersimpan sendiri tiap pekan.\n'
+                              '• Atau simpan berkas ke Google Drive / kirim '
+                              'ke diri sendiri lewat email/WhatsApp.\n'
                               '• Di perangkat baru, buka menu ini lalu '
                               '"Pulihkan dari berkas".\n'
                               '• Berkas berisi catatan ibadah, bacaan '
@@ -470,4 +663,47 @@ class _ModeTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Daftar salinan cadangan di folder (terbaru dulu).
+class _CopiesSheet extends StatelessWidget {
+  const _CopiesSheet({required this.copies});
+  final List<BackupCopy> copies;
+
+  String _size(int b) => b < 1024 * 1024
+      ? '${(b / 1024).ceil()} KB'
+      : '${(b / 1048576).toStringAsFixed(1)} MB';
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: ListView(
+      shrinkWrap: true,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'Pilih salinan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _stone,
+            ),
+          ),
+        ),
+        for (final c in copies)
+          ListTile(
+            leading: const Icon(Icons.description_outlined, color: _amber),
+            title: Text(
+              c.name
+                  .replaceFirst('bilalplus-cadangan-', '')
+                  .replaceFirst('.json', ''),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: Text(_size(c.size)),
+            onTap: () => Navigator.of(context).pop(c),
+          ),
+      ],
+    ),
+  );
 }
