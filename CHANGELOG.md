@@ -4,6 +4,48 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.18.0 (build 29) · 1 November 2026
+
+**Muraja'ah hafalan**
+- Hafalan yang sudah kamu tandai diulang berjarak: **1, 3, 7, 14, lalu 30
+  hari**. Ayat berurutan dikelompokkan otomatis menjadi unit (maks. 10
+  ayat). Nilai tiap unit **Lancar / Ragu / Lupa** - yang ragu atau lupa
+  muncul lebih cepat.
+- Kartu **Muraja'ah hari ini** di menu Hafalan, sesi mengulang (ayat
+  disembunyikan dulu, lalu diperiksa), dan **kuis sambung ayat** dari
+  hafalanmu.
+- Pengingat muraja'ah (mati bawaan), jumlahnya tampil di widget Hafalan, dan
+  laporan harian mengingatkan bila ada yang jatuh tempo.
+
+**Cadangan otomatis**
+- Pilih folder (mis. Documents) di halaman Cadangan Data: aplikasi
+  mencadangkan sendiri **tiap pekan** saat dibuka dan menyimpan 5 salinan
+  terakhir. Tetap ada walau aplikasi dihapus, tanpa akun.
+- **Pulihkan dari folder**: pilih salinan dari daftar. Bila izin folder
+  hilang atau penyimpanan gagal, muncul pesan yang jelas.
+
+**Cari di semua tempat**
+- Bilah **Cari** di Beranda (dan menu Lainnya): satu kolom untuk Al-Qur'an,
+  hadits, do'a, dan Asmaul Husna - hasil dikelompokkan, kata yang dicari
+  disorot, ketuk untuk membuka tempat aslinya. Bisa juga mengetik rujukan
+  seperti `2:255`. Riwayat pencarian hanya di perangkatmu.
+
+**Zakat mal & penghasilan**
+- Kalkulator baru (menu Lainnya -> Zakat Mal): nisab 85 gram emas, tarif
+  2,5%, zakat mal dan zakat penghasilan, harga emas diisi sendiri. Hasil
+  bisa dibagikan sebagai gambar. Disertai dalil dan catatan bahwa ini bukan
+  fatwa.
+
+**Pencapaian**
+- 12 **lencana** yang dihitung dari catatanmu (hari terjaga beruntun, Subuh
+  di awal waktu, jama'ah, Jumat penuh, tilawah, khatam, hafalan sejuz,
+  Ramadan penuh, hutang sholat lunas). Hanya untukmu - tanpa peringkat;
+  berbagi gambar sepenuhnya pilihan.
+
+**Perbaikan**
+- Gambar pratinjau widget **Ayat Harian** di daftar widget kini sesuai
+  tampilan aslinya.
+
 ## 1.17.0 (build 28) · 1 November 2026
 
 **Pengingat puasa sunnah**

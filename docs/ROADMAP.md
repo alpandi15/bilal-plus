@@ -1,11 +1,12 @@
-# Peta Jalan Bilal+ (M0 - M7)
+# Peta Jalan Bilal+ (M0 - M6)
 
 Rencana 11 fitur berikutnya, dikerjakan **per fase (milestone)**. Satu fase
 selesai (diuji, dicek di emulator, di-commit, diberi catatan rilis & tag)
 sebelum fase berikutnya dimulai.
 
-> Status per **31 Oktober 2026** · versi saat ini **1.15.0+26** · skema
-> database **v9** · baseline analyzer **57 isu** · semua tes lulus.
+> Status per **1 November 2026** · **semua fase M0-M6 selesai** · versi
+> **1.18.0+29** · skema database **v11** · baseline analyzer **56 isu** ·
+> semua tes lulus. **Mode gelap (M7) dibatalkan** atas keputusan pengguna.
 
 ## Ringkasan & urutan
 
@@ -18,11 +19,10 @@ berisiko/menyeluruh di akhir.
 | **M0** | Fondasi bersama | infrastruktur pengingat, pengaturan, deep link | kecil | digabung ke M1 |
 | **M1** | Paket cepat | #1 Muhasabah malam · #6 Waktu penting · #8 Ayat harian | kecil-sedang | 1.16.0 |
 | **M2** | Kebiasaan & kewajiban | #3 Pengingat sunnah hijriah · #4 Hutang sholat | sedang | 1.17.0 |
-| **M3** | Hafalan lanjutan | #2 Muraja'ah (pengulangan terjadwal) | sedang | 1.18.0 |
-| **M4** | Keamanan data | #5 Cadangan otomatis | sedang (ada spike) | 1.18.x / 1.19.0 |
-| **M5** | Cari & hitung | #9 Pencarian global · #11 Kalkulator zakat mal | sedang | 1.19.0 |
-| **M6** | Motivasi | #7 Lencana & pencapaian | sedang | 1.20.0 |
-| **M7** | Tampilan | #10 Mode gelap | besar | 1.21.0 |
+| **M3** | Hafalan lanjutan | #2 Muraja'ah (pengulangan terjadwal) | sedang | 1.18.0 (digabung) |
+| **M4** | Keamanan data | #5 Cadangan otomatis | sedang (ada spike) | 1.18.0 (digabung) |
+| **M5** | Cari & hitung | #9 Pencarian global · #11 Kalkulator zakat mal | sedang | 1.18.0 (digabung) |
+| **M6** | Motivasi | #7 Lencana & pencapaian | sedang | 1.18.0 (digabung) |
 
 Nomor versi hanya usulan; ditetapkan saat commit mengikuti aturan versi
 (angka terakhir untuk perbaikan & fitur kecil, angka tengah bila banyak
@@ -366,27 +366,6 @@ atau perbandingan; teks mengingatkan niat. Diverifikasi di emulator.
 
 ---
 
-## M7 - Mode gelap (#10) → usulan 1.21.0
-
-**Fase terbesar & paling menyeluruh** - banyak warna ditulis langsung
-(`Color(0xFF...)`) di hampir semua halaman.
-
-- [ ] **Desain token warna** (`ThemeExtension`): latar, kartu, teks, garis,
-      aksen; pemetaan dari warna krem/amber saat ini.
-- [ ] **Migrasi bertahap per area** (tiap area diuji sendiri): komponen
-      bersama → Beranda → Ibadah → Laporan → Qur'an (mushaf tetap tema
-      kertas bila dipilih) → sisa halaman.
-- [ ] Pilihan **Ikuti sistem / Terang / Gelap** di Pengaturan.
-- [ ] Widget layar utama sudah gelap-hijau; kartu jadwal (langit) tidak
-      berubah.
-- [ ] Ekspor laporan **tetap latar krem** (gambar/PDF dibaca di mana pun).
-- [ ] Tes: tangkapan golden/visual untuk halaman utama di dua tema.
-
-**Keputusan:** warna mushaf dalam mode gelap (tema kertas vs gelap), dan
-apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
-
----
-
 ## Backlog / tidak dijadwalkan
 
 - **Pola tidur untuk ibadah.** Konsep: catat jam tidur/bangun & qailulah,
@@ -408,18 +387,20 @@ apakah fase ini dipecah jadi **M7a/M7b** (komponen+Beranda+Ibadah dulu).
 | Penjadwalan adzan terganggu refaktor (M0) | tes menjaga perilaku lama; uji di HP asli sebelum rilis |
 | Perhitungan waktu (sepertiga malam, Dhuha) beda di lintang tinggi | uji beberapa lokasi; tampilkan "tidak tersedia" bila malam tak wajar |
 | Dalil keliru | verifikasi tiap nomor & matan ke kitab di aplikasi; ragu → tidak ditulis |
-| Mode gelap menyentuh semua layar | fase terakhir, bertahap, dengan tes visual |
 | APK membesar (sudah +4 MB karena paket PDF) | pantau ukuran tiap rilis; hindari paket baru bila tidak perlu |
 
 ## Riwayat fase
 
 | Fase | Status | Rilis | Tanggal |
 |---|---|---|---|
-| M0 Fondasi | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
-| M1 Paket cepat | selesai (belum dirilis) | 1.16.0 | 2026-10-31 |
-| M2 Kebiasaan & kewajiban | selesai (belum dirilis) | 1.17.0 | 2026-11-01 |
-| M3 Hafalan lanjutan | selesai (belum dirilis) | - | 2026-11-01 |
-| M4 Keamanan data | selesai (belum dirilis) | - | 2026-11-01 |
-| M5 Cari & hitung | selesai (belum dirilis) | - | 2026-11-01 |
-| M6 Lencana | selesai (belum dirilis) | - | 2026-11-01 |
-| M7 Mode gelap | belum | - | - |
+| M0 Fondasi | dirilis | 1.16.0 | 2026-10-31 |
+| M1 Paket cepat | dirilis | 1.16.0 | 2026-10-31 |
+| M2 Kebiasaan & kewajiban | dirilis | 1.17.0 | 2026-11-01 |
+| M3 Hafalan lanjutan | dirilis | 1.18.0 | 2026-11-01 |
+| M4 Keamanan data | dirilis | 1.18.0 | 2026-11-01 |
+| M5 Cari & hitung | dirilis | 1.18.0 | 2026-11-01 |
+| M6 Lencana | dirilis | 1.18.0 | 2026-11-01 |
+| ~~M7 Mode gelap~~ | dibatalkan (keputusan pengguna) | - | 2026-11-01 |
+
+"Dirilis" = sudah di-commit, diberi catatan rilis & tag; unggah ke toko
+dilakukan manual lewat `tool/release.sh` / `docs/RELEASING.md`.
