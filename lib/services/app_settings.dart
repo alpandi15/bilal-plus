@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'puasa_sunnah.dart';
+import 'hafalan_cue.dart';
 import 'sholat_guide.dart';
 import 'sholat_time.dart';
 
@@ -12,6 +13,7 @@ import 'sholat_time.dart';
 class AppSettings {
   static const sholatTimeKey = 'sholat_time_tracking';
   static const qadhaPromptKey = 'qadha_prompt';
+  static const hafalanCueKey = 'hafalan_cue';
   static const onTimeMinutesKey = 'sholat_on_time_minutes';
   static const lastPlaceKey = 'sholat_last_place';
   static const genderKey = 'user_gender';
@@ -69,6 +71,10 @@ const adzanPrayerKeys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
 class AppSettingsController extends ChangeNotifier {
   bool _sholatTime = true;
   bool _qadhaPrompt = true;
+  bool _hafalanCue = false;
+  int _cueWords = cueWordsDefault;
+  HafalanWidgetMode _hafalanWidgetMode = HafalanWidgetMode.full;
+  int _hafalanWidgetCount = cueCountDefault;
   int _onTimeMinutes = defaultOnTimeMinutes;
   String _lastPlace = 'rumah';
   Gender? _gender;
@@ -220,6 +226,18 @@ class AppSettingsController extends ChangeNotifier {
   /// Tawarkan membayar 1 qadha sesudah mencatat sholat wajib (bila ada hutang).
   bool get qadhaPrompt => _qadhaPrompt;
 
+  /// Halaman Hafalan: tampilkan hanya kata awal tiap ayat (petunjuk awal).
+  bool get hafalanCue => _hafalanCue;
+
+  /// Jumlah kata awal per ayat (halaman & widget), 1..3.
+  int get cueWords => _cueWords;
+
+  /// Widget Hafalan: satu ayat penuh atau beberapa ayat berisi kata awal.
+  HafalanWidgetMode get hafalanWidgetMode => _hafalanWidgetMode;
+
+  /// Jumlah ayat di widget bila mode petunjuk, 2..8.
+  int get hafalanWidgetCount => _hafalanWidgetCount;
+
   /// Batas "awal waktu", menit sesudah adzan.
   int get onTimeMinutes => _onTimeMinutes;
 
@@ -235,6 +253,11 @@ class AppSettingsController extends ChangeNotifier {
       );
       _sholatTime = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
       _qadhaPrompt = prefs.getBool(AppSettings.qadhaPromptKey) ?? true;
+      _hafalanCue = prefs.getBool(AppSettings.hafalanCueKey) ?? false;
+      final w = HafalanWidgetOptions.fromPrefs(prefs);
+      _cueWords = w.words;
+      _hafalanWidgetMode = w.mode;
+      _hafalanWidgetCount = w.count;
       _onTimeMinutes =
           prefs.getInt(AppSettings.onTimeMinutesKey) ?? defaultOnTimeMinutes;
       _lastPlace = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
@@ -533,6 +556,32 @@ class AppSettingsController extends ChangeNotifier {
     _readerSize = v.clamp(readerSizeMin, readerSizeMax);
     notifyListeners();
     await _save((p) => p.setDouble(AppSettings.readerSizeKey, _readerSize));
+  }
+
+  Future<void> setHafalanCue(bool v) async {
+    _hafalanCue = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.hafalanCueKey, v));
+  }
+
+  Future<void> setCueWords(int v) async {
+    _cueWords = v.clamp(cueWordsMin, cueWordsMax);
+    notifyListeners();
+    await _save((p) => p.setInt(HafalanWidgetOptions.wordsKey, _cueWords));
+  }
+
+  Future<void> setHafalanWidgetMode(HafalanWidgetMode v) async {
+    _hafalanWidgetMode = v;
+    notifyListeners();
+    await _save((p) => p.setString(HafalanWidgetOptions.modeKey, v.name));
+  }
+
+  Future<void> setHafalanWidgetCount(int v) async {
+    _hafalanWidgetCount = v.clamp(cueCountMin, cueCountMax);
+    notifyListeners();
+    await _save(
+      (p) => p.setInt(HafalanWidgetOptions.countKey, _hafalanWidgetCount),
+    );
   }
 
   Future<void> setQadhaPrompt(bool v) async {

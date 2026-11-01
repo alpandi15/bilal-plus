@@ -40,14 +40,14 @@ void main() {
     // gulir jauh ke tengah surah
     await tester.drag(find.byType(ListView), const Offset(0, -2000));
     await tester.pumpAndSettle();
-    expect(find.text('Sembunyikan ayat'), findsOneWidget);
+    expect(find.text('Tutup'), findsOneWidget);
 
-    await tester.tap(find.text('Sembunyikan ayat'));
+    await tester.tap(find.text('Tutup'));
     await tester.pump();
-    expect(find.text('Ayat disembunyikan'), findsOneWidget);
+    expect(find.text('Tertutup'), findsOneWidget);
 
-    await tester.tap(find.text('Ayat disembunyikan'));
+    await tester.tap(find.text('Tertutup'));
     await tester.pump();
-    expect(find.text('Sembunyikan ayat'), findsOneWidget);
+    expect(find.text('Tutup'), findsOneWidget);
   });
 }

@@ -6,6 +6,15 @@ pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
 ## Belum dirilis
 
+**Hafalan: mode kata awal**
+- Di halaman Hafalan ada tombol **Kata awal**: tiap ayat hanya menampilkan
+  1-3 kata pertamanya (pilih di ikon pengaturan di kanan atas); ketuk baris
+  untuk mengintip ayat utuh, lalu tandai hafal.
+- **Widget Hafalan** bisa menampilkan **1 ayat penuh** (seperti biasa) atau
+  **beberapa ayat (2-8)** sekaligus, hanya kata awal tiap ayat. Tombol
+  "Intip" menampilkan ayat pertama utuh; "Ayat N" menandainya hafal dan
+  daftar bergeser.
+
 **Hutang sholat**
 - Sesudah mencatat sholat wajib, aplikasi menawarkan **"Bayar 1"** qadha
   sholat yang sama bila masih ada hutang (bisa dimatikan di Pengaturan ->

@@ -13,6 +13,7 @@ import 'hijri_config.dart';
 import '../widgets/arabic_font.dart';
 import 'adzan_notifications.dart' show refreshMuhasabahInBackground;
 import 'ayat_harian.dart';
+import 'hafalan_cue.dart';
 import 'hafalan_widget_payload.dart';
 import 'muhasabah.dart';
 import 'prayer_calculator.dart' as calc;
@@ -180,6 +181,11 @@ class TrackerWidgetSync {
       await _syncHafalan(
         db,
         settings.quranFont,
+        options: HafalanWidgetOptions(
+          mode: settings.hafalanWidgetMode,
+          count: settings.hafalanWidgetCount,
+          words: settings.cueWords,
+        ),
         today: dateKey(calc.todayInZone(calc.timezoneFromLongitude(loc.long))),
       );
     } catch (e) {
@@ -237,12 +243,14 @@ class TrackerWidgetSync {
 Future<void> _syncHafalan(
   AppDatabase db,
   QuranFont font, {
+  HafalanWidgetOptions options = const HafalanWidgetOptions(),
   String? today,
 }) async {
   final payload = await hafalanWidgetPayload(
     db,
     QuranText.load,
     font: font,
+    options: options,
     today: today,
   );
   await HomeWidget.saveWidgetData<String>(_hafalanKey, jsonEncode(payload));
@@ -262,6 +270,7 @@ Future<void> _hafalanFromWidget(Uri uri) async {
     await _syncHafalan(
       db,
       QuranFont.parse(prefs.getString(AppSettings.quranFontKey)),
+      options: HafalanWidgetOptions.fromPrefs(prefs),
     );
   } finally {
     await db.close();

@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import '../../widgets/quran/quran_ayah_text.dart';
 import '../../db/app_database_scope.dart';
 import '../../services/app_settings.dart';
+import '../../services/hafalan_cue.dart';
 import '../../services/quran_index.dart';
 import '../../services/quran_text.dart';
 import '../../widgets/arabic_font.dart';
+import '../../widgets/hafalan_display_sheet.dart';
 import '../../widgets/quran/quran_ornaments.dart';
 import '../../widgets/sub_header.dart';
 import 'murajaah_page.dart';
@@ -84,7 +86,15 @@ class _HafalanPageState extends State<HafalanPage> {
       backgroundColor: const Color(0xFFFFFAF3),
       body: Column(
         children: [
-          const SubHeader(title: 'Hafalan', subtitle: "Menghafal Al-Qur'an"),
+          SubHeader(
+            title: 'Hafalan',
+            subtitle: "Menghafal Al-Qur'an",
+            trailing: IconButton(
+              tooltip: 'Tampilan hafalan',
+              onPressed: () => showHafalanDisplaySheet(context),
+              icon: const Icon(Icons.tune_rounded, color: _amber),
+            ),
+          ),
           Expanded(
             child: text == null
                 ? const Center(child: CircularProgressIndicator())
@@ -354,16 +364,28 @@ class _HafalanSurahPageState extends State<HafalanSurahPage> {
   @override
   Widget build(BuildContext context) {
     final dao = AppDatabaseScope.of(context).quranDao;
-    final size = (AppSettingsScope.maybeOf(context)?.readerSize ?? 28);
+    final settings = AppSettingsScope.maybeOf(context);
+    final size = (settings?.readerSize ?? 28);
+    final cue = settings?.hafalanCue ?? false;
+    final cueWords = settings?.cueWords ?? cueWordsDefault;
     final ayahs = widget.text.ayahsOf(widget.surah.number);
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
       // sakelar sembunyi & terjemahan menempel di bawah: bisa diubah di
       // tengah hafalan tanpa menggulir kembali ke atas
       bottomNavigationBar: _HafalanBar(
-        hide: _hide,
+        hide: _hide && !cue,
+        cue: cue,
         showArti: _showArti,
+        onCue: (v) {
+          settings?.setHafalanCue(v);
+          setState(() {
+            if (v) _hide = false;
+            _peek.clear();
+          });
+        },
         onHide: (v) {
+          if (cue) settings?.setHafalanCue(false);
           setState(() {
             _hide = v;
             _peek.clear();
@@ -389,6 +411,11 @@ class _HafalanSurahPageState extends State<HafalanSurahPage> {
           SubHeader(
             title: widget.surah.name,
             subtitle: 'Hafalan · ${widget.surah.ayahCount} ayat',
+            trailing: IconButton(
+              tooltip: 'Tampilan hafalan',
+              onPressed: () => showHafalanDisplaySheet(context),
+              icon: const Icon(Icons.tune_rounded, color: _amber),
+            ),
           ),
           StreamBuilder<Set<int>>(
             stream: dao.watchHafalan(),
@@ -412,6 +439,20 @@ class _HafalanSurahPageState extends State<HafalanSurahPage> {
                       );
                     }
                     final a = ayahs[i - 1];
+                    if (cue) {
+                      return _CueRow(
+                        ayah: a,
+                        size: size,
+                        words: cueWords,
+                        peeked: _peek.contains(a.index),
+                        showArti: _showArti,
+                        hafal: hafal.contains(a.index),
+                        onPeek: () => setState(() {
+                          if (!_peek.remove(a.index)) _peek.add(a.index);
+                        }),
+                        onHafal: (v) => dao.setHafal(a.index, a.index, v),
+                      );
+                    }
                     return _AyahCard(
                       ayah: a,
                       size: size,
@@ -500,13 +541,15 @@ class _Toolbar extends StatelessWidget {
 class _HafalanBar extends StatelessWidget {
   const _HafalanBar({
     required this.hide,
+    required this.cue,
     required this.showArti,
     required this.onHide,
+    required this.onCue,
     required this.onArti,
   });
 
-  final bool hide, showArti;
-  final ValueChanged<bool> onHide, onArti;
+  final bool hide, cue, showArti;
+  final ValueChanged<bool> onHide, onCue, onArti;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -535,13 +578,24 @@ class _HafalanBar extends StatelessWidget {
                 icon: hide
                     ? Icons.visibility_off_rounded
                     : Icons.visibility_rounded,
-                label: hide ? 'Ayat disembunyikan' : 'Sembunyikan ayat',
+                label: hide ? 'Tertutup' : 'Tutup',
                 activeColor: _amber,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
-              flex: 2,
+              flex: 3,
+              child: _BarToggle(
+                on: cue,
+                onChanged: onCue,
+                icon: Icons.format_list_numbered_rtl_rounded,
+                label: 'Kata awal',
+                activeColor: const Color(0xFF0F766E),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 3,
               child: _BarToggle(
                 on: showArti,
                 onChanged: onArti,
@@ -609,6 +663,96 @@ class _BarToggle extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Satu baris mode "kata awal": hanya kata-kata pertama ayat; ketuk untuk
+/// mengintip ayat utuhnya.
+class _CueRow extends StatelessWidget {
+  const _CueRow({
+    required this.ayah,
+    required this.size,
+    required this.words,
+    required this.peeked,
+    required this.showArti,
+    required this.hafal,
+    required this.onPeek,
+    required this.onHafal,
+  });
+
+  final QuranAyah ayah;
+  final double size;
+  final int words;
+  final bool peeked, showArti, hafal;
+  final VoidCallback onPeek;
+  final ValueChanged<bool> onHafal;
+
+  @override
+  Widget build(BuildContext context) {
+    final font = AppSettingsScope.maybeOf(context)?.quranFont ?? QuranFont.lpmq;
+    final full = quranTextFor(ayah, font);
+    final shown = peeked ? full : cueOf(full, words);
+    final hidden = !peeked && cueHides(full, words);
+    final style = TextStyle(
+      fontSize: size,
+      height: 1.9,
+      color: peeked ? const Color(0xFF1C1917) : _amber,
+    );
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: hafal ? const Color(0xFFF0FDF4) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: hafal ? const Color(0xFFA7F3D0) : _line),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onPeek,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+          child: Row(
+            children: [
+              AyahMedallion(number: ayah.number, size: 30, arabicDigits: false),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    QuranAyahText(
+                      hidden ? '$shown …' : shown,
+                      font: font,
+                      style: style,
+                    ),
+                    if (peeked && showArti)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          ayah.translation,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            height: 1.45,
+                            color: _muted,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: hafal ? 'Batal hafal' : 'Tandai hafal',
+                onPressed: () => onHafal(!hafal),
+                icon: Icon(
+                  hafal
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: hafal ? _emerald : _muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AyahCard extends StatelessWidget {

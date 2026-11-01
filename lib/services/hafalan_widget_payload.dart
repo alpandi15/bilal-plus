@@ -4,6 +4,7 @@ import '../db/app_database.dart';
 import '../utils/date_key.dart';
 import '../widgets/arabic_font.dart';
 import '../widgets/quran/quran_ayah_text.dart';
+import 'hafalan_cue.dart';
 import 'quran_text.dart';
 
 /// Jumlah ayat berikutnya yang dititipkan ke widget - cukup untuk beberapa
@@ -19,6 +20,7 @@ Future<Map<String, Object?>> hafalanWidgetPayload(
   AppDatabase db,
   Future<QuranText> Function() loadText, {
   required QuranFont font,
+  HafalanWidgetOptions options = const HafalanWidgetOptions(),
   DateTime? now,
 
   /// Kunci tanggal hari ini untuk menghitung muraja'ah yang jatuh tempo
@@ -66,6 +68,9 @@ Future<Map<String, Object?>> hafalanWidgetPayload(
     'ayahCount': surah.ayahCount,
     'memorized': memorized.length,
     'font': font.key,
+    'mode': options.mode.name,
+    'cueCount': options.count,
+    'cueWords': options.words,
     'queue': [
       for (final a in queue)
         {

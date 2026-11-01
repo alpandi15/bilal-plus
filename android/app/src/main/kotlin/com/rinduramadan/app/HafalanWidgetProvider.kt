@@ -41,6 +41,9 @@ import kotlin.math.min
  *
  * - "Tutup" ([ACTION_PEEK]) menyembunyikan ayat kecuali kata pertama -
  *   kata lainnya jadi blok samar di posisinya, untuk menguji hafalan.
+ * - Mode "petunjuk" (`mode` = cue di `hafalan_json`): beberapa ayat
+ *   berikutnya sekaligus, hanya kata awal tiap ayat; "Intip" menampilkan
+ *   ayat pertamanya utuh, "Hafal" menandai ayat pertama.
  * - Ketuk di mana pun selain tombol membuka halaman hafalan surahnya.
  * - "Hafal" ([ACTION_HAFAL]) langsung maju ke ayat berikutnya (tertunda,
  *   seperti centang widget Ibadah) lalu diteruskan ke Dart di latar
@@ -82,7 +85,8 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             }
             ACTION_PEEK -> {
                 val prefs = statePrefs(context)
-                prefs.edit().putBoolean(HIDDEN_KEY, !prefs.getBoolean(HIDDEN_KEY, false)).apply()
+                val key = if (isCueMode(context)) CUE_PEEK_KEY else HIDDEN_KEY
+                prefs.edit().putBoolean(key, !prefs.getBoolean(key, false)).apply()
                 refreshAll(context)
             }
             else -> super.onReceive(context, intent)
@@ -95,6 +99,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
         private const val STATE_PREFS = "hafalan_widget_state"
         private const val PENDING_KEY = "pending"
         private const val HIDDEN_KEY = "hidden"
+        private const val CUE_PEEK_KEY = "cue_peek"
 
         private const val CREAM = 0xFFF4F1EA.toInt()
         private const val GOLD = 0xFFF2D38A.toInt()
@@ -121,6 +126,14 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             all.keys().forEach { k -> if (all.getLong(k) > generatedAt) live.put(k, all.getLong(k)) }
             if (live.length() != all.length()) prefs.edit().putString(PENDING_KEY, live.toString()).apply()
             return live.keys().asSequence().mapNotNull { it.toIntOrNull() }.toSet()
+        }
+
+        /** Widget sedang dalam mode petunjuk (beberapa ayat, kata awal saja)? */
+        private fun isCueMode(context: Context): Boolean = try {
+            JSONObject(HomeWidgetPlugin.getData(context).getString("hafalan_json", null) ?: "{}")
+                .optString("mode") == "cue"
+        } catch (_: Exception) {
+            false
         }
 
         private fun refreshAll(context: Context) {
@@ -200,28 +213,45 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             }
 
             val number = next.optInt("n")
-            val hidden = statePrefs(context).getBoolean(HIDDEN_KEY, false)
+            val cueMode = root.optString("mode") == "cue"
+            val cueItems = if (cueMode) {
+                (0 until (queue?.length() ?: 0))
+                    .map { queue!!.getJSONObject(it) }
+                    .filter { it.optInt("i") !in skip }
+                    .take(root.optInt("cueCount", 5).coerceIn(2, 8))
+            } else {
+                emptyList()
+            }
+            val peeking = cueMode && statePrefs(context).getBoolean(CUE_PEEK_KEY, false)
+            val cueList = cueMode && !peeking
+            // mode ayat penuh: "Tutup" menyamarkan; mode petunjuk: "Intip"
+            val hidden = !cueMode && statePrefs(context).getBoolean(HIDDEN_KEY, false)
             val density = context.resources.displayMetrics.density
 
             // ruang (dp): padding 22, kepala 16, bar 11, panel ayat (margin 8 +
             // padding 12), kaki 36; terjemahan 2 baris ±32 bila masih lega
             val fixed = 22 + 16 + 11 + 20 + 36
-            val showTranslation = heightDp - fixed - 32 >= 56
+            val showTranslation = !cueList && heightDp - fixed - 32 >= 56
             val ayahH = heightDp - fixed - (if (showTranslation) 32 else 0)
             val ayahW = widthDp - 28 - 12
+            val font = root.optString("font", "lpmq")
+            val pxW = (ayahW * density).toInt().coerceAtLeast(60)
+            val pxH = (ayahH * density).toInt().coerceAtLeast(40)
 
-            val bitmap = renderAyah(
-                context,
-                next.optString("ar"),
-                root.optString("font", "lpmq"),
-                (ayahW * density).toInt().coerceAtLeast(60),
-                (ayahH * density).toInt().coerceAtLeast(40),
-                hidden,
-            )
+            val bitmap = if (cueList) {
+                val words = root.optInt("cueWords", 1)
+                renderCue(context, cueItems.map { cueLine(it.optInt("n"), it.optString("ar"), words) }, font, pxW, pxH)
+            } else {
+                renderAyah(context, next.optString("ar"), font, pxW, pxH, hidden)
+            }
             views.setViewVisibility(R.id.hw_ayah, View.VISIBLE)
             views.setViewVisibility(R.id.hw_empty, View.GONE)
             views.setImageViewBitmap(R.id.hw_ayah, bitmap)
-            views.setContentDescription(R.id.hw_ayah, "$name ayat $number")
+            views.setContentDescription(
+                R.id.hw_ayah,
+                if (cueList) "$name ayat ${cueItems.first().optInt("n")} sampai ${cueItems.last().optInt("n")}, kata awal saja"
+                else "$name ayat $number",
+            )
             // ketuk ayat = buka halaman hafalan surahnya (area terbesar -
             // harus membuka aplikasi); tutup/lihat hanya lewat tombolnya
             views.setOnClickPendingIntent(R.id.hw_ayah_box, open(context, surah))
@@ -229,12 +259,12 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             views.setViewVisibility(R.id.hw_translation, if (showTranslation && !hidden) View.VISIBLE else View.GONE)
             views.setTextViewText(R.id.hw_translation, next.optString("tr"))
 
-            views.setTextViewText(R.id.hw_label, if (widthDp >= 230) "Ayat $number dari $total" else "Ayat $number")
+            views.setTextViewText(R.id.hw_label, label(cueList, cueItems, number, total, widthDp))
             views.setViewVisibility(R.id.hw_peek, View.VISIBLE)
-            views.setTextViewText(R.id.hw_peek, if (hidden) "Lihat" else "Tutup")
+            views.setTextViewText(R.id.hw_peek, peekLabel(cueMode, peeking, hidden))
             views.setOnClickPendingIntent(R.id.hw_peek, broadcast(context, ACTION_PEEK, null, 1))
             views.setViewVisibility(R.id.hw_done, View.VISIBLE)
-            views.setTextViewText(R.id.hw_done, "✓ Hafal")
+            views.setTextViewText(R.id.hw_done, if (cueMode) "✓ Ayat $number" else "✓ Hafal")
             views.setOnClickPendingIntent(
                 R.id.hw_done,
                 broadcast(context, ACTION_HAFAL, Uri.parse("rinduramadan://hafalan/set?ayah=${next.optInt("i")}"), 2),
@@ -246,6 +276,73 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
         /// jatuh tempo hari ini bila ada.
         internal fun kicker(name: String, due: Int): String =
             "HAFALAN · ${name.uppercase()}" + if (due > 0) " · $due MURAJA'AH" else ""
+
+        private fun label(cueList: Boolean, items: List<JSONObject>, number: Int, total: Int, widthDp: Int): String =
+            if (cueList && items.size > 1) {
+                val range = "${items.first().optInt("n")}-${items.last().optInt("n")}"
+                if (widthDp >= 230) "Ayat $range dari $total" else "Ayat $range"
+            } else if (widthDp >= 230) "Ayat $number dari $total" else "Ayat $number"
+
+        internal fun peekLabel(cueMode: Boolean, peeking: Boolean, hidden: Boolean): String = when {
+            cueMode -> if (peeking) "Tutup" else "Intip"
+            else -> if (hidden) "Lihat" else "Tutup"
+        }
+
+        /** Satu baris petunjuk: nomor ayat, kata-kata awal, dan apakah ada yang disembunyikan. */
+        internal data class CueLine(val prefix: String, val words: String, val more: Boolean)
+
+        /** "12" -> "١٢". */
+        internal fun arabicDigits(n: Int): String =
+            n.toString().map { '\u0660' + (it - '0') }.joinToString("")
+
+        /** [words] kata pertama ayat [ar] (1..3) dengan nomor ayat [n]. */
+        internal fun cueLine(n: Int, ar: String, words: Int): CueLine {
+            val parts = ar.trim().split(Regex("\\s+"))
+            val k = words.coerceIn(1, 3)
+            return CueLine("(${arabicDigits(n)})", parts.take(k).joinToString(" "), parts.size > k)
+        }
+
+        /**
+         * Daftar petunjuk: satu baris per ayat (nomor emas, kata awal krem,
+         * "…" samar bila ada kata yang disembunyikan), rata kanan, sebesar
+         * mungkin (30..12sp) asal tiap ayat tetap satu baris dan semuanya
+         * muat dalam [w]x[h] px.
+         */
+        internal fun renderCue(context: Context, lines: List<CueLine>, font: String, w: Int, h: Int): Bitmap {
+            val metrics = context.resources.displayMetrics
+            val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = typeface(context, font)
+                color = CREAM
+            }
+            val builder = android.text.SpannableStringBuilder()
+            lines.forEachIndexed { i, l ->
+                if (i > 0) builder.append('\n')
+                val start = builder.length
+                builder.append(l.prefix)
+                builder.setSpan(ForegroundColorSpan(GOLD), start, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                builder.append("  ").append(l.words)
+                if (l.more) {
+                    val s = builder.length
+                    builder.append(" …")
+                    builder.setSpan(ForegroundColorSpan(0x99F4F1EA.toInt()), s, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            }
+            var layout: StaticLayout? = null
+            var sp = 30f
+            while (sp >= 12f) {
+                paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
+                val l = build(builder, paint, w, Int.MAX_VALUE, Layout.Alignment.ALIGN_NORMAL)
+                if (l.lineCount == lines.size && l.height <= h) {
+                    layout = l
+                    break
+                }
+                sp -= 1f
+            }
+            val fit = layout ?: build(builder, paint, w, lines.size, Layout.Alignment.ALIGN_NORMAL)
+            val bitmap = Bitmap.createBitmap(w, max(1, min(h, fit.height)), Bitmap.Config.ARGB_8888)
+            fit.draw(Canvas(bitmap))
+            return bitmap
+        }
 
         private fun empty(
             views: RemoteViews,
@@ -357,10 +454,16 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             return bitmap
         }
 
-        private fun build(text: CharSequence, paint: TextPaint, w: Int, maxLines: Int): StaticLayout =
+        private fun build(
+            text: CharSequence,
+            paint: TextPaint,
+            w: Int,
+            maxLines: Int,
+            align: Layout.Alignment = Layout.Alignment.ALIGN_CENTER,
+        ): StaticLayout =
             if (Build.VERSION.SDK_INT >= 23) {
                 StaticLayout.Builder.obtain(text, 0, text.length, paint, w)
-                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .setAlignment(align)
                     .setTextDirection(TextDirectionHeuristics.RTL)
                     .setLineSpacing(0f, 1.05f)
                     .setIncludePad(true)
@@ -369,7 +472,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
                     .build()
             } else {
                 @Suppress("DEPRECATION")
-                StaticLayout(text, paint, w, Layout.Alignment.ALIGN_CENTER, 1.05f, 0f, true)
+                StaticLayout(text, paint, w, align, 1.05f, 0f, true)
             }
     }
 }
