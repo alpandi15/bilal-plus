@@ -62,6 +62,11 @@ class _IbadahWeeklyReportPageState extends State<IbadahWeeklyReportPage> {
     final settings = AppSettingsScope.maybeOf(context);
     final (from, to) = weekRange(monday);
     final (pFrom, pTo) = weekRange(monday.subtract(const Duration(days: 7)));
+    final debtLeft = (await db.ibadahDao.sholatQadhaRemaining()).values.fold(
+      0,
+      (a, b) => a + b,
+    );
+    final debtPaid = await db.ibadahDao.sholatQadhaPaidBetween(from, to);
     return buildWeeklyReport(
       await db.ibadahDao.loadRange(from, to),
       monday: monday,
@@ -73,6 +78,8 @@ class _IbadahWeeklyReportPageState extends State<IbadahWeeklyReportPage> {
       soloWeight: settings?.effectiveSoloWeight ?? 1,
       male: settings?.gender == Gender.male,
       previous: await db.ibadahDao.loadRange(pFrom, pTo),
+      sholatDebtLeft: debtLeft,
+      sholatDebtPaid: debtPaid,
     );
   }
 

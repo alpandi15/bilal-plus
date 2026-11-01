@@ -946,6 +946,45 @@ class MonthlyReport {
   dateKey(DateTime.utc(month.year, month.month + 1, 0)),
 );
 
+/// Hutang sholat di laporan pekan/bulan: yang dibayar pada periode (pujian)
+/// atau, bila periode berjalan & belum ada yang dibayar, ajakan mencicil.
+({Insight? good, Insight? tip}) _debtInsights({
+  required int left,
+  required int paid,
+  required bool current,
+  required String period,
+}) {
+  if (paid > 0) {
+    return (
+      good: Insight(
+        InsightKind.good,
+        InsightIcon.qadha,
+        'Mencicil hutang sholat',
+        left == 0
+            ? 'Hutang sholatmu lunas - $paid sholat diqadha $period. '
+                  'Alhamdulillah.'
+            : '$paid sholat diqadha $period; sisa $left. Terus dicicil.',
+        ref: 'HR. Muslim no. 1103',
+      ),
+      tip: null,
+    );
+  }
+  if (left > 0 && current) {
+    return (
+      good: null,
+      tip: Insight(
+        InsightKind.tip,
+        InsightIcon.qadha,
+        'Cicil hutang sholatmu',
+        'Masih ada $left sholat yang ingin kamu qadha. Mulai dari satu '
+            'per hari - sedikit demi sedikit, lalu lunas.',
+        ref: 'HR. Muslim no. 1103',
+      ),
+    );
+  }
+  return (good: null, tip: null);
+}
+
 /// Susun laporan bulan [month]. [data] = `loadRange` untuk [monthRange];
 /// [previous] (opsional) = rentang bulan sebelumnya, untuk pembanding.
 MonthlyReport buildMonthlyReport(
@@ -959,6 +998,10 @@ MonthlyReport buildMonthlyReport(
   required double soloWeight,
   required bool male,
   IbadahRangeData? previous,
+
+  /// Sisa hutang sholat sekarang & yang dibayar pada periode laporan.
+  int sholatDebtLeft = 0,
+  int sholatDebtPaid = 0,
 }) {
   IbadahReport build(IbadahRangeData d) => buildIbadahReport(
     d,
@@ -1281,6 +1324,16 @@ MonthlyReport buildMonthlyReport(
         ),
       );
     }
+    final debtM = _debtInsights(
+      left: sholatDebtLeft,
+      paid: sholatDebtPaid,
+      current: today.startsWith(
+        '${month.year}-${month.month.toString().padLeft(2, '0')}',
+      ),
+      period: 'bulan ini',
+    );
+    if (debtM.good != null) good.add(debtM.good!);
+    if (debtM.tip != null) tips.add(debtM.tip!);
     if (tips.isEmpty) {
       tips.add(
         const Insight(
@@ -1396,6 +1449,10 @@ WeeklyReport buildWeeklyReport(
   required double soloWeight,
   required bool male,
   IbadahRangeData? previous,
+
+  /// Sisa hutang sholat sekarang & yang dibayar pada periode laporan.
+  int sholatDebtLeft = 0,
+  int sholatDebtPaid = 0,
 }) {
   IbadahReport build(IbadahRangeData d) => buildIbadahReport(
     d,
@@ -1724,6 +1781,16 @@ WeeklyReport buildWeeklyReport(
         ),
       );
     }
+    final debtW = _debtInsights(
+      left: sholatDebtLeft,
+      paid: sholatDebtPaid,
+      current:
+          today.compareTo(dateKey(monday)) >= 0 &&
+          today.compareTo(dateKey(monday.add(const Duration(days: 6)))) <= 0,
+      period: 'pekan ini',
+    );
+    if (debtW.good != null) good.add(debtW.good!);
+    if (debtW.tip != null) tips.add(debtW.tip!);
     if (tips.isEmpty) {
       tips.add(
         const Insight(

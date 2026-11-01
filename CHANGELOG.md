@@ -4,6 +4,15 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## Belum dirilis
+
+**Hutang sholat**
+- Sesudah mencatat sholat wajib, aplikasi menawarkan **"Bayar 1"** qadha
+  sholat yang sama bila masih ada hutang (bisa dimatikan di Pengaturan ->
+  "Tawarkan bayar qadha").
+- Laporan **mingguan & bulanan** kini menyebut hutang sholat: pujian untuk
+  yang sudah dibayar pada periode itu, atau ajakan mencicil.
+
 ## 1.18.0 (build 29) · 1 November 2026
 
 **Muraja'ah hafalan**

@@ -795,6 +795,16 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
     return pay;
   });
 
+  /// Jumlah sholat yang dibayar (qadha) pada hari [from]..[to] (kunci tanggal).
+  Future<int> sholatQadhaPaidBetween(String from, String to) async {
+    final row = await customSelect(
+      "SELECT COALESCE(SUM(-count), 0) AS n FROM sholat_qadha_entries "
+      "WHERE source = 'bayar' AND date BETWEEN ?1 AND ?2",
+      variables: [Variable.withString(from), Variable.withString(to)],
+    ).getSingle();
+    return row.read<int>('n');
+  }
+
   Future<void> deleteSholatQadha(int id) =>
       (delete(sholatQadhaEntries)..where((e) => e.id.equals(id))).go();
 

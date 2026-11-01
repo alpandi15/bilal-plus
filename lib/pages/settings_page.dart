@@ -185,6 +185,25 @@ class SettingsPage extends StatelessWidget {
                     const Divider(height: 1, color: _line),
                     SwitchListTile.adaptive(
                       activeTrackColor: _amber,
+                      value: settings.qadhaPrompt,
+                      onChanged: settings.setQadhaPrompt,
+                      title: const Text(
+                        'Tawarkan bayar qadha',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: _stone,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Sesudah mencatat sholat wajib, tawarkan membayar 1 '
+                        'qadha sholat yang sama bila masih ada hutang '
+                        '(menu Hutang Sholat).',
+                        style: TextStyle(fontSize: 12, color: _muted),
+                      ),
+                    ),
+                    const Divider(height: 1, color: _line),
+                    SwitchListTile.adaptive(
+                      activeTrackColor: _amber,
                       value: settings.sholatTime,
                       onChanged: settings.setSholatTime,
                       title: const Text(

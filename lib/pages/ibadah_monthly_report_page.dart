@@ -69,6 +69,11 @@ class _IbadahMonthlyReportPageState extends State<IbadahMonthlyReportPage> {
     final (pFrom, pTo) = monthRange(
       DateTime.utc(month.year, month.month - 1, 1),
     );
+    final debtLeft = (await db.ibadahDao.sholatQadhaRemaining()).values.fold(
+      0,
+      (a, b) => a + b,
+    );
+    final debtPaid = await db.ibadahDao.sholatQadhaPaidBetween(from, to);
     return buildMonthlyReport(
       await db.ibadahDao.loadRange(from, to),
       month: month,
@@ -80,6 +85,8 @@ class _IbadahMonthlyReportPageState extends State<IbadahMonthlyReportPage> {
       soloWeight: settings?.effectiveSoloWeight ?? 1,
       male: settings?.gender == Gender.male,
       previous: await db.ibadahDao.loadRange(pFrom, pTo),
+      sholatDebtLeft: debtLeft,
+      sholatDebtPaid: debtPaid,
     );
   }
 

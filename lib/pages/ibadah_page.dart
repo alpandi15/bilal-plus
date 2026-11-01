@@ -6,6 +6,7 @@ import '../db/app_database_scope.dart';
 import '../models/prayer_models.dart';
 import 'ibadah_daily_report_page.dart';
 import '../services/hijri_config_scope.dart';
+import '../services/hutang_sholat.dart';
 import '../services/ibadah_day.dart';
 import '../services/prayer_calculator.dart' as calc;
 import '../services/user_location_scope.dart';
@@ -294,6 +295,7 @@ class _DayView extends StatelessWidget {
         value > 0 ? 0 : 1,
         jamaah: value > 0 ? null : settings?.lastJamaah ?? false,
       );
+      if (value == 0 && context.mounted) _offerQadha(context, item);
       return;
     }
     final log = data.logs[item.id];
@@ -343,11 +345,49 @@ class _DayView extends StatelessWidget {
         await settings.setLastPlace(where);
         await settings.setLastJamaah(jamaah);
         await settings.setLastSafar(result.safar);
+        if (value == 0 && context.mounted) _offerQadha(context, item);
       case SholatLogRemove():
         await dao.setValue(data.date, item.id, 0);
       case null:
         break;
     }
+  }
+
+  /// Sesudah sholat wajib baru tercatat: bila masih ada hutang sholat yang
+  /// sama, tawarkan membayar 1 qadha sekalian (bisa dimatikan di Pengaturan).
+  Future<void> _offerQadha(BuildContext context, IbadahItem item) async {
+    final settings = AppSettingsScope.maybeOf(context);
+    if (settings != null && !settings.qadhaPrompt) return;
+    final name = hutangPrayerNames[item.key];
+    if (name == null) return;
+    final left = (await dao.sholatQadhaRemaining())[item.key] ?? 0;
+    if (left <= 0 || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 8),
+          content: Text('Sekalian bayar 1 qadha $name? Sisa $left.'),
+          action: SnackBarAction(
+            label: 'Bayar 1',
+            onPressed: () async {
+              final paid = await dao.paySholatQadha(item.key, 1, date: today);
+              if (paid == 0) return;
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Qadha $name dibayar - sisa ${left - 1}. '
+                      'Semoga diterima.',
+                    ),
+                  ),
+                );
+            },
+          ),
+        ),
+      );
   }
 
   /// Ganti berjama'ah <-> sendiri pada sholat yang sudah dicentang.

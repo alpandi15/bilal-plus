@@ -429,4 +429,110 @@ void main() {
       expect(has((await report('2026-09-20', 3)).tips, "muraja'ah"), isFalse);
     },
   );
+
+  group('hutang sholat di laporan pekan & bulan', () {
+    Future<void> seed() async {
+      // beberapa hari tercatat agar laporan punya data (pekan 21-27 Sep 2026)
+      for (final d in ['2026-09-21', '2026-09-22', '2026-09-23']) {
+        for (final k in ['subuh', 'dzuhur', 'ashar']) {
+          await db.ibadahDao.setValue(d, await idOf(k), 1);
+        }
+      }
+    }
+
+    Future<WeeklyReport> week(int left, int paid, String today) async {
+      final monday = DateTime.utc(2026, 9, 21);
+      final (from, to) = weekRange(monday);
+      return buildWeeklyReport(
+        await db.ibadahDao.loadRange(from, to),
+        monday: monday,
+        today: today,
+        anchors: HijriAnchors.none,
+        latitude: _lat,
+        longitude: _long,
+        onTimeMinutes: 15,
+        soloWeight: 1,
+        male: true,
+        sholatDebtLeft: left,
+        sholatDebtPaid: paid,
+      );
+    }
+
+    Future<MonthlyReport> month(int left, int paid, String today) async {
+      final m = DateTime.utc(2026, 9, 1);
+      final (from, to) = monthRange(m);
+      return buildMonthlyReport(
+        await db.ibadahDao.loadRange(from, to),
+        month: m,
+        today: today,
+        anchors: HijriAnchors.none,
+        latitude: _lat,
+        longitude: _long,
+        onTimeMinutes: 15,
+        soloWeight: 1,
+        male: true,
+        sholatDebtLeft: left,
+        sholatDebtPaid: paid,
+      );
+    }
+
+    test('dibayar pada periode: pujian, dengan sisa', () async {
+      await seed();
+      expect(
+        has(
+          (await week(12, 5, '2026-09-23')).good,
+          '5 sholat diqadha pekan ini',
+        ),
+        isTrue,
+      );
+      expect(has((await month(12, 5, '2026-09-23')).good, 'sisa 12'), isTrue);
+      expect(has((await week(0, 5, '2026-09-23')).good, 'lunas'), isTrue);
+    });
+
+    test('periode berjalan, belum ada yang dibayar: ajakan mencicil', () async {
+      await seed();
+      expect(
+        has((await week(12, 0, '2026-09-23')).tips, 'Cicil hutang'),
+        isTrue,
+      );
+      expect(
+        has((await month(12, 0, '2026-09-23')).tips, 'Cicil hutang'),
+        isTrue,
+      );
+    });
+
+    test('periode lampau atau tanpa hutang: tidak ada saran', () async {
+      await seed();
+      expect(
+        has((await week(12, 0, '2026-10-20')).tips, 'Cicil hutang'),
+        isFalse,
+      );
+      expect(
+        has((await month(12, 0, '2026-10-20')).tips, 'Cicil hutang'),
+        isFalse,
+      );
+      expect(
+        has((await week(0, 0, '2026-09-23')).tips, 'Cicil hutang'),
+        isFalse,
+      );
+    });
+
+    test('pembayaran per periode dihitung dari tanggal bayar', () async {
+      await db.ibadahDao.addSholatQadha('subuh', 10);
+      await db.ibadahDao.paySholatQadha('subuh', 3, date: '2026-09-22');
+      await db.ibadahDao.paySholatQadha('subuh', 2, date: '2026-10-02');
+      expect(
+        await db.ibadahDao.sholatQadhaPaidBetween('2026-09-21', '2026-09-27'),
+        3,
+      );
+      expect(
+        await db.ibadahDao.sholatQadhaPaidBetween('2026-09-01', '2026-10-31'),
+        5,
+      );
+      expect(
+        await db.ibadahDao.sholatQadhaPaidBetween('2026-01-01', '2026-01-31'),
+        0,
+      );
+    });
+  });
 }

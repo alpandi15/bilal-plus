@@ -112,4 +112,25 @@ void main() {
     final items = await tester.runAsync(() => db.ibadahDao.watchItems().first);
     expect(items!.last.name, 'Sholawat');
   });
+
+  testWidgets('hutang sholat: tawarkan bayar 1 qadha sesudah mencatat sholat', (
+    tester,
+  ) async {
+    await tester.runAsync(() => db.ibadahDao.addSholatQadha('subuh', 3));
+    await open(tester);
+    // sholat tanpa hutang tidak menawarkan apa-apa
+    await tester.tap(find.text('Dzuhur'));
+    await settle(tester);
+    expect(find.textContaining('Sekalian bayar'), findsNothing);
+
+    await tester.tap(find.text('Subuh'));
+    await settle(tester);
+    expect(find.text('Sekalian bayar 1 qadha Subuh? Sisa 3.'), findsOneWidget);
+    await tester.tap(find.text('Bayar 1'));
+    await settle(tester);
+    expect(await tester.runAsync(() => db.ibadahDao.sholatQadhaRemaining()), {
+      'subuh': 2,
+    });
+    expect(find.textContaining('sisa 2'), findsOneWidget);
+  });
 }

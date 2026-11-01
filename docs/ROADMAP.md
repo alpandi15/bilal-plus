@@ -219,9 +219,10 @@ Syawal diingatkan malam sebelum tiap hari Syawal sesudah 1 Syawal.
 tabel `sholat_qadha_entries` (buku besar: tambah/bayar, bukan jumlah
 tunggal), halaman Hutang Sholat (menu "Lainnya"), "Dari catatan" menawarkan
 sholat belum tercatat 60 hari terakhir untuk DIPILIH, saran mencicil di
-laporan harian. Belum: pilihan "bayar bersamaan sholat wajib" dari
-checklist (hanya tombol Bayar 1 di halaman) dan angka hutang di laporan
-mingguan/bulanan.
+laporan harian. Menyusul (selesai): sesudah mencatat sholat wajib
+ditawarkan "Bayar 1" qadha sholat yang sama bila ada hutang (saklar di
+Pengaturan), dan laporan mingguan/bulanan memuji yang dibayar atau
+mengajak mencicil.
 
 **Selesai bila:** migrasi v9→v10 teruji (pola `pragma_table_info`),
 cadangan lama tetap terbaca, hutang bertambah/berkurang konsisten dengan

@@ -11,6 +11,7 @@ import 'sholat_time.dart';
 /// jadi jangan diganti sembarangan.
 class AppSettings {
   static const sholatTimeKey = 'sholat_time_tracking';
+  static const qadhaPromptKey = 'qadha_prompt';
   static const onTimeMinutesKey = 'sholat_on_time_minutes';
   static const lastPlaceKey = 'sholat_last_place';
   static const genderKey = 'user_gender';
@@ -67,6 +68,7 @@ const adzanPrayerKeys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
 
 class AppSettingsController extends ChangeNotifier {
   bool _sholatTime = true;
+  bool _qadhaPrompt = true;
   int _onTimeMinutes = defaultOnTimeMinutes;
   String _lastPlace = 'rumah';
   Gender? _gender;
@@ -215,6 +217,9 @@ class AppSettingsController extends ChangeNotifier {
   /// Catat jam & tempat sholat wajib (dan hitung awal waktu/terlambat/qadha).
   bool get sholatTime => _sholatTime;
 
+  /// Tawarkan membayar 1 qadha sesudah mencatat sholat wajib (bila ada hutang).
+  bool get qadhaPrompt => _qadhaPrompt;
+
   /// Batas "awal waktu", menit sesudah adzan.
   int get onTimeMinutes => _onTimeMinutes;
 
@@ -229,6 +234,7 @@ class AppSettingsController extends ChangeNotifier {
         const Duration(seconds: 5),
       );
       _sholatTime = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
+      _qadhaPrompt = prefs.getBool(AppSettings.qadhaPromptKey) ?? true;
       _onTimeMinutes =
           prefs.getInt(AppSettings.onTimeMinutesKey) ?? defaultOnTimeMinutes;
       _lastPlace = prefs.getString(AppSettings.lastPlaceKey) ?? 'rumah';
@@ -527,6 +533,12 @@ class AppSettingsController extends ChangeNotifier {
     _readerSize = v.clamp(readerSizeMin, readerSizeMax);
     notifyListeners();
     await _save((p) => p.setDouble(AppSettings.readerSizeKey, _readerSize));
+  }
+
+  Future<void> setQadhaPrompt(bool v) async {
+    _qadhaPrompt = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.qadhaPromptKey, v));
   }
 
   Future<void> setSholatTime(bool v) async {
