@@ -176,6 +176,56 @@ void main() {
       },
     );
 
+    group('saran hari ini mengikuti waktu', () {
+      String titles(DailyReport r) => r.tips.map((t) => t.title).join(' | ');
+
+      test('malam: yang sudah lewat tidak disarankan', () async {
+        await pray('subuh');
+        final now = window('isya', _date).start.add(const Duration(minutes: 5));
+        final r = await daily(_date, today: _date, now: now);
+        final t = titles(r);
+        expect(t, contains('Masih bisa hari ini'));
+        expect(t, contains('Witir'));
+        for (final gone in [
+          'Puasa sunnah',
+          'Tahajud',
+          'Dzikir pagi',
+          'Sholat Dhuha',
+        ]) {
+          expect(t, isNot(contains(gone)), reason: gone);
+        }
+        // penjelasannya juga bukan tentang amalan yang sudah lewat
+        expect(has(r.tips, 'Senin-Kamis'), isFalse);
+      });
+
+      test('pagi: puasa sunnah & dhuha masih bisa, tahajud lewat', () async {
+        await pray('subuh');
+        final now = window('subuh', _date).end.add(const Duration(hours: 1));
+        final t = titles(await daily(_date, today: _date, now: now));
+        expect(t, contains('Puasa sunnah'));
+        expect(t, isNot(contains('Tahajud')));
+      });
+
+      test('sebelum Subuh: tahajud masih bisa', () async {
+        await pray('isya');
+        final now = window(
+          'subuh',
+          _date,
+        ).start.subtract(const Duration(minutes: 30));
+        final r = await daily(_date, today: _date, now: now);
+        final names = r.tips.map((t) => t.title).join(' ');
+        expect(names, contains('Masih bisa hari ini'));
+        expect(has(r.tips, 'Puasa sunnah'), isTrue);
+      });
+
+      test('hari lampau: tetap mencantumkan semua yang belum', () async {
+        await pray('subuh');
+        final r = await daily(_date, today: '2026-09-22');
+        expect(has(r.improve, 'Belum tercentang'), isTrue);
+        expect(has(r.improve, 'Puasa sunnah'), isTrue);
+      });
+    });
+
     test('hari berhalangan', () async {
       await db.ibadahDao.setExcused(_date, true);
       final r = await daily(_date);

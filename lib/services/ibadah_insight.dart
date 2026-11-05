@@ -1,5 +1,6 @@
 import '../data/sholat_dalil.dart';
 import '../db/app_database.dart';
+import '../models/prayer_models.dart';
 import '../utils/date_key.dart';
 import 'hijri_calendar.dart';
 import 'ibadah_day.dart';
@@ -225,6 +226,23 @@ const _itemTips = <String, (String, String, String?)>{
   ),
 };
 
+/// Batas amalan hari ini: sesudah waktu ini amalannya tidak lagi disarankan.
+/// Puasa wajib & sahur berniat sebelum Subuh; niat puasa sunnah masih boleh
+/// sampai sebelum Dzuhur; tahajud = malam yang berakhir di Subuh tanggal ini;
+/// dzikir pagi mengikuti sesi di halaman Dzikir (sebelum Ashar). Amalan yang
+/// tidak tercantum (witir, dzikir petang, sedekah, buatan sendiri) tetap
+/// terbuka sampai hari berganti.
+const _closesAt = <String, PrayerKey>{
+  'sahur': PrayerKey.fajr,
+  'puasa': PrayerKey.fajr,
+  qadhaKey: PrayerKey.fajr,
+  'tahajud': PrayerKey.fajr,
+  'puasa_sunnah': PrayerKey.dhuhr,
+  'dhuha': PrayerKey.dhuhr,
+  'dzikir_pagi': PrayerKey.asr,
+  kahfiKey: PrayerKey.maghrib,
+};
+
 const _monthNames = [
   'Januari',
   'Februari',
@@ -443,6 +461,20 @@ DailyReport buildDailyReport(
       itemDone(i, values[i.id] ?? 0, hasTilawah: hasTilawah);
   final doneRawatib = rawatib.where(done).toList();
   final undoneOthers = others.where((i) => !done(i)).toList();
+  // hari ini: yang waktunya sudah lewat tidak disarankan lagi
+  final schedule = isToday
+      ? calc.calculatePrayerTimes(
+          latitude: latitude,
+          longitude: longitude,
+          date: day,
+        )
+      : null;
+  bool stillOpen(IbadahItem i) {
+    final closes = schedule?.times[_closesAt[i.key]];
+    return closes == null || clock.isBefore(closes);
+  }
+
+  final openOthers = undoneOthers.where(stillOpen).toList();
   final doneOthers = others.where(done).toList();
   final tilawahDone = tilawah.isNotEmpty && done(tilawah.first);
 
@@ -722,11 +754,11 @@ DailyReport buildDailyReport(
         ),
       );
     }
-    if (undoneOthers.isNotEmpty && hasData) {
+    if (openOthers.isNotEmpty && hasData) {
       // hari ini: masih ada waktu - jadi rekomendasi, bukan teguran
       final target = isToday ? tips : improve;
-      final names = [for (final i in undoneOthers) i.name];
-      final first = undoneOthers
+      final names = [for (final i in openOthers) i.name];
+      final first = openOthers
           .map((i) => _itemTips[i.key])
           .whereType<(String, String, String?)>()
           .firstOrNull;
@@ -797,7 +829,7 @@ DailyReport buildDailyReport(
     final allClean =
         laggards.isEmpty && ongoing.isEmpty && doneRows.length == rows.length;
     if (allClean && rows.isNotEmpty) {
-      final next = undoneOthers
+      final next = openOthers
           .map((i) => _itemTips[i.key])
           .whereType<(String, String, String?)>()
           .firstOrNull;

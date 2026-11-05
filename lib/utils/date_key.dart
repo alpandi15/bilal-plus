@@ -32,6 +32,12 @@ const _bulanPendek = [
   'Des',
 ];
 
+/// "8 Feb"
+String formatDayMonth(String key) {
+  final d = parseDateKey(key);
+  return '${d.day} ${_bulanPendek[d.month - 1]}';
+}
+
 /// "Sen, 8 Feb"
 String formatDateKeyShort(String key) {
   final d = parseDateKey(key);

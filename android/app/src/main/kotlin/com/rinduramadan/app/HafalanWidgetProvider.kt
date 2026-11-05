@@ -100,6 +100,8 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
         private const val PENDING_KEY = "pending"
         private const val HIDDEN_KEY = "hidden"
         private const val CUE_PEEK_KEY = "cue_peek"
+        private const val CUE_MIN_SP = 16f
+        private const val CUE_LINE_SPACING = 0.78f
 
         private const val CREAM = 0xFFF4F1EA.toInt()
         private const val GOLD = 0xFFF2D38A.toInt()
@@ -238,9 +240,16 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             val pxW = (ayahW * density).toInt().coerceAtLeast(60)
             val pxH = (ayahH * density).toInt().coerceAtLeast(40)
 
+            var shownItems = cueItems
             val bitmap = if (cueList) {
                 val words = root.optInt("cueWords", 1)
-                renderCue(context, cueItems.map { cueLine(it.optInt("n"), it.optString("ar"), words) }, font, pxW, pxH)
+                val (image, shown) = renderCue(
+                    context,
+                    cueItems.map { cueLine(it.optInt("n"), it.optString("ar"), words) },
+                    font, pxW, pxH,
+                )
+                shownItems = cueItems.take(shown)
+                image
             } else {
                 renderAyah(context, next.optString("ar"), font, pxW, pxH, hidden)
             }
@@ -249,7 +258,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             views.setImageViewBitmap(R.id.hw_ayah, bitmap)
             views.setContentDescription(
                 R.id.hw_ayah,
-                if (cueList) "$name ayat ${cueItems.first().optInt("n")} sampai ${cueItems.last().optInt("n")}, kata awal saja"
+                if (cueList) "$name ayat ${shownItems.first().optInt("n")} sampai ${shownItems.last().optInt("n")}, kata awal saja"
                 else "$name ayat $number",
             )
             // ketuk ayat = buka halaman hafalan surahnya (area terbesar -
@@ -259,7 +268,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             views.setViewVisibility(R.id.hw_translation, if (showTranslation && !hidden) View.VISIBLE else View.GONE)
             views.setTextViewText(R.id.hw_translation, next.optString("tr"))
 
-            views.setTextViewText(R.id.hw_label, label(cueList, cueItems, number, total, widthDp))
+            views.setTextViewText(R.id.hw_label, label(cueList, shownItems, number, total, widthDp))
             views.setViewVisibility(R.id.hw_peek, View.VISIBLE)
             views.setTextViewText(R.id.hw_peek, peekLabel(cueMode, peeking, hidden))
             views.setOnClickPendingIntent(R.id.hw_peek, broadcast(context, ACTION_PEEK, null, 1))
@@ -288,7 +297,7 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             else -> if (hidden) "Lihat" else "Tutup"
         }
 
-        /** Satu baris petunjuk: nomor ayat, kata-kata awal, dan apakah ada yang disembunyikan. */
+        /** Satu ayat petunjuk: nomor ayat, kata-kata awal, dan apakah ada yang disembunyikan. */
         internal data class CueLine(val prefix: String, val words: String, val more: Boolean)
 
         /** "12" -> "١٢". */
@@ -302,46 +311,71 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             return CueLine("(${arabicDigits(n)})", parts.take(k).joinToString(" "), parts.size > k)
         }
 
+        /** Spasi tak terputus: nomor & kata awal satu ayat tidak terpisah baris. */
+        private const val NBSP = '\u00A0'
+
+        /** Teks satu ayat petunjuk tanpa nomor: kata awal (+ "…" bila ada sisanya). */
+        internal fun cueWords(line: CueLine): String =
+            line.words.replace(' ', NBSP) + if (line.more) "$NBSP…" else ""
+
         /**
-         * Daftar petunjuk: satu baris per ayat (nomor emas, kata awal krem,
-         * "…" samar bila ada kata yang disembunyikan), rata kanan, sebesar
-         * mungkin (30..12sp) asal tiap ayat tetap satu baris dan semuanya
-         * muat dalam [w]x[h] px.
+         * Petunjuk mengalir seperti paragraf: ayat demi ayat bersambung dan
+         * baru turun bila baris penuh (nomor emas, kata awal krem, "…" samar),
+         * rata tengah, sebesar mungkin.
+         *
+         * Semua ayat diutamakan muat pada [CUE_MIN_SP] ke atas; bila tidak,
+         * ayat di ujung dilepas agar teks tetap terbaca. Mengembalikan gambar
+         * & jumlah ayat yang benar-benar tampil.
          */
-        internal fun renderCue(context: Context, lines: List<CueLine>, font: String, w: Int, h: Int): Bitmap {
+        internal fun renderCue(context: Context, lines: List<CueLine>, font: String, w: Int, h: Int): Pair<Bitmap, Int> {
             val metrics = context.resources.displayMetrics
             val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                 typeface = typeface(context, font)
                 color = CREAM
             }
-            val builder = android.text.SpannableStringBuilder()
+            var fit: StaticLayout? = null
+            var shown = lines.size
+            search@ while (shown >= 1) {
+                val text = cueText(lines.take(shown))
+                var sp = 34f
+                while (sp >= CUE_MIN_SP) {
+                    paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
+                    // font mushaf berjarak baris lebar; petunjuk pendek aman dirapatkan
+                    val l = build(text, paint, w, Int.MAX_VALUE, spacing = CUE_LINE_SPACING, pad = false)
+                    if (l.height <= h) {
+                        fit = l
+                        break@search
+                    }
+                    sp -= 1f
+                }
+                shown--
+            }
+            // panel sangat pendek: satu ayat saja pada ukuran terkecil
+            val layout = fit ?: build(cueText(lines.take(1)), paint, w, 1)
+            shown = max(1, shown)
+            val bitmap = Bitmap.createBitmap(w, max(1, min(h, layout.height)), Bitmap.Config.ARGB_8888)
+            layout.draw(Canvas(bitmap))
+            return bitmap to shown
+        }
+
+        private fun cueText(lines: List<CueLine>): CharSequence {
+            val text = android.text.SpannableStringBuilder()
             lines.forEachIndexed { i, l ->
-                if (i > 0) builder.append('\n')
-                val start = builder.length
-                builder.append(l.prefix)
-                builder.setSpan(ForegroundColorSpan(GOLD), start, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                builder.append("  ").append(l.words)
+                if (i > 0) text.append("  ")
+                val start = text.length
+                text.append(l.prefix)
+                text.setSpan(ForegroundColorSpan(GOLD), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                text.append(NBSP).append(cueWords(l))
                 if (l.more) {
-                    val s = builder.length
-                    builder.append(" …")
-                    builder.setSpan(ForegroundColorSpan(0x99F4F1EA.toInt()), s, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    text.setSpan(
+                        ForegroundColorSpan(0x99F4F1EA.toInt()),
+                        text.length - 1,
+                        text.length,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
                 }
             }
-            var layout: StaticLayout? = null
-            var sp = 30f
-            while (sp >= 12f) {
-                paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, metrics)
-                val l = build(builder, paint, w, Int.MAX_VALUE, Layout.Alignment.ALIGN_NORMAL)
-                if (l.lineCount == lines.size && l.height <= h) {
-                    layout = l
-                    break
-                }
-                sp -= 1f
-            }
-            val fit = layout ?: build(builder, paint, w, lines.size, Layout.Alignment.ALIGN_NORMAL)
-            val bitmap = Bitmap.createBitmap(w, max(1, min(h, fit.height)), Bitmap.Config.ARGB_8888)
-            fit.draw(Canvas(bitmap))
-            return bitmap
+            return text
         }
 
         private fun empty(
@@ -460,19 +494,21 @@ class HafalanWidgetProvider : HomeWidgetProvider() {
             w: Int,
             maxLines: Int,
             align: Layout.Alignment = Layout.Alignment.ALIGN_CENTER,
+            spacing: Float = 1.05f,
+            pad: Boolean = true,
         ): StaticLayout =
             if (Build.VERSION.SDK_INT >= 23) {
                 StaticLayout.Builder.obtain(text, 0, text.length, paint, w)
                     .setAlignment(align)
                     .setTextDirection(TextDirectionHeuristics.RTL)
-                    .setLineSpacing(0f, 1.05f)
-                    .setIncludePad(true)
+                    .setLineSpacing(0f, spacing)
+                    .setIncludePad(pad)
                     .setMaxLines(maxLines)
                     .setEllipsize(if (maxLines == Int.MAX_VALUE) null else TextUtils.TruncateAt.END)
                     .build()
             } else {
                 @Suppress("DEPRECATION")
-                StaticLayout(text, paint, w, align, 1.05f, 0f, true)
+                StaticLayout(text, paint, w, align, spacing, 0f, pad)
             }
     }
 }

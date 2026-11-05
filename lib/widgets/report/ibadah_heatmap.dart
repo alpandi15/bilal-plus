@@ -103,6 +103,8 @@ class ContributionCalendar extends StatelessWidget {
   final double cell;
   final double gap;
 
+  static const _labelWidth = 28.0, _maxCell = 30.0;
+
   static const _bulan = [
     'Jan',
     'Feb',
@@ -121,10 +123,21 @@ class ContributionCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (days.isEmpty) return const SizedBox.shrink();
+    return LayoutBuilder(builder: (context, box) => _grid(box.maxWidth));
+  }
+
+  Widget _grid(double width) {
     final first = parseDateKey(days.first.date);
     final lead = first.weekday - 1;
     final slots = <DayScore?>[for (var i = 0; i < lead; i++) null, ...days];
     final weeks = (slots.length / 7).ceil();
+    // rentang pendek: kotak diperbesar agar kartunya tidak kosong sebelah
+    final room = width - _labelWidth;
+    final cell = (room / weeks - gap).clamp(
+      this.cell,
+      this.cell > _maxCell ? this.cell : _maxCell,
+    );
+    final scrolls = weeks * (cell + gap) > room;
 
     Widget column(int w) {
       // label bulan di pekan pertama bulan itu
@@ -206,7 +219,7 @@ class ContributionCalendar extends StatelessWidget {
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            reverse: true,
+            reverse: scrolls,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [for (var w = 0; w < weeks; w++) column(w)],

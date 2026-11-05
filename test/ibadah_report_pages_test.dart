@@ -130,7 +130,10 @@ void main() {
       parseDateKey(today).subtract(const Duration(days: 1)),
     );
     expect(find.text('Belum ada catatan'), findsWidgets);
-    expect(find.textContaining(yesterday.substring(8)), findsWidgets);
+    expect(
+      find.textContaining('${int.parse(yesterday.substring(8))} '),
+      findsWidgets,
+    );
   });
 
   testWidgets('laporan bulanan: bulan ini, navigasi & pilih bulan', (

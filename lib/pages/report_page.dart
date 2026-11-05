@@ -12,6 +12,7 @@ import '../utils/date_key.dart';
 import '../widgets/ibadah/jamaah_info.dart';
 import '../widgets/ibadah/sholat_log_sheet.dart';
 import '../widgets/report/ibadah_heatmap.dart';
+import '../widgets/report/ibadah_trend_chart.dart';
 import '../widgets/report/reveal.dart';
 import 'ibadah_daily_report_page.dart';
 import 'ibadah_monthly_report_page.dart';
@@ -53,7 +54,7 @@ class ReportPage extends StatefulWidget {
 }
 
 class _ReportPageState extends State<ReportPage> {
-  _Range _range = _Range.quarter;
+  _Range _range = _Range.month;
   Stream<IbadahRangeData>? _stream;
   String? _key;
 
@@ -116,6 +117,7 @@ class _ReportPageState extends State<ReportPage> {
                   // tab dibuka lagi
                   key: ValueKey((_range, widget.replay)),
                   report: report,
+                  today: today,
                   range: _range,
                   onRange: (r) => setState(() => _range = r),
                   showSholat:
@@ -137,12 +139,14 @@ class _ReportBody extends StatelessWidget {
   const _ReportBody({
     super.key,
     required this.report,
+    required this.today,
     required this.range,
     required this.onRange,
     required this.showSholat,
   });
 
   final IbadahReport report;
+  final String today;
   final _Range range;
   final ValueChanged<_Range> onRange;
   final bool showSholat;
@@ -197,6 +201,20 @@ class _ReportBody extends StatelessWidget {
                   ),
                 ],
               ),
+              if (!noData) ...[
+                const SizedBox(height: 14),
+                _Card(
+                  title: 'TREN ${range.label.toUpperCase()} TERAKHIR',
+                  child: IbadahTrendChart(
+                    points: trendPoints(
+                      report.days,
+                      span: range.days,
+                      today: today,
+                    ),
+                    weekly: range.days > trendDailyMaxDays,
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               _Card(
                 title: 'KALENDER IBADAH',

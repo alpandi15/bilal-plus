@@ -32,6 +32,15 @@ class HafalanCueTest {
     }
 
     @Test
+    fun kataSatuAyatTidakTerpisahBaris() {
+        val two = HafalanWidgetProvider.cueLine(6, ayah, 2)
+        val text = HafalanWidgetProvider.cueWords(two)
+        assertFalse(text.contains(' '))
+        assertTrue(text.endsWith("\u00A0…"))
+        assertFalse(HafalanWidgetProvider.cueWords(HafalanWidgetProvider.cueLine(1, "قُلْ هُوَ", 3)).contains('…'))
+    }
+
+    @Test
     fun labelTombolIntip() {
         assertEquals("Intip", HafalanWidgetProvider.peekLabel(true, false, false))
         assertEquals("Tutup", HafalanWidgetProvider.peekLabel(true, true, false))

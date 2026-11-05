@@ -327,3 +327,61 @@ IbadahReport buildIbadahReport(
     longestStreak: longest,
   );
 }
+
+/// Satu titik grafik tren: satu hari, atau satu pekan untuk rentang panjang.
+class TrendPoint {
+  const TrendPoint({
+    required this.from,
+    required this.to,
+    required this.value,
+    this.partial = false,
+  });
+
+  /// Rentang tanggal titik ini (sama untuk titik harian).
+  final String from, to;
+
+  /// 0..1; null = tidak dihitung (berhalangan / belum ada catatan), jadi
+  /// garisnya terputus, bukan jatuh ke 0.
+  final double? value;
+
+  /// Memuat hari ini, yang masih berjalan.
+  final bool partial;
+}
+
+/// Rentang lebih panjang dari ini dirata-rata per pekan agar garisnya
+/// terbaca di layar HP.
+const trendDailyMaxDays = 120;
+
+/// Titik grafik untuk [span] hari terakhir dari [days] (urut naik). Hari ini
+/// yang belum ada centangnya dilewati supaya garis tidak jatuh ke 0 tiap pagi.
+List<TrendPoint> trendPoints(
+  List<DayScore> days, {
+  required int span,
+  required String today,
+}) {
+  final last = days.length > span ? days.sublist(days.length - span) : days;
+  final size = span > trendDailyMaxDays ? 7 : 1;
+  bool counted(DayScore d) =>
+      d.hasData &&
+      !d.excused &&
+      d.total > 0 &&
+      !(d.date == today && d.done == 0);
+  final points = <TrendPoint>[];
+  // dihitung mundur dari hari ini agar pekan terakhir selalu utuh
+  for (var end = last.length; end > 0; end -= size) {
+    final chunk = last.sublist(end - size < 0 ? 0 : end - size, end);
+    final used = chunk.where(counted).toList();
+    points.add(
+      TrendPoint(
+        from: chunk.first.date,
+        to: chunk.last.date,
+        value: used.isEmpty
+            ? null
+            : used.fold<double>(0, (a, d) => a + d.fraction.clamp(0.0, 1.0)) /
+                  used.length,
+        partial: chunk.last.date == today,
+      ),
+    );
+  }
+  return points.reversed.toList();
+}

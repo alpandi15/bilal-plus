@@ -11,9 +11,18 @@ pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
   1-3 kata pertamanya (pilih di ikon pengaturan di kanan atas); ketuk baris
   untuk mengintip ayat utuh, lalu tandai hafal.
 - **Widget Hafalan** bisa menampilkan **1 ayat penuh** (seperti biasa) atau
-  **beberapa ayat (2-8)** sekaligus, hanya kata awal tiap ayat. Tombol
-  "Intip" menampilkan ayat pertama utuh; "Ayat N" menandainya hafal dan
-  daftar bergeser.
+  **beberapa ayat (2-8)** sekaligus, hanya kata awal tiap ayat, bersambung
+  seperti paragraf dengan huruf sebesar yang muat. Tombol "Intip" menampilkan
+  ayat pertama utuh; "Ayat N" menandainya hafal dan daftar bergeser.
+
+**Laporan**
+- Grafik garis **tren ibadah** di halaman Laporan: bawaannya 30 hari
+  terakhir, mengikuti pilihan 3 bulan / 1 tahun. Sentuh grafik untuk melihat
+  angka tiap hari.
+- Halaman Laporan kini terbuka di rentang 30 hari.
+- Saran **"Masih bisa hari ini"** mengikuti waktu: amalan yang waktunya sudah
+  lewat (puasa sunnah, tahajud, Dhuha, dzikir pagi, dst.) tidak lagi
+  disarankan.
 
 **Hutang sholat**
 - Sesudah mencatat sholat wajib, aplikasi menawarkan **"Bayar 1"** qadha
