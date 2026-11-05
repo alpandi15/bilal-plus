@@ -4,7 +4,7 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
-## Belum dirilis
+## 1.18.1 (build 30) · 5 November 2026
 
 **Hafalan: mode kata awal**
 - Di halaman Hafalan ada tombol **Kata awal**: tiap ayat hanya menampilkan
