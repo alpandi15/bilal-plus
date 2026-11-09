@@ -4,6 +4,19 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.18.3 (build 32) · 9 November 2026
+
+**Dzikir pagi & petang**
+- Teks Arab diperbaiki semua: harakat, madd, dan hamzah yang hilang kini
+  lengkap (mis. *bimaa syaa'* di Ayat Kursi), salah harakat dibetulkan, dan
+  ejaannya disamakan dengan mushaf Indonesia. Ayat Kursi, tiga Qul, dan
+  *hasbiyallaah* diambil langsung dari mushaf di aplikasi.
+- Pilihan baru **Singkat ±5 menit** untuk yang waktunya sedikit: 9 bacaan
+  pendek yang keutamaannya besar (Ayat Kursi, tiga Qul, Sayyidul Istighfar,
+  *bismillaahil ladzii laa yadhurru*, *radhiitu billaah*, *hasbiyallaah*,
+  *yaa hayyu yaa qayyuum*, dzikir khusus pagi/petang, dan shalawat).
+  Pilihannya diingat, dan selesai versi singkat juga mencentang checklist.
+
 ## 1.18.2 (build 31) · 9 November 2026
 
 **Dzikir & doa usai sholat**

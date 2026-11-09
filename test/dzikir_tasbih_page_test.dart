@@ -125,6 +125,32 @@ void main() {
     expect(haptics, ['complete']);
   });
 
+  testWidgets('dzikir pagi versi singkat: tersimpan & mencentang checklist', (
+    tester,
+  ) async {
+    await open(tester, const DzikirPage(session: DzikirSession.pagi));
+    expect(find.textContaining('Hisnul Muslim · 0/'), findsOneWidget);
+    await tester.tap(find.text('Singkat ±5 menit'));
+    await settle(tester);
+    expect(settings.dzikirBrief, isTrue);
+    expect(find.textContaining('Singkat · 0/9 selesai'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Tandai selesai'),
+      600,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('Tandai selesai'));
+    await settle(tester);
+    final items = await tester.runAsync(() => db.ibadahDao.watchItems().first);
+    final id = items!.firstWhere((i) => i.key == 'dzikir_pagi').id;
+    final log = await tester.runAsync(
+      () => (db.select(
+        db.ibadahLogs,
+      )..where((l) => l.itemId.equals(id))).getSingleOrNull(),
+    );
+    expect(log?.value, 1);
+  });
+
   testWidgets('usai sholat: bagian bacaan & tombol selesai sebelum pilihan', (
     tester,
   ) async {

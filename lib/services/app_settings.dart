@@ -13,6 +13,7 @@ import 'sholat_time.dart';
 class AppSettings {
   static const sholatTimeKey = 'sholat_time_tracking';
   static const qadhaPromptKey = 'qadha_prompt';
+  static const dzikirBriefKey = 'dzikir_brief';
   static const hafalanCueKey = 'hafalan_cue';
   static const onTimeMinutesKey = 'sholat_on_time_minutes';
   static const lastPlaceKey = 'sholat_last_place';
@@ -71,6 +72,7 @@ const adzanPrayerKeys = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
 class AppSettingsController extends ChangeNotifier {
   bool _sholatTime = true;
   bool _qadhaPrompt = true;
+  bool _dzikirBrief = false;
   bool _hafalanCue = false;
   int _cueWords = cueWordsDefault;
   HafalanWidgetMode _hafalanWidgetMode = HafalanWidgetMode.full;
@@ -226,6 +228,9 @@ class AppSettingsController extends ChangeNotifier {
   /// Tawarkan membayar 1 qadha sesudah mencatat sholat wajib (bila ada hutang).
   bool get qadhaPrompt => _qadhaPrompt;
 
+  /// Dzikir pagi/petang versi singkat (bacaan pendek berkeutamaan besar).
+  bool get dzikirBrief => _dzikirBrief;
+
   /// Halaman Hafalan: tampilkan hanya kata awal tiap ayat (petunjuk awal).
   bool get hafalanCue => _hafalanCue;
 
@@ -253,6 +258,7 @@ class AppSettingsController extends ChangeNotifier {
       );
       _sholatTime = prefs.getBool(AppSettings.sholatTimeKey) ?? true;
       _qadhaPrompt = prefs.getBool(AppSettings.qadhaPromptKey) ?? true;
+      _dzikirBrief = prefs.getBool(AppSettings.dzikirBriefKey) ?? false;
       _hafalanCue = prefs.getBool(AppSettings.hafalanCueKey) ?? false;
       final w = HafalanWidgetOptions.fromPrefs(prefs);
       _cueWords = w.words;
@@ -582,6 +588,12 @@ class AppSettingsController extends ChangeNotifier {
     await _save(
       (p) => p.setInt(HafalanWidgetOptions.countKey, _hafalanWidgetCount),
     );
+  }
+
+  Future<void> setDzikirBrief(bool v) async {
+    _dzikirBrief = v;
+    notifyListeners();
+    await _save((p) => p.setBool(AppSettings.dzikirBriefKey, v));
   }
 
   Future<void> setQadhaPrompt(bool v) async {

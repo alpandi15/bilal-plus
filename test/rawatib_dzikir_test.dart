@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -121,6 +122,52 @@ void main() {
         expect(d.arti, isNotEmpty);
         expect(d.arabic, isNot(contains('((')));
       }
+    });
+
+    test('teks Arab berejaan lengkap, ayat sama dengan mushaf', () {
+      final quran = File('assets/quran/quran.json').readAsStringSync();
+      final kursi = dzikirList.firstWhere((d) => d.id == 75).arabic;
+      // "bimaa syaa'" dengan madd seperti di mushaf, bukan بِمَا شَاء
+      expect(kursi, contains('بِمَا شَاۤءَ'));
+      expect(kursi, isNot(contains('بِمَا شَاء ')));
+      final qul = dzikirList.firstWhere((d) => d.id == 76).arabic;
+      expect(qul, contains('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ'));
+      expect(qul, contains('كُفُوًا'));
+      for (final d in dzikirList) {
+        for (final t in [d.arabic, ?d.arabicPetang]) {
+          // sisa catatan sumber & ejaan tanpa harakat yang dulu lolos
+          expect(t, isNot(contains('(')), reason: d.title);
+          expect(t, isNot(contains('صلى الله')), reason: d.title);
+          expect(t, isNot(contains('إلاَّ')), reason: d.title);
+        }
+      }
+      // ayat diambil persis dari mushaf aplikasi
+      final ayat = (jsonDecode(quran)['ayah'] as List)
+          .map((a) => (a as List).first as String)
+          .toList();
+      final hasbi = dzikirList.firstWhere((d) => d.id == 83).arabic;
+      expect(ayat.any((a) => a.contains(hasbi)), isTrue);
+      expect(ayat.any((a) => kursi.contains(a.trim())), isTrue);
+      expect(
+        dzikirList.firstWhere((d) => d.id == 80).arabic,
+        contains('وَمَلَائِكَتَكَ'),
+      );
+    });
+
+    test('versi singkat: bacaan pendek pagi & petang', () {
+      final pagi = dzikirFor(DzikirSession.pagi, brief: true);
+      final petang = dzikirFor(DzikirSession.petang, brief: true);
+      expect(pagi.length, 9);
+      expect(petang.length, 9);
+      expect(pagi.map((d) => d.title), contains('Sayyidul Istighfar'));
+      expect(pagi.map((d) => d.id), contains(94));
+      expect(petang.map((d) => d.id), contains(97));
+      expect(pagi.length, lessThan(dzikirFor(DzikirSession.pagi).length));
+      // dzikir setelah sholat tidak terpengaruh
+      expect(
+        dzikirFor(DzikirSession.sholat, prayer: 'dzuhur', brief: true),
+        dzikirFor(DzikirSession.sholat, prayer: 'dzuhur'),
+      );
     });
 
     test('versi petang berbeda dari versi pagi', () {

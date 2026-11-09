@@ -1,8 +1,9 @@
 // DIBUAT OTOMATIS oleh tool/gen_dzikir.py - jangan diedit langsung.
 //
 // Dzikir pagi & petang - Hisnul Muslim (Sa'id bin Wahf Al-Qahthani),
-// bab 27. Teks Arab dari hisnmuslim.com (tool/hisnmuslim_27_ar.json);
-// versi petang disusun dari catatan sumber "وإذا أمسى قال". Latin &
+// bab 27. Teks Arab ditulis ulang dengan ejaan mushaf Indonesia
+// (rujukan: hisnmuslim.com, tool/hisnmuslim_27_ar.json); ayat dari
+// assets/quran/quran.json. `brief` = termasuk versi singkat. Latin &
 // terjemahan Indonesia bersifat bantuan - rujukan utama teks Arab.
 
 import '../services/dzikir.dart';
@@ -14,7 +15,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'أَعُوذُ بِاللَّهِ مِنَ الشَّيطَانِ الرَّجِيمِ ﴿اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَوَاتِ وَالْأَرْضَ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾',
+        'أَعُوْذُ بِاللّٰهِ مِنَ الشَّيْطَانِ الرَّجِيْمِ ﴿اَللّٰهُ لَآ اِلٰهَ اِلَّا هُوَۚ اَلْحَيُّ الْقَيُّوْمُ ەۚ لَا تَأْخُذُهٗ سِنَةٌ وَّلَا نَوْمٌۗ لَهٗ مَا فِى السَّمٰوٰتِ وَمَا فِى الْاَرْضِۗ مَنْ ذَا الَّذِيْ يَشْفَعُ عِنْدَهٗٓ اِلَّا بِاِذْنِهٖۗ يَعْلَمُ مَا بَيْنَ اَيْدِيْهِمْ وَمَا خَلْفَهُمْۚ وَلَا يُحِيْطُوْنَ بِشَيْءٍ مِّنْ عِلْمِهٖٓ اِلَّا بِمَا شَاۤءَۚ وَسِعَ كُرْسِيُّهُ السَّمٰوٰتِ وَالْاَرْضَۚ وَلَا يَـُٔوْدُهٗ حِفْظُهُمَاۚ وَهُوَ الْعَلِيُّ الْعَظِيْمُ﴾',
     arabicPetang: null,
     latin:
         'A\'uudzu billaahi minasy syaithaanir rajiim. Allaahu laa ilaaha illaa huwal hayyul qayyuum, laa ta\'khudzuhuu sinatuw wa laa naum, lahuu maa fis samaawaati wa maa fil ardh, man dzal ladzii yasyfa\'u \'indahuu illaa bi-idznih, ya\'lamu maa baina aidiihim wa maa khalfahum, wa laa yuhiithuuna bisyai-im min \'ilmihii illaa bimaa syaa\', wasi\'a kursiyyuhus samaawaati wal ardh, wa laa ya-uuduhuu hifzhuhumaa, wa huwal \'aliyyul \'azhiim.',
@@ -25,6 +26,7 @@ const dzikirList = <Dzikir>[
     note:
         'Dijaga dari gangguan setan hingga petang (bila dibaca pagi) atau hingga pagi (bila dibaca petang).',
     source: 'HR. Al-Hakim',
+    brief: true,
   ),
   Dzikir(
     id: 76,
@@ -32,7 +34,7 @@ const dzikirList = <Dzikir>[
     repeat: 3,
     time: DzikirTime.both,
     arabic:
-        'بسم الله الرحمن الرحيم ﴿قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُواً أَحَدٌ﴾\nبسم الله الرحمن الرحيم ﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِن شَرِّ مَا خَلَقَ ۝ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ﴾\nبسم الله الرحمن الرحيم ﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَهِ النَّاسِ ۝ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَ النَّاسِ﴾',
+        'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ ﴿قُلْ هُوَ اللّٰهُ اَحَدٌۚ ۝ اَللّٰهُ الصَّمَدُۚ ۝ لَمْ يَلِدْ وَلَمْ يُوْلَدْۙ ۝ وَلَمْ يَكُنْ لَّهٗ كُفُوًا اَحَدٌ﴾\nبِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ ﴿قُلْ اَعُوْذُ بِرَبِّ الْفَلَقِۙ ۝ مِنْ شَرِّ مَا خَلَقَۙ ۝ وَمِنْ شَرِّ غَاسِقٍ اِذَا وَقَبَۙ ۝ وَمِنْ شَرِّ النَّفّٰثٰتِ فِى الْعُقَدِۙ ۝ وَمِنْ شَرِّ حَاسِدٍ اِذَا حَسَدَ﴾\nبِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ ﴿قُلْ اَعُوْذُ بِرَبِّ النَّاسِۙ ۝ مَلِكِ النَّاسِۙ ۝ اِلٰهِ النَّاسِۙ ۝ مِنْ شَرِّ الْوَسْوَاسِ ەۙ الْخَنَّاسِۖ ۝ الَّذِيْ يُوَسْوِسُ فِيْ صُدُوْرِ النَّاسِۙ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ﴾',
     arabicPetang: null,
     latin:
         'Bismillaahir rahmaanir rahiim. Qul huwallaahu ahad. Allaahush shamad. Lam yalid wa lam yuulad. Wa lam yakul lahuu kufuwan ahad.\nBismillaahir rahmaanir rahiim. Qul a\'uudzu birabbil falaq. Min syarri maa khalaq. Wa min syarri ghaasiqin idzaa waqab. Wa min syarrin naffaatsaati fil \'uqad. Wa min syarri haasidin idzaa hasad.\nBismillaahir rahmaanir rahiim. Qul a\'uudzu birabbin naas. Malikin naas. Ilaahin naas. Min syarril waswaasil khannaas. Alladzii yuwaswisu fii shuduurin naas. Minal jinnati wan naas.',
@@ -42,6 +44,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Mencukupkan (melindungi) dari segala sesuatu.',
     source: 'HR. Abu Dawud & At-Tirmidzi',
+    brief: true,
   ),
   Dzikir(
     id: 77,
@@ -49,9 +52,9 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيرَ مَا بَعْدَهُ ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
+        'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلّٰهِ، وَالْحَمْدُ لِلّٰهِ، لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِيْ هٰذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْ هٰذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوْذُ بِكَ مِنَ الْكَسَلِ وَسُوْءِ الْكِبَرِ، رَبِّ أَعُوْذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
     arabicPetang:
-        'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
+        'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلّٰهِ، وَالْحَمْدُ لِلّٰهِ، لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِيْ هٰذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْ هٰذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوْذُ بِكَ مِنَ الْكَسَلِ وَسُوْءِ الْكِبَرِ، رَبِّ أَعُوْذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
     latin:
         'Ashbahnaa wa ashbahal mulku lillaah, walhamdu lillaah, laa ilaaha illallaahu wahdahuu laa syariika lah, lahul mulku wa lahul hamdu wa huwa \'alaa kulli syai-in qadiir. Rabbi as-aluka khaira maa fii haadzal yaumi wa khaira maa ba\'dah, wa a\'uudzu bika min syarri maa fii haadzal yaumi wa syarri maa ba\'dah. Rabbi a\'uudzu bika minal kasali wa suu-il kibar. Rabbi a\'uudzu bika min \'adzaabin fin naari wa \'adzaabin fil qabr.',
     latinPetang:
@@ -69,9 +72,9 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا ، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ',
+        'اَللّٰهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوْتُ، وَإِلَيْكَ النُّشُوْرُ',
     arabicPetang:
-        'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ',
+        'اَللّٰهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوْتُ، وَإِلَيْكَ الْمَصِيْرُ',
     latin:
         'Allaahumma bika ashbahnaa, wa bika amsainaa, wa bika nahyaa, wa bika namuutu wa ilaikan nusyuur.',
     latinPetang:
@@ -89,7 +92,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لاَ يَغْفِرُ الذُّنوبَ إِلاَّ أَنْتَ',
+        'اَللّٰهُمَّ أَنْتَ رَبِّيْ لَا إِلٰهَ إِلَّا أَنْتَ، خَلَقْتَنِيْ وَأَنَا عَبْدُكَ، وَأَنَا عَلٰى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوْذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوْءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوْءُ بِذَنْبِيْ، فَاغْفِرْ لِيْ، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوْبَ إِلَّا أَنْتَ',
     arabicPetang: null,
     latin:
         'Allaahumma anta rabbii laa ilaaha illaa anta, khalaqtanii wa ana \'abduka, wa ana \'alaa \'ahdika wa wa\'dika mastatha\'tu, a\'uudzu bika min syarri maa shana\'tu, abuu-u laka bini\'matika \'alayya, wa abuu-u bidzanbii faghfir lii fa innahuu laa yaghfirudz dzunuuba illaa anta.',
@@ -100,6 +103,7 @@ const dzikirList = <Dzikir>[
     note:
         'Siapa yang membacanya dengan yakin lalu wafat pada hari/malam itu, ia termasuk penghuni surga.',
     source: 'HR. Al-Bukhari',
+    brief: true,
   ),
   Dzikir(
     id: 80,
@@ -107,9 +111,9 @@ const dzikirList = <Dzikir>[
     repeat: 4,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلاَئِكَتِكَ، وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّداً عَبْدُكَ وَرَسُولُكَ',
+        'اَللّٰهُمَّ إِنِّيْ أَصْبَحْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلَائِكَتَكَ، وَجَمِيْعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللّٰهُ لَا إِلٰهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيْكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُوْلُكَ',
     arabicPetang:
-        'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلاَئِكَتِكَ، وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّداً عَبْدُكَ وَرَسُولُكَ',
+        'اَللّٰهُمَّ إِنِّيْ أَمْسَيْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ، وَمَلَائِكَتَكَ، وَجَمِيْعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللّٰهُ لَا إِلٰهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيْكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُوْلُكَ',
     latin:
         'Allaahumma innii ashbahtu usyhiduka wa usyhidu hamalata \'arsyika wa malaa-ikataka wa jamii\'a khalqika, annaka antallaahu laa ilaaha illaa anta wahdaka laa syariika laka, wa anna muhammadan \'abduka wa rasuuluk.',
     latinPetang:
@@ -127,9 +131,9 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لاَ شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
+        'اَللّٰهُمَّ مَا أَصْبَحَ بِيْ مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيْكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
     arabicPetang:
-        'اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لاَ شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
+        'اَللّٰهُمَّ مَا أَمْسَى بِيْ مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيْكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
     latin:
         'Allaahumma maa ashbaha bii min ni\'matin au bi-ahadin min khalqika fa minka wahdaka laa syariika laka, fa lakal hamdu wa lakasy syukru.',
     latinPetang:
@@ -147,7 +151,7 @@ const dzikirList = <Dzikir>[
     repeat: 3,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لاَ إِلَهَ إِلاَّ أَنْتَ. اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ، وَالفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ القَبْرِ، لاَ إِلَهَ إِلاَّ أَنْتَ',
+        'اَللّٰهُمَّ عَافِنِيْ فِيْ بَدَنِيْ، اَللّٰهُمَّ عَافِنِيْ فِيْ سَمْعِيْ، اَللّٰهُمَّ عَافِنِيْ فِيْ بَصَرِيْ، لَا إِلٰهَ إِلَّا أَنْتَ. اَللّٰهُمَّ إِنِّيْ أَعُوْذُ بِكَ مِنَ الْكُفْرِ وَالْفَقْرِ، وَأَعُوْذُ بِكَ مِنْ عَذَابِ الْقَبْرِ، لَا إِلٰهَ إِلَّا أَنْتَ',
     arabicPetang: null,
     latin:
         'Allaahumma \'aafinii fii badanii, allaahumma \'aafinii fii sam\'ii, allaahumma \'aafinii fii basharii, laa ilaaha illaa anta. Allaahumma innii a\'uudzu bika minal kufri wal faqri, wa a\'uudzu bika min \'adzaabil qabri, laa ilaaha illaa anta.',
@@ -164,7 +168,7 @@ const dzikirList = <Dzikir>[
     repeat: 7,
     time: DzikirTime.both,
     arabic:
-        'حَسْبِيَ اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ عَلَيهِ تَوَكَّلتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ',
+        'حَسْبِيَ اللّٰهُ لَآ اِلٰهَ اِلَّا هُوَ ۗ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيْمِ',
     arabicPetang: null,
     latin:
         'Hasbiyallaahu laa ilaaha illaa huwa, \'alaihi tawakkaltu wa huwa rabbul \'arsyil \'azhiim.',
@@ -174,6 +178,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Allah mencukupkan urusan dunia dan akhiratnya.',
     source: 'HR. Abu Dawud',
+    brief: true,
   ),
   Dzikir(
     id: 84,
@@ -181,7 +186,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ: فِي دِينِي وَدُنْيَايَ وَأَهْلِي، وَمَالِي، اللَّهُمَّ اسْتُرْ عَوْرَاتِي، وَآمِنْ رَوْعَاتِي، اللَّهُمَّ احْفَظْنِي مِنْ بَينِ يَدَيَّ، وَمِنْ خَلْفِي، وَعَنْ يَمِينِي، وَعَنْ شِمَالِي، وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي',
+        'اَللّٰهُمَّ إِنِّيْ أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ، اَللّٰهُمَّ إِنِّيْ أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِيْ دِيْنِيْ وَدُنْيَايَ وَأَهْلِيْ وَمَالِيْ، اَللّٰهُمَّ اسْتُرْ عَوْرَاتِيْ، وَآمِنْ رَوْعَاتِيْ، اَللّٰهُمَّ احْفَظْنِيْ مِنْ بَيْنِ يَدَيَّ، وَمِنْ خَلْفِيْ، وَعَنْ يَمِيْنِيْ، وَعَنْ شِمَالِيْ، وَمِنْ فَوْقِيْ، وَأَعُوْذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِيْ',
     arabicPetang: null,
     latin:
         'Allaahumma innii as-alukal \'afwa wal \'aafiyata fid dunyaa wal aakhirah. Allaahumma innii as-alukal \'afwa wal \'aafiyata fii diinii wa dunyaaya wa ahlii wa maalii. Allaahummastur \'auraatii wa aamin rau\'aatii. Allaahummahfazhnii min baini yadayya wa min khalfii wa \'an yamiinii wa \'an syimaalii wa min fauqii, wa a\'uudzu bi\'azhamatika an ughtaala min tahtii.',
@@ -198,7 +203,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'اللَّهُمَّ عَالِمَ الغَيْبِ وَالشَّهَادَةِ فَاطِرَ السَّمَوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطانِ وَشَرَكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءاً، أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ',
+        'اَللّٰهُمَّ عَالِمَ الْغَيْبِ وَالشَّهَادَةِ، فَاطِرَ السَّمٰوَاتِ وَالْأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيْكَهُ، أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا أَنْتَ، أَعُوْذُ بِكَ مِنْ شَرِّ نَفْسِيْ، وَمِنْ شَرِّ الشَّيْطَانِ وَشَرَكِهِ، وَأَنْ أَقْتَرِفَ عَلٰى نَفْسِيْ سُوْءًا، أَوْ أَجُرَّهُ إِلٰى مُسْلِمٍ',
     arabicPetang: null,
     latin:
         'Allaahumma \'aalimal ghaibi wasy syahaadah, faathiras samaawaati wal ardh, rabba kulli syai-in wa maliikah, asyhadu allaa ilaaha illaa anta, a\'uudzu bika min syarri nafsii wa min syarrisy syaithaani wa syarakih, wa an aqtarifa \'alaa nafsii suu-an au ajurrahuu ilaa muslim.',
@@ -215,7 +220,7 @@ const dzikirList = <Dzikir>[
     repeat: 3,
     time: DzikirTime.both,
     arabic:
-        'بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلاَ فِي السّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ',
+        'بِسْمِ اللّٰهِ الَّذِيْ لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ، وَهُوَ السَّمِيْعُ الْعَلِيْمُ',
     arabicPetang: null,
     latin:
         'Bismillaahil ladzii laa yadhurru ma\'asmihii syai-un fil ardhi wa laa fis samaa-i wa huwas samii\'ul \'aliim.',
@@ -225,6 +230,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Tidak akan ditimpa bahaya apa pun (hingga pagi/petang).',
     source: 'HR. Abu Dawud & At-Tirmidzi',
+    brief: true,
   ),
   Dzikir(
     id: 87,
@@ -232,7 +238,7 @@ const dzikirList = <Dzikir>[
     repeat: 3,
     time: DzikirTime.both,
     arabic:
-        'رَضِيتُ بِاللَّهِ رَبَّاً، وَبِالْإِسْلاَمِ دِيناً، وَبِمُحَمَّدٍ صلى الله عليه وسلم نَبِيّاً',
+        'رَضِيْتُ بِاللّٰهِ رَبًّا، وَبِالْإِسْلَامِ دِيْنًا، وَبِمُحَمَّدٍ صَلَّى اللّٰهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا',
     arabicPetang: null,
     latin:
         'Radhiitu billaahi rabbaa, wa bil islaami diinaa, wa bi muhammadin shallallaahu \'alaihi wa sallama nabiyyaa.',
@@ -242,6 +248,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Allah pasti meridainya pada hari kiamat.',
     source: 'HR. Abu Dawud & At-Tirmidzi',
+    brief: true,
   ),
   Dzikir(
     id: 88,
@@ -249,7 +256,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغيثُ أَصْلِحْ لِي شَأْنِيَ كُلَّهُ وَلاَ تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ',
+        'يَا حَيُّ يَا قَيُّوْمُ، بِرَحْمَتِكَ أَسْتَغِيْثُ، أَصْلِحْ لِيْ شَأْنِيْ كُلَّهُ، وَلَا تَكِلْنِيْ إِلٰى نَفْسِيْ طَرْفَةَ عَيْنٍ',
     arabicPetang: null,
     latin:
         'Yaa hayyu yaa qayyuum, birahmatika astaghiits, ashlih lii sya-nii kullahuu wa laa takilnii ilaa nafsii tharfata \'ain.',
@@ -259,6 +266,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: null,
     source: 'HR. Al-Hakim',
+    brief: true,
   ),
   Dzikir(
     id: 89,
@@ -266,9 +274,9 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُـمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذَا الْيَوْمِ:فَتْحَهُ، وَنَصْرَهُ، وَنورَهُ، وَبَرَكَتَهُ، وَهُدَاهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ',
+        'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلّٰهِ رَبِّ الْعَالَمِيْنَ، اَللّٰهُمَّ إِنِّيْ أَسْأَلُكَ خَيْرَ هٰذَا الْيَوْمِ: فَتْحَهُ، وَنَصْرَهُ، وَنُوْرَهُ، وَبَرَكَتَهُ، وَهُدَاهُ، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْهِ وَشَرِّ مَا بَعْدَهُ',
     arabicPetang:
-        'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذِهِ اللَّيْلَةِ: فَتْحَهَا، وَنَصْرَهَا، وَنُورَهَا، وَبَرَكَتَهَا، وَهُدَاهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهَا وَشَرِّ مَا بَعْدَهَا',
+        'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلّٰهِ رَبِّ الْعَالَمِيْنَ، اَللّٰهُمَّ إِنِّيْ أَسْأَلُكَ خَيْرَ هٰذِهِ اللَّيْلَةِ: فَتْحَهَا، وَنَصْرَهَا، وَنُوْرَهَا، وَبَرَكَتَهَا، وَهُدَاهَا، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْهَا وَشَرِّ مَا بَعْدَهَا',
     latin:
         'Ashbahnaa wa ashbahal mulku lillaahi rabbil \'aalamiin. Allaahumma innii as-aluka khaira haadzal yaum, fathahuu wa nashrahuu wa nuurahuu wa barakatahuu wa hudaah, wa a\'uudzu bika min syarri maa fiihi wa syarri maa ba\'dah.',
     latinPetang:
@@ -286,9 +294,9 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.both,
     arabic:
-        'أَصْبَحْنا عَلَى فِطْرَةِ الْإِسْلاَمِ، وَعَلَى كَلِمَةِ الْإِخْلاَصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صلى الله عليه وسلم، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفاً مُسْلِماً وَمَا كَانَ مِنَ الْمُشرِكِينَ',
+        'أَصْبَحْنَا عَلٰى فِطْرَةِ الْإِسْلَامِ، وَعَلٰى كَلِمَةِ الْإِخْلَاصِ، وَعَلٰى دِيْنِ نَبِيِّنَا مُحَمَّدٍ صَلَّى اللّٰهُ عَلَيْهِ وَسَلَّمَ، وَعَلٰى مِلَّةِ أَبِيْنَا إِبْرَاهِيْمَ، حَنِيْفًا مُسْلِمًا، وَمَا كَانَ مِنَ الْمُشْرِكِيْنَ',
     arabicPetang:
-        'أَمْسَيْنَا عَلَى فِطْرَةِ الْإِسْلاَمِ، وَعَلَى كَلِمَةِ الْإِخْلاَصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صلى الله عليه وسلم، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ، حَنِيفاً مُسْلِماً وَمَا كَانَ مِنَ الْمُشرِكِينَ',
+        'أَمْسَيْنَا عَلٰى فِطْرَةِ الْإِسْلَامِ، وَعَلٰى كَلِمَةِ الْإِخْلَاصِ، وَعَلٰى دِيْنِ نَبِيِّنَا مُحَمَّدٍ صَلَّى اللّٰهُ عَلَيْهِ وَسَلَّمَ، وَعَلٰى مِلَّةِ أَبِيْنَا إِبْرَاهِيْمَ، حَنِيْفًا مُسْلِمًا، وَمَا كَانَ مِنَ الْمُشْرِكِيْنَ',
     latin:
         'Ashbahnaa \'alaa fithratil islaam, wa \'alaa kalimatil ikhlaash, wa \'alaa diini nabiyyinaa muhammadin shallallaahu \'alaihi wa sallam, wa \'alaa millati abiinaa ibraahiima haniifam muslimaa, wa maa kaana minal musyrikiin.',
     latinPetang:
@@ -305,7 +313,7 @@ const dzikirList = <Dzikir>[
     title: 'Subhaanallaahi wa bihamdih',
     repeat: 100,
     time: DzikirTime.both,
-    arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+    arabic: 'سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ',
     arabicPetang: null,
     latin: 'Subhaanallaahi wa bihamdih.',
     latinPetang: null,
@@ -321,7 +329,7 @@ const dzikirList = <Dzikir>[
     repeat: 10,
     time: DzikirTime.both,
     arabic:
-        'لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ ، أَوْ (مرَّةً واحدةً عندَ الكَسَلِ)',
+        'لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْرٌ',
     arabicPetang: null,
     latin:
         'Laa ilaaha illallaahu wahdahuu laa syariika lah, lahul mulku wa lahul hamdu wa huwa \'alaa kulli syai-in qadiir.',
@@ -338,7 +346,7 @@ const dzikirList = <Dzikir>[
     repeat: 100,
     time: DzikirTime.pagi,
     arabic:
-        'لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',
+        'لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْرٌ',
     arabicPetang: null,
     latin:
         'Laa ilaaha illallaahu wahdahuu laa syariika lah, lahul mulku wa lahul hamdu wa huwa \'alaa kulli syai-in qadiir.',
@@ -356,7 +364,7 @@ const dzikirList = <Dzikir>[
     repeat: 3,
     time: DzikirTime.pagi,
     arabic:
-        'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ: عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ',
+        'سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ',
     arabicPetang: null,
     latin:
         'Subhaanallaahi wa bihamdihii \'adada khalqihii wa ridhaa nafsihii wa zinata \'arsyihii wa midaada kalimaatih.',
@@ -366,6 +374,7 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: null,
     source: 'HR. Muslim',
+    brief: true,
   ),
   Dzikir(
     id: 95,
@@ -373,7 +382,7 @@ const dzikirList = <Dzikir>[
     repeat: 1,
     time: DzikirTime.pagi,
     arabic:
-        'اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْماً نَافِعاً، وَرِزْقاً طَيِّباً، وَعَمَلاً مُتَقَبَّلاً',
+        'اَللّٰهُمَّ إِنِّيْ أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا',
     arabicPetang: null,
     latin:
         'Allaahumma innii as-aluka \'ilman naafi\'aa, wa rizqan thayyibaa, wa \'amalan mutaqabbalaa.',
@@ -389,7 +398,7 @@ const dzikirList = <Dzikir>[
     title: 'Astaghfirullaaha wa atuubu ilaih',
     repeat: 100,
     time: DzikirTime.pagi,
-    arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+    arabic: 'أَسْتَغْفِرُ اللّٰهَ وَأَتُوْبُ إِلَيْهِ',
     arabicPetang: null,
     latin: 'Astaghfirullaaha wa atuubu ilaih.',
     latinPetang: null,
@@ -403,7 +412,7 @@ const dzikirList = <Dzikir>[
     title: 'A\'uudzu bikalimaatillaahit taammaat',
     repeat: 3,
     time: DzikirTime.petang,
-    arabic: 'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ',
+    arabic: 'أَعُوْذُ بِكَلِمَاتِ اللّٰهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ',
     arabicPetang: null,
     latin: 'A\'uudzu bikalimaatillaahit taammaati min syarri maa khalaq.',
     latinPetang: null,
@@ -412,13 +421,14 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Tidak akan dicelakai oleh sengatan binatang malam itu.',
     source: 'HR. Ahmad & At-Tirmidzi',
+    brief: true,
   ),
   Dzikir(
     id: 98,
     title: 'Shalawat kepada Nabi',
     repeat: 10,
     time: DzikirTime.both,
-    arabic: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
+    arabic: 'اَللّٰهُمَّ صَلِّ وَسَلِّمْ عَلٰى نَبِيِّنَا مُحَمَّدٍ',
     arabicPetang: null,
     latin: 'Allaahumma shalli wa sallim \'alaa nabiyyinaa muhammad.',
     latinPetang: null,
@@ -427,5 +437,6 @@ const dzikirList = <Dzikir>[
     artiPetang: null,
     note: 'Mendapat syafaat Nabi pada hari kiamat.',
     source: 'HR. Ath-Thabrani',
+    brief: true,
   ),
 ];

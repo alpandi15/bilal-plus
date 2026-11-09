@@ -118,7 +118,9 @@ class _DzikirPageState extends State<DzikirPage> {
     // dzikir terakhir yang tuntas: pola "selesai semua" (di _markChecklist)
     final last =
         reached &&
-        _list.every((x) => x.id == d.id || (_counts[x.id] ?? 0) >= x.repeat);
+        _required.every(
+          (x) => x.id == d.id || (_counts[x.id] ?? 0) >= x.repeat,
+        );
     if (_haptic && !last) {
       Haptics.play(reached ? HapticKind.target : HapticKind.tap);
     }
@@ -139,7 +141,13 @@ class _DzikirPageState extends State<DzikirPage> {
     );
   }
 
-  List<Dzikir> get _list => dzikirFor(_session!, prayer: _prayer);
+  /// Versi singkat dzikir pagi/petang (pilihan tersimpan di pengaturan).
+  bool get _brief =>
+      _session != DzikirSession.sholat &&
+      (AppSettingsScope.maybeOf(context)?.dzikirBrief ?? false);
+
+  List<Dzikir> get _list =>
+      dzikirFor(_session!, prayer: _prayer, brief: _brief);
 
   /// Bacaan wajib di sesi ini (yang pilihan tidak dihitung).
   List<Dzikir> get _required => [
@@ -198,7 +206,7 @@ class _DzikirPageState extends State<DzikirPage> {
             title: session.title,
             subtitle:
                 '${session == DzikirSession.sholat ? 'Bacaan di masjid' : 'Hisnul Muslim'}'
-                ' · $done/${required.length} selesai',
+                '${_brief ? ' · Singkat' : ''} · $done/${required.length} selesai',
             trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.tune_rounded, color: Color(0xFF92400E)),
               onSelected: (v) {
@@ -255,6 +263,30 @@ class _DzikirPageState extends State<DzikirPage> {
                   showSelectedIcon: false,
                   onSelectionChanged: (v) => _switch(v.first),
                 ),
+                if (session != DzikirSession.sholat) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      for (final (brief, label) in const [
+                        (false, 'Lengkap'),
+                        (true, 'Singkat ±5 menit'),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            label: Text(label),
+                            selected: _brief == brief,
+                            selectedColor: const Color(0xFFFDE68A),
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
+                            onSelected: (_) => settings?.setDzikirBrief(brief),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
                 if (session == DzikirSession.sholat) ...[
                   const SizedBox(height: 8),
                   SingleChildScrollView(

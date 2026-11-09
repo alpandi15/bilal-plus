@@ -55,6 +55,7 @@ class Dzikir {
     this.note,
     this.group,
     this.optional = false,
+    this.brief = false,
   });
 
   /// Nomor di Hisnul Muslim (pagi/petang); nomor urut untuk dzikir setelah
@@ -66,6 +67,9 @@ class Dzikir {
 
   /// Bacaan pilihan: tidak dihitung ke progres & tanda selesai.
   final bool optional;
+
+  /// Termasuk dzikir pagi/petang versi singkat.
+  final bool brief;
   final String title;
   final int repeat;
   final DzikirTime time;
@@ -92,10 +96,14 @@ class Dzikir {
       s == DzikirSession.petang ? artiPetang ?? arti : arti;
 }
 
-List<Dzikir> dzikirFor(DzikirSession s, {String? prayer}) => [
-  for (final d in s == DzikirSession.sholat ? dzikirSholatList : dzikirList)
-    if (d.readIn(s, prayer: prayer)) d,
-];
+/// Dzikir sesi [s]. [brief] = versi singkat (hanya pagi/petang).
+List<Dzikir> dzikirFor(DzikirSession s, {String? prayer, bool brief = false}) =>
+    [
+      for (final d in s == DzikirSession.sholat ? dzikirSholatList : dzikirList)
+        if (d.readIn(s, prayer: prayer) &&
+            (!brief || s == DzikirSession.sholat || d.brief))
+          d,
+    ];
 
 /// Sholat wajib yang terakhir masuk pada [now] ('subuh'..'isya') - untuk
 /// dzikir setelah sholat. Sebelum Subuh = Isya (malam sebelumnya).
