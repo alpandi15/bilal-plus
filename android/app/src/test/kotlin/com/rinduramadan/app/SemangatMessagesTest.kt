@@ -78,4 +78,34 @@ class SemangatMessagesTest {
         val m = msg(s, at(8, 0))
         assertFalse(m.long.any { "HR." in it || "QS." in it })
     }
+
+    private val down = SemangatWidgetProvider.Companion.Messages(listOf("besok semangat"), listOf("b"))
+
+    private fun allDone() = listOf(
+        prayer(1, "Subuh", at(4, 58), at(6, 11), done = true, status = "onTime", prayedMs = at(5, 0)),
+        prayer(2, "Dzuhur", at(12, 17), at(15, 28), done = true, status = "onTime", prayedMs = at(12, 20)),
+        prayer(3, "Ashar", at(15, 28), at(18, 20), done = true, status = "onTime", prayedMs = at(15, 30)),
+        prayer(4, "Maghrib", at(18, 20), at(19, 29), done = true, status = "onTime", prayedMs = at(18, 25)),
+        prayer(5, "Isya", at(19, 29), at(28, 58), done = true, status = "onTime", prayedMs = at(19, 35)),
+    )
+
+    private fun msgDown(sholat: List<Prayer>, now: Long) =
+        SemangatWidgetProvider.messages(sholat, null, false, now, 15 * 60_000L, none, motivation, down)
+
+    @Test
+    fun ibadah_turun_malam_hari_diberi_semangat_untuk_besok() {
+        // 20:00, sesudah Isya: penyemangat menang atas tanggapan "Isya on time"
+        assertTrue(msgDown(allDone(), at(20, 0)).long == down.long)
+        // siang hari belum dinilai turun
+        assertFalse(msgDown(allDone(), at(16, 0)).long == down.long)
+    }
+
+    @Test
+    fun ibadah_turun_tapi_ada_terlewat_qadha_dulu() {
+        val s = allDone().toMutableList()
+        s[1] = prayer(2, "Dzuhur", at(12, 17), at(15, 28))
+        val m = msgDown(s, at(21, 0))
+        assertFalse(m.long == down.long)
+        assertTrue(m.long.any { "Dzuhur" in it })
+    }
 }

@@ -287,6 +287,23 @@ class _DailyBody extends StatelessWidget {
                 chips: chips,
                 empty: !hasData,
               ),
+              if (!r.note.isEmpty) ...[
+                const SizedBox(height: 14),
+                Entrance(
+                  delay: 60,
+                  child: ReportCard(
+                    title: 'CATATAN HARI INI',
+                    child: Text(
+                      r.note.summary,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: Color(0xFF44403C),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               Entrance(
                 delay: 100,

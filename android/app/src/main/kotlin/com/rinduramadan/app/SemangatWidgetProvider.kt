@@ -32,6 +32,7 @@ import kotlin.math.ceil
  * dengan ajakan & semangat, bukan teguran. Urutan prioritas:
  * berhalangan > sholat berjalan belum dicentang > sebentar lagi masuk
  * (<= [SOON_MIN] menit) > puasa Tarwiyah/Arafah (& malam sebelumnya) >
+ * ibadah hari ini turun dari biasanya (malam, [WidgetDecline]) >
  * lima waktu tuntas > ada yang terlewat hari ini >
  * tanggapan sholat terakhir (awal waktu/terlambat/qadha) > sholat berikutnya.
  * Variasi kalimat dipilih per hari (tidak berganti tiap refresh).
@@ -257,7 +258,15 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                 ),
                 seed,
             )
-            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs, fast, motivation)
+            // malam & ibadah hari ini turun dari rata-rata 7 hari: penyemangat
+            val recent = if (root.has("recentRate")) root.optDouble("recentRate") else null
+            val down = if (WidgetDecline.isDown(todayRate(day, pending, date), recent)) {
+                WidgetDecline.lines(
+                    day.optString("reason", "").ifEmpty { null },
+                    day.optBoolean("note", false),
+                ).let { Messages(it.first, it.second) }
+            } else null
+            val msgs = messages(sholat, tomorrowSubuh, excused, now, onTimeMs, fast, motivation, down)
             val salt = seed + (sholat.firstOrNull { !it.done }?.id ?: 0)
             fun rotate(list: List<String>): List<String> {
                 val start = Math.floorMod(salt, list.size)
@@ -295,6 +304,44 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             return views
         }
 
+        /**
+         * % tuntas hari ini (0..1) seperti di aplikasi: sholat wajib
+         * berbobot (`w`), rawatib dihitung per sholat, centang tertunda dari
+         * widget Ibadah Harian ikut dihitung. Tanpa item = 1 (tidak turun).
+         */
+        private fun todayRate(day: JSONObject, pending: Map<String, Int>, date: String): Double {
+            var total = 0.0
+            var score = 0.0
+            day.optJSONArray("sholat")?.let { arr ->
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    if (o.optBoolean("excused", false)) continue
+                    total += 1
+                    val done = pending["$date|${o.optInt("id")}"]?.let { it > 0 } ?: o.optBoolean("done", false)
+                    if (done) score += o.optDouble("w", 1.0)
+                }
+            }
+            day.optJSONArray("items")?.let { arr ->
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    if (o.optBoolean("excused", false)) continue
+                    val id = o.optInt("id")
+                    if (id == -1) {
+                        // ringkasan rawatib: tiap sholat rawatib satu item
+                        total += o.optInt("target", 0)
+                        score += o.optInt("value", 0)
+                        continue
+                    }
+                    total += 1
+                    val done = pending["$date|$id"]?.let { v ->
+                        if (o.optString("kind") == "counter") v >= o.optInt("target", 1) else v > 0
+                    } ?: o.optBoolean("done", false)
+                    if (done) score += 1
+                }
+            }
+            return if (total == 0.0) 1.0 else score / total
+        }
+
         /** Sholat yang waktunya sedang berjalan. */
         private fun currentPrayer(sholat: List<Prayer>, now: Long): Prayer? =
             sholat.lastOrNull { it.at in 1..now }?.takeIf { it.end > now }
@@ -315,6 +362,8 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
             onTimeMs: Long,
             fast: Fast,
             motivation: WidgetMotivation.Lines,
+            /** Penyemangat bila ibadah hari ini turun ([WidgetDecline]). */
+            down: Messages? = null,
         ): Messages {
             if (excused) {
                 return Messages(
@@ -383,6 +432,12 @@ class SemangatWidgetProvider : HomeWidgetProvider() {
                     WidgetWarning.qadhaShort(it.name),
                 )
             }
+
+            // malam (sesudah adzan Isya) & ibadah hari ini turun: semangat
+            // untuk besok - kecuali masih ada sholat terlewat (qadha dulu)
+            val afterIsya = sholat.getOrNull(4)?.let { now >= it.at } ?: false
+            val anyMissed = sholat.any { it.end in 1..now && !it.done && !it.excused }
+            if (down != null && afterIsya && !anyMissed) return down
 
             val counted = sholat.filter { !it.excused }
             if (counted.isNotEmpty() && counted.all { it.done }) {

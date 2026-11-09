@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../services/day_note.dart';
 import '../services/murajaah.dart';
 import '../services/quran_index.dart';
 
@@ -122,7 +123,12 @@ class IbadahLogs extends Table {
 class DayStatuses extends Table {
   TextColumn get date => text()();
   BoolColumn get excused => boolean().withDefault(const Constant(false))();
+
+  /// Catatan harian bebas (mis. "demam sejak pagi").
   TextColumn get note => text().nullable()();
+
+  /// Alasan ibadah hari itu naik/turun: [DayReason.key] (sejak v12).
+  TextColumn get reason => text().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -282,7 +288,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -361,6 +367,15 @@ class AppDatabase extends _$AppDatabase {
           "AND name = 'hafalan_reviews'",
         ).get();
         if (tables.isEmpty) await m.createTable(hafalanReviews);
+      }
+      if (from < 12) {
+        // v12: alasan di catatan harian (dicek dulu seperti v6)
+        final cols = await customSelect(
+          "SELECT name FROM pragma_table_info('day_statuses')",
+        ).map((r) => r.read<String>('name')).get();
+        if (!cols.contains('reason')) {
+          await m.addColumn(dayStatuses, dayStatuses.reason);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -558,9 +573,13 @@ class IbadahDayData {
     required this.summaries,
     this.qadhaRemaining = 0,
     this.logs = const {},
+    this.note = const DayNote(),
   });
 
   final String date;
+
+  /// Catatan harian (alasan & keterangan).
+  final DayNote note;
 
   /// Catatan lengkap per item (untuk waktu & tempat sholat).
   final Map<int, IbadahLog> logs;
@@ -593,9 +612,13 @@ class IbadahRangeData {
     required this.excused,
     required this.tilawah,
     required this.firstDate,
+    this.notes = const {},
   });
 
   final String from, to;
+
+  /// tanggal -> catatan harian (hanya yang terisi).
+  final Map<String, DayNote> notes;
 
   /// Item aktif, terurut.
   final List<IbadahItem> items;
@@ -707,6 +730,7 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       values: {for (final l in logs) l.itemId: l.value},
       logs: {for (final l in logs) l.itemId: l},
       excused: status?.excused ?? false,
+      note: _noteOf(status),
       hasTilawah: tilawah.isNotEmpty,
       summaries: await summaries(summariesFrom, summariesTo),
       qadhaRemaining: (await qadhaStatus()).remaining,
@@ -883,6 +907,40 @@ class IbadahDao extends DatabaseAccessor<AppDatabase> with _$IbadahDaoMixin {
       excused: await excusedDates(from, to),
       tilawah: tilawah.toSet(),
       firstDate: first.read<String?>('d'),
+      notes: await notesBetween(from, to),
+    );
+  }
+
+  /// Catatan harian yang terisi di [from]..[to].
+  Future<Map<String, DayNote>> notesBetween(String from, String to) async {
+    final rows =
+        await (select(dayStatuses)..where(
+              (d) =>
+                  d.date.isBetweenValues(from, to) &
+                  (d.reason.isNotNull() | d.note.isNotNull()),
+            ))
+            .get();
+    return {
+      for (final r in rows)
+        if (_noteOf(r) case final n when !n.isEmpty) r.date: n,
+    };
+  }
+
+  static DayNote _noteOf(DayStatus? s) => s == null
+      ? const DayNote()
+      : DayNote(reason: DayReason.of(s.reason), text: s.note);
+
+  /// Simpan catatan harian [date]; alasan & keterangan kosong = dihapus.
+  /// Status berhalangan tidak disentuh.
+  Future<void> setDayNote(String date, DayReason? reason, String? text) {
+    final t = text?.trim() ?? '';
+    return into(dayStatuses).insertOnConflictUpdate(
+      DayStatusesCompanion.insert(
+        date: date,
+        reason: Value(reason?.key),
+        note: Value(t.isEmpty ? null : t),
+        updatedAt: DateTime.now(),
+      ),
     );
   }
 

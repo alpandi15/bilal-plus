@@ -3,6 +3,7 @@ import '../models/prayer_models.dart';
 import '../utils/date_key.dart';
 import 'hijri_calendar.dart';
 import 'ibadah_day.dart';
+import 'ibadah_report.dart';
 import 'prayer_calculator.dart' as calc;
 import 'quran_index.dart';
 import 'quran_target.dart';
@@ -66,6 +67,12 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
   bool male = false,
 }) async {
   final tz = calc.timezoneFromLongitude(longitude);
+  final recent = await recentIbadahRate(
+    db,
+    anchors: anchors,
+    today: today,
+    soloWeight: soloWeight,
+  );
   return {
     'generatedAt': DateTime.now().millisecondsSinceEpoch,
     'tzId': tzIds[tz],
@@ -73,6 +80,8 @@ Future<Map<String, Object?>> ibadahWidgetPayload(
     'onTimeMinutes': onTimeMinutes,
     'soloWeight': soloWeight,
     'lastJamaah': lastJamaah,
+    // pembanding widget Semangat Sholat: hari ini turun dari biasanya?
+    'recentRate': ?recent,
     'days': [
       for (final date in [today, _tomorrow(today)])
         await ibadahWidgetDay(
@@ -192,6 +201,9 @@ Future<Map<String, Object?>> ibadahWidgetDay(
     if (items.where((i) => i.key == 'puasa_sunnah').firstOrNull case final i?)
       'fastItem': i.id,
     'excused': data.excused,
+    // catatan harian: alasan memilih kata penyemangat di widget
+    if (data.note.reason case final r?) 'reason': r.key,
+    if (!data.note.isEmpty) 'note': true,
     'streak': ibadahStreak(data.summaries, date),
     'done': progress.done,
     'total': progress.total,
@@ -207,6 +219,34 @@ Future<Map<String, Object?>> ibadahWidgetDay(
           entry(i),
     ],
   };
+}
+
+/// Hari pembanding untuk [recentIbadahRate].
+const recentRateDays = 7;
+
+/// Rata-rata % tuntas (0..1) [recentRateDays] hari sebelum [today]; hari
+/// berhalangan / tanpa catatan dilewati. Null bila kurang dari 3 hari yang
+/// bisa dibandingkan.
+Future<double?> recentIbadahRate(
+  AppDatabase db, {
+  required HijriAnchors anchors,
+  required String today,
+  double soloWeight = 1,
+}) async {
+  final end = parseDateKey(today).subtract(const Duration(days: 1));
+  final from = dateKey(
+    end.subtract(const Duration(days: recentRateDays - 1)),
+  );
+  final report = buildIbadahReport(
+    await db.ibadahDao.loadRange(from, dateKey(end)),
+    anchors: anchors,
+    today: dateKey(end),
+    soloWeight: soloWeight,
+  );
+  final days = report.counted.toList();
+  if (days.length < 3) return null;
+  return days.fold<double>(0, (a, d) => a + d.fraction.clamp(0.0, 1.0)) /
+      days.length;
 }
 
 /// Id entri ringkasan rawatib di payload widget (bukan id item sungguhan).

@@ -136,6 +136,7 @@ class BackupService {
             'date': s.date,
             'excused': s.excused,
             'note': s.note,
+            if (s.reason != null) 'reason': s.reason,
             'updatedAt': _iso(s.updatedAt),
           },
       ],
@@ -369,6 +370,7 @@ class BackupService {
                 date: date,
                 excused: Value(s['excused'] as bool),
                 note: Value(s['note'] as String?),
+                reason: Value(s['reason'] as String?),
                 updatedAt: updatedAt,
               ),
             );

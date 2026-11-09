@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/day_note.dart';
 import '../../services/ibadah_report.dart';
 import '../../utils/date_key.dart';
 import 'reveal.dart';
@@ -19,9 +20,20 @@ class IbadahTrendChart extends StatefulWidget {
     super.key,
     required this.points,
     this.weekly = false,
+    this.notes = const {},
   });
 
   final List<TrendPoint> points;
+
+  /// Catatan harian (tanggal -> catatan): ditandai titik kecil di bawah
+  /// grafik dan disebut saat titiknya disentuh.
+  final Map<String, DayNote> notes;
+
+  /// Catatan di rentang [p] (satu hari, atau satu pekan).
+  List<DayNote> notesIn(TrendPoint p) => [
+    for (final e in notes.entries)
+      if (e.key.compareTo(p.from) >= 0 && e.key.compareTo(p.to) <= 0) e.value,
+  ];
 
   /// Tiap titik = rata-rata satu pekan.
   final bool weekly;
@@ -54,8 +66,15 @@ class _IbadahTrendChartState extends State<IbadahTrendChart> {
         ? '${formatDayMonth(p.from)} - ${formatDayMonth(p.to)}'
         : formatDateKeyShort(p.to);
     final v = p.value;
-    if (v == null) return '$when: tidak dihitung';
-    return '$when: ${(v * 100).round()}%${p.partial ? ' (masih berjalan)' : ''}';
+    final notes = widget.notesIn(p);
+    final note = notes.isEmpty
+        ? ''
+        : widget.weekly
+        ? ' · ${notes.length} catatan'
+        : ' · ${notes.first.short}';
+    if (v == null) return '$when: tidak dihitung$note';
+    return '$when: ${(v * 100).round()}%'
+        '${p.partial ? ' (masih berjalan)' : ''}$note';
   }
 
   String get _summary {
@@ -98,7 +117,15 @@ class _IbadahTrendChartState extends State<IbadahTrendChart> {
               duration: 900,
               builder: (context, t) => CustomPaint(
                 size: Size(box.maxWidth, 180),
-                painter: _TrendPainter(widget.points, _selected, t),
+                painter: _TrendPainter(
+                  widget.points,
+                  _selected,
+                  t,
+                  marks: {
+                    for (var i = 0; i < widget.points.length; i++)
+                      if (widget.notesIn(widget.points[i]).isNotEmpty) i,
+                  },
+                ),
               ),
             ),
           ),
@@ -109,9 +136,17 @@ class _IbadahTrendChartState extends State<IbadahTrendChart> {
 }
 
 class _TrendPainter extends CustomPainter {
-  _TrendPainter(this.points, this.selected, this.progress);
+  _TrendPainter(
+    this.points,
+    this.selected,
+    this.progress, {
+    this.marks = const {},
+  });
 
   final List<TrendPoint> points;
+
+  /// Indeks titik yang punya catatan harian.
+  final Set<int> marks;
   final int? selected;
   final double progress;
 
@@ -231,6 +266,12 @@ class _TrendPainter extends CustomPainter {
     }
     canvas.restore();
 
+    // penanda catatan harian, tepat di atas garis 0%
+    final mark = Paint()..color = _amber.withValues(alpha: 0.75);
+    for (final i in marks) {
+      if (i < n) canvas.drawCircle(Offset(x(i), y(0) - 4), 2.6, mark);
+    }
+
     final s = selected;
     if (s != null && s < n) {
       canvas.drawLine(
@@ -253,5 +294,6 @@ class _TrendPainter extends CustomPainter {
   bool shouldRepaint(_TrendPainter old) =>
       old.points != points ||
       old.selected != selected ||
-      old.progress != progress;
+      old.progress != progress ||
+      old.marks.length != marks.length;
 }

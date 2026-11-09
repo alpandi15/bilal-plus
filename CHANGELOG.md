@@ -4,6 +4,25 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.18.4 (build 33) · 9 November 2026
+
+**Catatan harian ibadah**
+- Di kartu ringkasan halaman Ibadah ada **Catatan hari ini**: pilih
+  sebabnya (Sakit, Perjalanan, Sibuk, Lelah, Lagi futur, Lainnya) dan tulis
+  keterangan bila perlu. Bisa juga untuk hari-hari sebelumnya.
+- Catatan tampil di laporan: daftar **Catatan harian** dengan % tuntas hari
+  itu, titik penanda di grafik tren (sentuh titiknya untuk melihat
+  sebabnya), dan kartu catatan di laporan harian.
+- Saat sakit atau safar, laporan harian mengingatkan bahwa amalan rutin
+  tetap ditulis pahalanya (HR. Bukhari). Saat futur, diajak memulai dari
+  amalan kecil yang rutin.
+
+**Widget Semangat Sholat**
+- Malam hari (sesudah Isya), bila ibadah hari ini jauh di bawah rata-rata
+  7 hari terakhir, widget menampilkan kata penyemangat supaya besok lebih
+  semangat. Nadanya mengikuti catatan hari itu, mis. doa lekas sembuh saat
+  sakit, atau ajakan tidur awal saat lelah.
+
 ## 1.18.3 (build 32) · 9 November 2026
 
 **Dzikir pagi & petang**

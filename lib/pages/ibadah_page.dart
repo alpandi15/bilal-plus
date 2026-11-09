@@ -14,6 +14,8 @@ import '../utils/date_key.dart';
 import '../services/app_settings.dart';
 import '../services/ramadan_recap.dart';
 import '../services/sholat_time.dart';
+import '../services/day_note.dart';
+import '../widgets/ibadah/day_note_sheet.dart';
 import '../widgets/ibadah/ibadah_manage_sheet.dart';
 import '../widgets/ibadah/ramadan_notice_cards.dart';
 import '../widgets/ibadah/jamaah_info.dart';
@@ -477,6 +479,18 @@ class _DayView extends StatelessWidget {
                 streak: ibadahStreak(data.summaries, today),
                 excused: data.excused,
                 onExcused: (v) => dao.setExcused(data.date, v),
+                note: data.note,
+                onNote: () async {
+                  final note = await showDayNoteSheet(
+                    context,
+                    note: data.note,
+                    title: data.date == today
+                        ? 'Catatan hari ini'
+                        : 'Catatan ${formatDateKeyShort(data.date)}',
+                  );
+                  if (note == null) return;
+                  await dao.setDayNote(data.date, note.reason, note.text);
+                },
                 onReport: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => IbadahDailyReportPage(date: data.date),
@@ -813,9 +827,13 @@ class _SummaryCard extends StatelessWidget {
     required this.excused,
     required this.onExcused,
     required this.onReport,
+    required this.note,
+    required this.onNote,
   });
 
   final VoidCallback onReport;
+  final DayNote note;
+  final VoidCallback onNote;
   final String date, today;
   final IbadahDay day;
   final IbadahProgress progress;
@@ -930,6 +948,8 @@ class _SummaryCard extends StatelessWidget {
               style: TextStyle(fontSize: 11, color: _muted),
             ),
           ),
+          const Divider(height: 1, color: _line),
+          DayNoteRow(note: note, isToday: date == today, onTap: onNote),
           const SizedBox(height: 4),
           SizedBox(
             width: double.infinity,

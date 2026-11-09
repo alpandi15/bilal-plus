@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../db/app_database.dart';
 import '../db/app_database_scope.dart';
 import '../services/app_settings.dart';
+import '../services/day_note.dart';
 import '../services/hijri_config_scope.dart';
 import '../services/ibadah_report.dart';
 import '../services/prayer_calculator.dart' as calc;
@@ -117,6 +118,10 @@ class _ReportPageState extends State<ReportPage> {
                   // tab dibuka lagi
                   key: ValueKey((_range, widget.replay)),
                   report: report,
+                  notes: {
+                    for (final e in data.notes.entries)
+                      if (e.key.compareTo(today) <= 0) e.key: e.value,
+                  },
                   today: today,
                   range: _range,
                   onRange: (r) => setState(() => _range = r),
@@ -143,9 +148,11 @@ class _ReportBody extends StatelessWidget {
     required this.range,
     required this.onRange,
     required this.showSholat,
+    this.notes = const {},
   });
 
   final IbadahReport report;
+  final Map<String, DayNote> notes;
   final String today;
   final _Range range;
   final ValueChanged<_Range> onRange;
@@ -212,7 +219,15 @@ class _ReportBody extends StatelessWidget {
                       today: today,
                     ),
                     weekly: range.days > trendDailyMaxDays,
+                    notes: notes,
                   ),
+                ),
+              ],
+              if (notes.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _Card(
+                  title: 'CATATAN HARIAN',
+                  child: _NoteList(notes: notes, report: report),
                 ),
               ],
               const SizedBox(height: 14),
@@ -998,4 +1013,82 @@ class _EntryCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Catatan harian di rentang laporan, terbaru dulu, lengkap dengan
+/// % tuntas hari itu - supaya kelihatan kenapa grafik turun. Ketuk membuka
+/// laporan harian.
+class _NoteList extends StatelessWidget {
+  const _NoteList({required this.notes, required this.report});
+
+  final Map<String, DayNote> notes;
+  final IbadahReport report;
+
+  static const _max = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final dates = notes.keys.toList()..sort((a, b) => b.compareTo(a));
+    final scores = {for (final d in report.days) d.date: d};
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final date in dates.take(_max))
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => IbadahDailyReportPage(date: date),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 58,
+                    child: Text(
+                      formatDayMonth(date),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _stone,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      notes[date]!.summary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: _stone),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    switch (scores[date]) {
+                      final s? when s.excused => 'uzur',
+                      final s? when s.hasData && s.total > 0 =>
+                        '${(s.fraction.clamp(0.0, 1.0) * 100).round()}%',
+                      _ => '',
+                    },
+                    style: const TextStyle(fontSize: 12, color: _muted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (dates.length > _max)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '+${dates.length - _max} catatan lain - sentuh grafik untuk '
+              'melihatnya.',
+              style: const TextStyle(fontSize: 11, color: _muted),
+            ),
+          ),
+      ],
+    );
+  }
 }

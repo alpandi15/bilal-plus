@@ -1,6 +1,7 @@
 import '../data/sholat_dalil.dart';
 import '../db/app_database.dart';
 import '../models/prayer_models.dart';
+import 'day_note.dart';
 import '../utils/date_key.dart';
 import 'hijri_calendar.dart';
 import 'ibadah_day.dart';
@@ -152,7 +153,11 @@ class DailyReport {
     required this.streak,
     required this.previousAverage,
     required this.timed,
+    this.note = const DayNote(),
   });
+
+  /// Catatan harian pengguna (alasan ibadah naik/turun).
+  final DayNote note;
 
   final String date;
   final bool isToday;
@@ -890,6 +895,38 @@ DailyReport buildDailyReport(
     );
   }
 
+  // catatan harian: sakit/safar/futur dijawab dengan dalil yang menenangkan
+  final reason = (data.notes[date] ?? const DayNote()).reason;
+  if (!excused && (reason == DayReason.sakit || reason == DayReason.safar)) {
+    good.insert(
+      0,
+      Insight(
+        InsightKind.good,
+        InsightIcon.bintang,
+        reason == DayReason.sakit
+            ? 'Sedang sakit - pahala tetap mengalir'
+            : 'Sedang safar - pahala tetap mengalir',
+        'Amalan yang biasa kamu kerjakan saat sehat & di rumah tetap '
+            'ditulis pahalanya. Kerjakan yang wajib semampunya, sisanya '
+            'istirahat.',
+        ref: 'HR. Bukhari no. 2774',
+      ),
+    );
+  } else if (!excused && reason == DayReason.futur) {
+    tips.insert(
+      0,
+      Insight(
+        InsightKind.tip,
+        InsightIcon.umum,
+        'Futur itu wajar, jangan berhenti',
+        'Pilih satu amalan kecil yang pasti bisa dijaga besok, lalu rutinkan. '
+            'Amalan yang paling dicintai Allah adalah yang rutin walau '
+            'sedikit.',
+        ref: 'HR. Bukhari no. 5984',
+      ),
+    );
+  }
+
   if (!hasData && !excused) {
     tips.add(
       const Insight(
@@ -915,6 +952,7 @@ DailyReport buildDailyReport(
     streak: streak,
     previousAverage: previousAverage,
     timed: anyTimed,
+    note: data.notes[date] ?? const DayNote(),
   );
 }
 

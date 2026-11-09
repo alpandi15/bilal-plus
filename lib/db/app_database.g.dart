@@ -1439,6 +1439,15 @@ class $DayStatusesTable extends DayStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1451,7 +1460,13 @@ class $DayStatusesTable extends DayStatuses
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [date, excused, note, updatedAt];
+  List<GeneratedColumn> get $columns => [
+    date,
+    excused,
+    note,
+    reason,
+    updatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1484,6 +1499,12 @@ class $DayStatusesTable extends DayStatuses
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1513,6 +1534,10 @@ class $DayStatusesTable extends DayStatuses
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1529,12 +1554,18 @@ class $DayStatusesTable extends DayStatuses
 class DayStatus extends DataClass implements Insertable<DayStatus> {
   final String date;
   final bool excused;
+
+  /// Catatan harian bebas (mis. "demam sejak pagi").
   final String? note;
+
+  /// Alasan ibadah hari itu naik/turun: [DayReason.key] (sejak v12).
+  final String? reason;
   final DateTime updatedAt;
   const DayStatus({
     required this.date,
     required this.excused,
     this.note,
+    this.reason,
     required this.updatedAt,
   });
   @override
@@ -1545,6 +1576,9 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -1554,6 +1588,9 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
       date: Value(date),
       excused: Value(excused),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1567,6 +1604,7 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
       date: serializer.fromJson<String>(json['date']),
       excused: serializer.fromJson<bool>(json['excused']),
       note: serializer.fromJson<String?>(json['note']),
+      reason: serializer.fromJson<String?>(json['reason']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1577,6 +1615,7 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
       'date': serializer.toJson<String>(date),
       'excused': serializer.toJson<bool>(excused),
       'note': serializer.toJson<String?>(note),
+      'reason': serializer.toJson<String?>(reason),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1585,11 +1624,13 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
     String? date,
     bool? excused,
     Value<String?> note = const Value.absent(),
+    Value<String?> reason = const Value.absent(),
     DateTime? updatedAt,
   }) => DayStatus(
     date: date ?? this.date,
     excused: excused ?? this.excused,
     note: note.present ? note.value : this.note,
+    reason: reason.present ? reason.value : this.reason,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   DayStatus copyWithCompanion(DayStatusesCompanion data) {
@@ -1597,6 +1638,7 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
       date: data.date.present ? data.date.value : this.date,
       excused: data.excused.present ? data.excused.value : this.excused,
       note: data.note.present ? data.note.value : this.note,
+      reason: data.reason.present ? data.reason.value : this.reason,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1607,13 +1649,14 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
           ..write('date: $date, ')
           ..write('excused: $excused, ')
           ..write('note: $note, ')
+          ..write('reason: $reason, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(date, excused, note, updatedAt);
+  int get hashCode => Object.hash(date, excused, note, reason, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1621,6 +1664,7 @@ class DayStatus extends DataClass implements Insertable<DayStatus> {
           other.date == this.date &&
           other.excused == this.excused &&
           other.note == this.note &&
+          other.reason == this.reason &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1628,12 +1672,14 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
   final Value<String> date;
   final Value<bool> excused;
   final Value<String?> note;
+  final Value<String?> reason;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const DayStatusesCompanion({
     this.date = const Value.absent(),
     this.excused = const Value.absent(),
     this.note = const Value.absent(),
+    this.reason = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1641,6 +1687,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
     required String date,
     this.excused = const Value.absent(),
     this.note = const Value.absent(),
+    this.reason = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : date = Value(date),
@@ -1649,6 +1696,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
     Expression<String>? date,
     Expression<bool>? excused,
     Expression<String>? note,
+    Expression<String>? reason,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -1656,6 +1704,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
       if (date != null) 'date': date,
       if (excused != null) 'excused': excused,
       if (note != null) 'note': note,
+      if (reason != null) 'reason': reason,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1665,6 +1714,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
     Value<String>? date,
     Value<bool>? excused,
     Value<String?>? note,
+    Value<String?>? reason,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -1672,6 +1722,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
       date: date ?? this.date,
       excused: excused ?? this.excused,
       note: note ?? this.note,
+      reason: reason ?? this.reason,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1689,6 +1740,9 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -1704,6 +1758,7 @@ class DayStatusesCompanion extends UpdateCompanion<DayStatus> {
           ..write('date: $date, ')
           ..write('excused: $excused, ')
           ..write('note: $note, ')
+          ..write('reason: $reason, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5349,6 +5404,7 @@ typedef $$DayStatusesTableCreateCompanionBuilder =
       required String date,
       Value<bool> excused,
       Value<String?> note,
+      Value<String?> reason,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -5357,6 +5413,7 @@ typedef $$DayStatusesTableUpdateCompanionBuilder =
       Value<String> date,
       Value<bool> excused,
       Value<String?> note,
+      Value<String?> reason,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -5382,6 +5439,11 @@ class $$DayStatusesTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5415,6 +5477,11 @@ class $$DayStatusesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -5438,6 +5505,9 @@ class $$DayStatusesTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -5477,12 +5547,14 @@ class $$DayStatusesTableTableManager
                 Value<String> date = const Value.absent(),
                 Value<bool> excused = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DayStatusesCompanion(
                 date: date,
                 excused: excused,
                 note: note,
+                reason: reason,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -5491,12 +5563,14 @@ class $$DayStatusesTableTableManager
                 required String date,
                 Value<bool> excused = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => DayStatusesCompanion.insert(
                 date: date,
                 excused: excused,
                 note: note,
+                reason: reason,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
