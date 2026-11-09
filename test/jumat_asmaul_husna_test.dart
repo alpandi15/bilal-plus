@@ -78,14 +78,40 @@ void main() {
   });
 
   group('dzikir setelah sholat', () {
-    test('tahlil 10x hanya Subuh & Maghrib, ilman nafi\'a hanya Subuh', () {
+    test('urutan bacaan masjid, ilman nafi\'a hanya Subuh', () {
       final subuh = dzikirFor(DzikirSession.sholat, prayer: 'subuh');
-      final maghrib = dzikirFor(DzikirSession.sholat, prayer: 'maghrib');
       final dzuhur = dzikirFor(DzikirSession.sholat, prayer: 'dzuhur');
-      expect(subuh.length, 12);
-      expect(maghrib.length, 11);
-      expect(dzuhur.length, 10);
-      expect(subuh.map((d) => d.title), contains(contains('Kursi')));
+      expect(subuh.length, dzuhur.length + 1);
+      final wajib = [
+        for (final d in dzuhur)
+          if (!d.optional) d,
+      ];
+      expect(wajib.length, 20);
+      expect(wajib.first.title, 'Istighfar');
+      expect(wajib.first.repeat, 3);
+      expect(wajib.map((d) => d.title).toList().sublist(0, 6), [
+        'Istighfar',
+        'Tahlil',
+        'Mohon perlindungan dari neraka',
+        'Allaahumma antas salaam',
+        'Al-Fatihah',
+        'Ayat Kursi',
+      ]);
+      expect(wajib.last.title, contains('Subhaana rabbika'));
+      // bacaan pilihan menyusul sesudah bacaan wajib
+      final firstOptional = dzuhur.indexWhere((d) => d.optional);
+      expect(dzuhur.skip(firstOptional).every((d) => d.optional), isTrue);
+      expect(subuh.map((d) => d.title), contains(contains('Ilman')));
+      expect(dzuhur.map((d) => d.title), isNot(contains(contains('Ilman'))));
+    });
+
+    test('semua dzikir setelah sholat bersumber & bergrup', () {
+      final all = dzikirFor(DzikirSession.sholat, prayer: 'subuh');
+      expect(all.map((d) => d.id).toSet().length, all.length);
+      for (final d in all) {
+        expect(d.source, isNotEmpty, reason: d.title);
+        expect(d.group, isNotNull, reason: d.title);
+      }
     });
 
     test('pagi/petang tidak memuat dzikir sholat', () {

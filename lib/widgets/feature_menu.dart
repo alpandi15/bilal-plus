@@ -76,10 +76,12 @@ final _hafalan = FeatureMenu('Hafalan', Icons.psychology_rounded, const [
   Color(0xFFA3E635),
   Color(0xFF047857),
 ], () => const HafalanPage());
-final _zakatMal = FeatureMenu('Zakat Mal', Icons.savings_rounded, const [
-  Color(0xFF34D399),
-  Color(0xFF047857),
-], () => const ZakatMalPage());
+final _zakatMal = FeatureMenu(
+  'Zakat Mal',
+  Icons.account_balance_wallet_rounded,
+  const [Color(0xFF34D399), Color(0xFF047857)],
+  () => const ZakatMalPage(),
+);
 final _pencapaian = FeatureMenu(
   'Pencapaian',
   Icons.emoji_events_rounded,
@@ -156,7 +158,7 @@ final _takbiran = FeatureMenu('Takbiran', Icons.campaign_rounded, const [
   Color(0xFFA78BFA),
   Color(0xFF6D28D9),
 ], () => const TakbiranPage());
-final _zakat = FeatureMenu('Zakat Fitrah', Icons.rice_bowl_rounded, const [
+final _zakat = FeatureMenu('Zakat Fitrah', Icons.grass_rounded, const [
   Color(0xFFFBBF24),
   Color(0xFFD97706),
 ], () => const ZakatFitrahPage());

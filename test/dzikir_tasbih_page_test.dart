@@ -125,6 +125,35 @@ void main() {
     expect(haptics, ['complete']);
   });
 
+  testWidgets('usai sholat: bagian bacaan & tombol selesai sebelum pilihan', (
+    tester,
+  ) async {
+    await open(tester, const DzikirPage(session: DzikirSession.sholat));
+    expect(
+      find.textContaining('Bacaan di masjid · 0/20 selesai'),
+      findsOneWidget,
+    );
+    expect(find.text('DZIKIR'), findsOneWidget);
+    expect(find.text('Istighfar'), findsOneWidget);
+    final list = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('Tandai selesai'),
+      600,
+      scrollable: list,
+    );
+    // bacaan pilihan ada sesudah tombol selesai
+    await tester.scrollUntilVisible(
+      find.text('DOA LAIN YANG SERING DIBACA IMAM'),
+      600,
+      scrollable: list,
+    );
+    expect(find.text('Pilihan - tidak dihitung ke progres.'), findsWidgets);
+    expect(
+      tester.getTopLeft(find.text('DOA LAIN YANG SERING DIBACA IMAM')).dy,
+      greaterThan(tester.getTopLeft(find.text('Tandai selesai')).dy),
+    );
+  });
+
   testWidgets('dzikir: tombol hitung maju & bergetar', (tester) async {
     await open(tester, const DzikirPage(session: DzikirSession.pagi));
     // Al-Ikhlas dkk: 3x

@@ -4,6 +4,25 @@ Aturan nomor versi: angka terakhir untuk perbaikan & fitur kecil, angka
 tengah untuk banyak fitur baru sekaligus, angka pertama hanya bila perlu
 pembaruan wajib. Angka di belakang `+` adalah nomor build (selalu naik).
 
+## 1.18.2 (build 31) · 9 November 2026
+
+**Dzikir & doa usai sholat**
+- Urutan bacaan kini mengikuti yang lazim di masjid: istighfar 3×, tahlil,
+  *Allaahumma ajirnii minan naar* 3×, *Allaahumma antas salaam*,
+  Al-Fatihah, Ayat Kursi, tasbih-tahmid-takbir 33×, lalu **doa setelah
+  sholat** yang biasa dibaca imam (hamdalah, shalawat, *taqabbal minnaa*,
+  *rabbanaa zhalamnaa*, sapu jagat, sampai *subhaana rabbika*).
+- Bagian baru **Doa lain yang sering dibaca imam**: doa keselamatan,
+  *Allaahumma innii as-alukal hudaa*, *ashlih lii diinii*, *yaa muqallibal
+  quluub*, doa untuk keluarga, orang tua, dan saudara seiman.
+- Dzikir sunnah lain (Hisnul Muslim) tetap ada di bawahnya. Bacaan pilihan
+  tidak dihitung ke progres, dan tombol selesai ada sesudah bacaan utama.
+- Setiap bacaan mencantumkan sumbernya; yang bukan dari hadits ditandai
+  sebagai bacaan yang lazim di masjid.
+
+**Tampilan**
+- Ikon **Zakat Mal** kini dompet, dan **Zakat Fitrah** rumpun tanaman.
+
 ## 1.18.1 (build 30) · 5 November 2026
 
 **Hafalan: mode kata awal**

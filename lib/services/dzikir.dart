@@ -53,10 +53,19 @@ class Dzikir {
     this.latinPetang,
     this.artiPetang,
     this.note,
+    this.group,
+    this.optional = false,
   });
 
-  /// Nomor di Hisnul Muslim.
+  /// Nomor di Hisnul Muslim (pagi/petang); nomor urut untuk dzikir setelah
+  /// sholat.
   final int id;
+
+  /// Judul bagian di halaman (mis. "Dzikir", "Doa setelah sholat").
+  final String? group;
+
+  /// Bacaan pilihan: tidak dihitung ke progres & tanda selesai.
+  final bool optional;
   final String title;
   final int repeat;
   final DzikirTime time;

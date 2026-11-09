@@ -141,7 +141,13 @@ class _DzikirPageState extends State<DzikirPage> {
 
   List<Dzikir> get _list => dzikirFor(_session!, prayer: _prayer);
 
-  bool get _allDone => _list.every((d) => (_counts[d.id] ?? 0) >= d.repeat);
+  /// Bacaan wajib di sesi ini (yang pilihan tidak dihitung).
+  List<Dzikir> get _required => [
+    for (final d in _list)
+      if (!d.optional) d,
+  ];
+
+  bool get _allDone => _required.every((d) => (_counts[d.id] ?? 0) >= d.repeat);
 
   Future<void> _markChecklist() async {
     final db = AppDatabaseScope.of(context);
@@ -168,7 +174,21 @@ class _DzikirPageState extends State<DzikirPage> {
     final session = _session!;
     final settings = AppSettingsScope.maybeOf(context);
     final list = _list;
-    final done = list.where((d) => (_counts[d.id] ?? 0) >= d.repeat).length;
+    final required = _required;
+    final done = required.where((d) => (_counts[d.id] ?? 0) >= d.repeat).length;
+    // baris daftar: judul bagian, kartu, dan tombol selesai sesudah bacaan
+    // wajib terakhir (bacaan pilihan menyusul di bawahnya)
+    final rows = <Object>[];
+    String? group;
+    for (final d in list) {
+      if (d.optional && !rows.contains(_finish)) rows.add(_finish);
+      if (d.group != null && d.group != group) {
+        group = d.group;
+        rows.add((group!, d.optional));
+      }
+      rows.add(d);
+    }
+    if (!rows.contains(_finish)) rows.add(_finish);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF3),
@@ -176,7 +196,9 @@ class _DzikirPageState extends State<DzikirPage> {
         children: [
           SubHeader(
             title: session.title,
-            subtitle: "Hisnul Muslim · $done/${list.length} selesai",
+            subtitle:
+                '${session == DzikirSession.sholat ? 'Bacaan di masjid' : 'Hisnul Muslim'}'
+                ' · $done/${required.length} selesai',
             trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.tune_rounded, color: Color(0xFF92400E)),
               onSelected: (v) {
@@ -259,14 +281,18 @@ class _DzikirPageState extends State<DzikirPage> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(99),
                   child: TweenAnimationBuilder<double>(
-                    tween: Tween(end: list.isEmpty ? 0 : done / list.length),
+                    tween: Tween(
+                      end: required.isEmpty ? 0 : done / required.length,
+                    ),
                     duration: const Duration(milliseconds: 400),
                     builder: (_, v, _) => LinearProgressIndicator(
                       value: v,
                       minHeight: 6,
                       backgroundColor: const Color(0xFFF6E7CC),
                       valueColor: AlwaysStoppedAnimation(
-                        done == list.length ? _green : const Color(0xFFF59E0B),
+                        done == required.length
+                            ? _green
+                            : const Color(0xFFF59E0B),
                       ),
                     ),
                   ),
@@ -284,17 +310,24 @@ class _DzikirPageState extends State<DzikirPage> {
                       16,
                       32 + MediaQuery.paddingOf(context).bottom,
                     ),
-                    itemCount: list.length + 1,
+                    itemCount: rows.length,
                     itemBuilder: (context, i) {
-                      if (i == list.length) {
-                        return _FinishCard(
-                          done: _allDone,
-                          onFinish: _markChecklist,
+                      final row = rows[i];
+                      if (row == _finish) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _FinishCard(
+                            done: _allDone,
+                            onFinish: _markChecklist,
+                          ),
                         );
                       }
-                      final d = list[i];
+                      if (row is (String, bool)) {
+                        return _GroupHeader(title: row.$1, optional: row.$2);
+                      }
+                      final d = row as Dzikir;
                       return _DzikirCard(
-                        number: i + 1,
+                        number: list.indexOf(d) + 1,
                         dzikir: d,
                         session: session,
                         count: _counts[d.id] ?? 0,
@@ -583,6 +616,42 @@ class _CountButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Penanda posisi tombol selesai di daftar baris.
+const _finish = #finish;
+
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({required this.title, required this.optional});
+  final String title;
+  final bool optional;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.6,
+            color: _amber,
+          ),
+        ),
+        if (optional)
+          const Padding(
+            padding: EdgeInsets.only(top: 3),
+            child: Text(
+              'Pilihan - tidak dihitung ke progres.',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF78716C)),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class _FinishCard extends StatelessWidget {
