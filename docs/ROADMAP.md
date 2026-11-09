@@ -369,6 +369,10 @@ atau perbandingan; teks mengingatkan niat. Diverifikasi di emulator.
 
 ## Backlog / tidak dijadwalkan
 
+- **Penomoran rujukan hadits.** Sebagian rujukan memakai penomoran umum,
+  padahal kitab di aplikasi memakai penomoran Lidwa, jadi tautannya membuka
+  hadits lain. Hasil audit, kandidat nomor, dan pilihan perbaikan ada di
+  [HADITS_RUJUKAN.md](HADITS_RUJUKAN.md). Menunggu keputusan pendekatan.
 - **Pola tidur untuk ibadah.** Konsep: catat jam tidur/bangun & qailulah,
   laporan "begadang" dan kaitannya dengan Subuh. Menunggu keputusan:
   (1) cara mencatat (tombol "Sudah bangun" di notifikasi Subuh + kartu pagi,
